@@ -7,7 +7,7 @@ import {
   Users as UsersIcon,
   ArrowUpRight,
 } from "lucide-react";
-import { usersApi } from "@/lib/api-client";
+import { dashboardApi, type DashboardSummary } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -20,25 +20,24 @@ export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
-type CardState =
-  | { status: "loading" }
-  | { status: "ready"; value: number }
-  | { status: "unavailable"; reason: string }
-  | { status: "error"; message: string };
+type Status = "loading" | "ready";
 
 function DashboardPage() {
-  const [users, setUsers] = useState<CardState>({ status: "loading" });
+  const [status, setStatus] = useState<Status>("loading");
+  const [summary, setSummary] = useState<DashboardSummary>({
+    employees: null,
+    users: null,
+    departments: null,
+    roles: null,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    usersApi
-      .count()
-      .then((value) => {
-        if (!cancelled) setUsers({ status: "ready", value });
-      })
-      .catch((err: Error) => {
-        if (!cancelled) setUsers({ status: "error", message: err.message });
-      });
+    dashboardApi.summary().then((data) => {
+      if (cancelled) return;
+      setSummary(data);
+      setStatus("ready");
+    });
     return () => {
       cancelled = true;
     };
@@ -61,18 +60,21 @@ function DashboardPage() {
           <MetricCard
             label="Employees"
             icon={UserSquare2}
-            state={{ status: "unavailable", reason: "Coming soon" }}
+            value={summary.employees}
+            status={status}
           />
-          <MetricCard label="Users" icon={UsersIcon} state={users} />
+          <MetricCard label="Users" icon={UsersIcon} value={summary.users} status={status} />
           <MetricCard
             label="Departments"
             icon={Building2}
-            state={{ status: "unavailable", reason: "Coming soon" }}
+            value={summary.departments}
+            status={status}
           />
           <MetricCard
             label="Roles"
             icon={ShieldCheck}
-            state={{ status: "unavailable", reason: "Coming soon" }}
+            value={summary.roles}
+            status={status}
           />
         </div>
       </section>
@@ -109,38 +111,44 @@ function DashboardPage() {
 function MetricCard({
   label,
   icon: Icon,
-  state,
+  value,
+  status,
 }: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  state: CardState;
+  value: number | null;
+  status: Status;
 }) {
+  const isLoading = status === "loading";
+  const isReady = status === "ready" && value !== null;
+  const isUnavailable = status === "ready" && value === null;
+
   return (
     <div className="rounded-lg border border-border bg-card p-5 shadow-xs">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="min-w-0">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {label}
           </div>
-          <div className="mt-2 min-h-[2rem] text-3xl font-semibold tracking-tight text-foreground">
-            {state.status === "ready" && state.value.toLocaleString()}
-            {state.status === "loading" && (
-              <span className="inline-block h-6 w-16 rounded bg-muted align-middle" aria-label="Loading" />
+          <div className="mt-2 min-h-[2.25rem] text-3xl font-semibold tracking-tight text-foreground">
+            {isReady && (value as number).toLocaleString()}
+            {isLoading && (
+              <span
+                className="inline-block h-7 w-20 rounded bg-muted align-middle"
+                aria-label="Loading"
+              />
             )}
-            {(state.status === "unavailable" || state.status === "error") && (
-              <span className="text-3xl text-muted-foreground">—</span>
-            )}
+            {isUnavailable && <span className="text-muted-foreground">—</span>}
           </div>
         </div>
-        <span className="grid h-9 w-9 place-items-center rounded-md bg-muted text-muted-foreground">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
           <Icon className="h-5 w-5" />
         </span>
       </div>
       <div className="mt-3 text-xs text-muted-foreground">
-        {state.status === "ready" && "Total records"}
-        {state.status === "loading" && "Loading…"}
-        {state.status === "unavailable" && state.reason}
-        {state.status === "error" && state.message}
+        {isLoading && "Loading…"}
+        {isReady && "Total records"}
+        {isUnavailable && "Coming soon"}
       </div>
     </div>
   );
