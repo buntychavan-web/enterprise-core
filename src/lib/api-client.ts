@@ -214,6 +214,85 @@ export const usersApi = {
   },
 };
 
+/* -------------------------------------------------------------------------- */
+/* Dashboard                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export type DashboardSummary = {
+  employees: number | null;
+  users: number | null;
+  departments: number | null;
+  roles: number | null;
+};
+
+/**
+ * Fetches consolidated dashboard counts.
+ *
+ * Preferred endpoint (to be implemented by the backend team):
+ *   GET /api/dashboard/summary
+ *   { "employees": 0, "users": 0, "departments": 0, "roles": 0 }
+ *
+ * Fallback: if the consolidated endpoint returns 404, try individual count
+ * endpoints for each card independently. Each card that has no backend
+ * endpoint stays `null` and the UI renders "—" without blocking.
+ *
+ * Never throws: the dashboard must never be blocked by unimplemented endpoints.
+ */
+export const dashboardApi = {
+  async summary(): Promise<DashboardSummary> {
+    // 1) Consolidated endpoint (preferred).
+    try {
+      const data = await request<Partial<DashboardSummary>>("/dashboard/summary");
+      return {
+        employees: numOrNull(data.employees),
+        users: numOrNull(data.users),
+        departments: numOrNull(data.departments),
+        roles: numOrNull(data.roles),
+      };
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.status !== 404) {
+        // Non-404 errors (network / auth / 5xx) still fall through to
+        // per-card fetches so partial data can render.
+      }
+    }
+
+    // 2) Fallback to per-resource counts. Each call is independent; a failure
+    //    on one card leaves it as null (renders "—") without affecting others.
+    const [employees, users, departments, roles] = await Promise.all([
+      safeCount("/employees"),
+      safeCount("/users"),
+      safeCount("/departments"),
+      safeCount("/roles"),
+    ]);
+    return { employees, users, departments, roles };
+  },
+};
+
+function numOrNull(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+async function safeCount(path: string): Promise<number | null> {
+  try {
+    const data = await request<
+      unknown[] | { totalElements?: number; count?: number; content?: unknown[] }
+    >(path);
+    if (Array.isArray(data)) return data.length;
+    if (data && typeof (data as { totalElements?: number }).totalElements === "number") {
+      return (data as { totalElements: number }).totalElements;
+    }
+    if (data && typeof (data as { count?: number }).count === "number") {
+      return (data as { count: number }).count;
+    }
+    if (data && Array.isArray((data as { content?: unknown[] }).content)) {
+      return (data as { content: unknown[] }).content.length;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function displayName(user: UserDto | null | undefined): string {
   if (!user) return "";
   if (user.fullName) return user.fullName;
