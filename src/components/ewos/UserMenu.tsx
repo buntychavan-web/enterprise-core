@@ -1,4 +1,5 @@
-import { ChevronDown, LogOut, UserCircle2 } from "lucide-react";
+import { ChevronDown, LogOut, Settings, UserCircle2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,9 +37,17 @@ export function UserMenu({
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <UserCircle2 className="mr-2 h-4 w-4 text-muted-foreground" />
-          Profile
+        <DropdownMenuItem asChild>
+          <Link to="/profile">
+            <UserCircle2 className="mr-2 h-4 w-4 text-muted-foreground" />
+            My profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings">
+            <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
+            Settings
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onLogout}>

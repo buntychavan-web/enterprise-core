@@ -6,6 +6,8 @@ import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
 import { UserMenu } from "@/components/ewos/UserMenu";
 import { Footer } from "@/components/ewos/Footer";
+import { GlobalSearch } from "@/components/ewos/GlobalSearch";
+import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { displayName, initials } from "@/lib/api-client";
