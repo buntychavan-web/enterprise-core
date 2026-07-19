@@ -52,13 +52,29 @@ function AppShell() {
     );
   }
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
   return (
-    <div className="min-h-screen bg-muted/30 text-foreground">
+    <div className="min-h-dvh bg-muted/30 text-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow"
+      >
+        Skip to main content
+      </a>
       {mobileOpen && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 z-30 bg-foreground/40 lg:hidden"
           onClick={() => setMobileOpen(false)}
-          aria-hidden
+          aria-label="Close navigation overlay"
         />
       )}
 
