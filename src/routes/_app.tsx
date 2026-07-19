@@ -95,20 +95,22 @@ function AppShell() {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <nav className="flex-1 space-y-0.5 p-3">
+        <nav aria-label="Primary" className="flex-1 space-y-0.5 p-3">
           {NAV.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
+              className="flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
               activeOptions={{ exact: false }}
+              activeProps={{ "aria-current": "page" }}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-4 w-4" aria-hidden />
               {item.label}
             </Link>
           ))}
         </nav>
+
         <div className="border-t border-border p-3">
           <Link to="/design-system" className="text-xs text-muted-foreground hover:text-foreground">
             Design System
