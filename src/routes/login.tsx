@@ -69,8 +69,9 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+    <div className="min-h-dvh bg-muted/40">
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
+
         <div className="mb-8 flex justify-center">
           <EwosLogo />
         </div>
@@ -150,7 +151,8 @@ function LoginPage() {
         <p className="mt-6 text-center text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} EWOS. All rights reserved.
         </p>
-      </div>
+      </main>
     </div>
+
   );
 }

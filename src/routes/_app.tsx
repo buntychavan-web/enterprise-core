@@ -52,17 +52,35 @@ function AppShell() {
     );
   }
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
   return (
-    <div className="min-h-screen bg-muted/30 text-foreground">
+    <div className="min-h-dvh bg-muted/30 text-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow"
+      >
+        Skip to main content
+      </a>
       {mobileOpen && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 z-30 bg-foreground/40 lg:hidden"
           onClick={() => setMobileOpen(false)}
-          aria-hidden
+          aria-label="Close navigation overlay"
         />
       )}
 
       <aside
+        id="primary-navigation"
+        aria-label="Sidebar"
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-card transition-transform lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -79,20 +97,22 @@ function AppShell() {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <nav className="flex-1 space-y-0.5 p-3">
+        <nav aria-label="Primary" className="flex-1 space-y-0.5 p-3">
           {NAV.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
+              className="flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
               activeOptions={{ exact: false }}
+              activeProps={{ "aria-current": "page" }}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-4 w-4" aria-hidden />
               {item.label}
             </Link>
           ))}
         </nav>
+
         <div className="border-t border-border p-3">
           <Link to="/design-system" className="text-xs text-muted-foreground hover:text-foreground">
             Design System
@@ -101,7 +121,7 @@ function AppShell() {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-col lg:pl-64">
+      <div className="flex min-h-dvh flex-col lg:pl-64">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
           <Button
             variant="ghost"
@@ -109,6 +129,8 @@ function AppShell() {
             onClick={() => setMobileOpen(true)}
             className="lg:hidden"
             aria-label="Open navigation"
+            aria-expanded={mobileOpen}
+            aria-controls="primary-navigation"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -126,11 +148,12 @@ function AppShell() {
           </div>
         </header>
 
-        <main className="flex-1">
+        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>
+
 
         <Footer />
       </div>
