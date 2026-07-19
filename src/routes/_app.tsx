@@ -119,7 +119,7 @@ function AppShell() {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-col lg:pl-64">
+      <div className="flex min-h-dvh flex-col lg:pl-64">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
           <Button
             variant="ghost"
@@ -127,6 +127,8 @@ function AppShell() {
             onClick={() => setMobileOpen(true)}
             className="lg:hidden"
             aria-label="Open navigation"
+            aria-expanded={mobileOpen}
+            aria-controls="primary-navigation"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -144,11 +146,12 @@ function AppShell() {
           </div>
         </header>
 
-        <main className="flex-1">
+        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>
+
 
         <Footer />
       </div>
