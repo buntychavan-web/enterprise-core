@@ -1,10 +1,4 @@
-export function ModulePlaceholder({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
+export function ModulePlaceholder({ title, description }: { title: string; description: string }) {
   return (
     <div className="space-y-6">
       <header>
@@ -15,8 +9,8 @@ export function ModulePlaceholder({
         <div>
           <div className="text-sm font-medium text-foreground">Coming soon</div>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            This module will be implemented in a future sprint. It will connect to the
-            corresponding backend endpoints once they are available.
+            This module will be implemented in a future sprint. It will connect to the corresponding
+            backend endpoints once they are available.
           </p>
         </div>
       </div>

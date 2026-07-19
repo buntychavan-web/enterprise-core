@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type React from "react";
 import { useState } from "react";
 import {
   Building2,
@@ -87,8 +88,7 @@ export const Route = createFileRoute("/design-system/organization")({
       { title: "Organization Setup — High-Fidelity Mockups | EWOS" },
       {
         name: "description",
-        content:
-          "Rendered, implementation-ready screens for the EWOS Organization Setup module.",
+        content: "Rendered, implementation-ready screens for the EWOS Organization Setup module.",
       },
       { name: "robots", content: "noindex,nofollow" },
     ],
@@ -142,7 +142,12 @@ const NAV = [
   { icon: Settings, label: "Settings" },
 ];
 
-const ORG_SUBNAV: { icon: any; label: string; key: ScreenKey | "any"; count?: number }[] = [
+const ORG_SUBNAV: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  key: ScreenKey | "any";
+  count?: number;
+}[] = [
   { icon: Building2, label: "Company", key: "company-grid", count: 4 },
   { icon: Layers, label: "Business Unit", key: "any", count: 12 },
   { icon: Network, label: "Department", key: "dept-list", count: 38 },
@@ -229,7 +234,9 @@ function OrganizationMockups() {
           <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{current.label}</span>
             <span>·</span>
-            <span>{current.device === "mobile" ? "Mobile · 390 × 844" : "Desktop · 1440 × 900"}</span>
+            <span>
+              {current.device === "mobile" ? "Mobile · 390 × 844" : "Desktop · 1440 × 900"}
+            </span>
           </div>
 
           {current.device === "desktop" ? (
@@ -413,11 +420,7 @@ function AppTopbar() {
       <div className="ml-auto flex items-center gap-2">
         <div className="relative hidden md:block">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search organization…"
-            className="h-8 w-64 pl-8 text-xs"
-            readOnly
-          />
+          <Input placeholder="Search organization…" className="h-8 w-64 pl-8 text-xs" readOnly />
           <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border bg-muted px-1 text-[10px] text-muted-foreground">
             ⌘K
           </kbd>
@@ -459,9 +462,7 @@ function PageTitle({
           </p>
         )}
         <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -476,9 +477,16 @@ function Toolbar({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatusPill({ tone, label }: { tone: "success" | "warn" | "muted" | "info"; label: string }) {
+function StatusPill({
+  tone,
+  label,
+}: {
+  tone: "success" | "warn" | "muted" | "info";
+  label: string;
+}) {
   const map: Record<string, string> = {
-    success: "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300",
+    success:
+      "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300",
     warn: "bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300",
     muted: "bg-muted text-muted-foreground ring-border",
     info: "bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-500/10 dark:text-sky-300",
@@ -498,15 +506,96 @@ function StatusPill({ tone, label }: { tone: "success" | "warn" | "muted" | "inf
 /* ------------------------------------------------------------------ */
 
 const DEPARTMENTS = [
-  { code: "ENG", name: "Engineering", parent: "Technology", head: "Aarav Mehta", bu: "Product", loc: "Bengaluru", headcount: 128, status: "Active" as const },
-  { code: "PLT", name: "Platform Engineering", parent: "Engineering", head: "Ishaan Kapoor", bu: "Product", loc: "Bengaluru", headcount: 42, status: "Active" as const },
-  { code: "DES", name: "Design", parent: "Technology", head: "Meera Iyer", bu: "Product", loc: "Bengaluru", headcount: 18, status: "Active" as const },
-  { code: "FIN", name: "Finance", parent: "Corporate", head: "Rohit Sharma", bu: "Corporate", loc: "Mumbai", headcount: 24, status: "Active" as const },
-  { code: "HRD", name: "People & Culture", parent: "Corporate", head: "Sana Raza", bu: "Corporate", loc: "Mumbai", headcount: 12, status: "Active" as const },
-  { code: "SAL", name: "Sales — EMEA", parent: "Revenue", head: "David Okafor", bu: "GTM", loc: "London", headcount: 34, status: "Active" as const },
-  { code: "SAL2", name: "Sales — APAC", parent: "Revenue", head: "Wei Chen", bu: "GTM", loc: "Singapore", headcount: 29, status: "Active" as const },
-  { code: "OPS", name: "Operations", parent: "Corporate", head: "Priya Nair", bu: "Corporate", loc: "Mumbai", headcount: 41, status: "Draft" as const },
-  { code: "LEG", name: "Legal & Compliance", parent: "Corporate", head: "Anita Desai", bu: "Corporate", loc: "Mumbai", headcount: 8, status: "Archived" as const },
+  {
+    code: "ENG",
+    name: "Engineering",
+    parent: "Technology",
+    head: "Aarav Mehta",
+    bu: "Product",
+    loc: "Bengaluru",
+    headcount: 128,
+    status: "Active" as const,
+  },
+  {
+    code: "PLT",
+    name: "Platform Engineering",
+    parent: "Engineering",
+    head: "Ishaan Kapoor",
+    bu: "Product",
+    loc: "Bengaluru",
+    headcount: 42,
+    status: "Active" as const,
+  },
+  {
+    code: "DES",
+    name: "Design",
+    parent: "Technology",
+    head: "Meera Iyer",
+    bu: "Product",
+    loc: "Bengaluru",
+    headcount: 18,
+    status: "Active" as const,
+  },
+  {
+    code: "FIN",
+    name: "Finance",
+    parent: "Corporate",
+    head: "Rohit Sharma",
+    bu: "Corporate",
+    loc: "Mumbai",
+    headcount: 24,
+    status: "Active" as const,
+  },
+  {
+    code: "HRD",
+    name: "People & Culture",
+    parent: "Corporate",
+    head: "Sana Raza",
+    bu: "Corporate",
+    loc: "Mumbai",
+    headcount: 12,
+    status: "Active" as const,
+  },
+  {
+    code: "SAL",
+    name: "Sales — EMEA",
+    parent: "Revenue",
+    head: "David Okafor",
+    bu: "GTM",
+    loc: "London",
+    headcount: 34,
+    status: "Active" as const,
+  },
+  {
+    code: "SAL2",
+    name: "Sales — APAC",
+    parent: "Revenue",
+    head: "Wei Chen",
+    bu: "GTM",
+    loc: "Singapore",
+    headcount: 29,
+    status: "Active" as const,
+  },
+  {
+    code: "OPS",
+    name: "Operations",
+    parent: "Corporate",
+    head: "Priya Nair",
+    bu: "Corporate",
+    loc: "Mumbai",
+    headcount: 41,
+    status: "Draft" as const,
+  },
+  {
+    code: "LEG",
+    name: "Legal & Compliance",
+    parent: "Corporate",
+    head: "Anita Desai",
+    bu: "Corporate",
+    loc: "Mumbai",
+    headcount: 8,
+    status: "Archived" as const,
+  },
 ];
 
 function DepartmentList() {
@@ -556,7 +645,9 @@ function DepartmentList() {
         </Select>
         <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
           <Filter className="h-3.5 w-3.5" /> More filters
-          <Badge variant="secondary" className="h-4 px-1 text-[10px]">2</Badge>
+          <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+            2
+          </Badge>
         </Button>
         <Separator orientation="vertical" className="h-6" />
         <div className="flex items-center gap-1.5 text-xs">
@@ -616,14 +707,19 @@ function DepartmentList() {
                   <TableCell>
                     <Checkbox checked={i < 3} className="h-3.5 w-3.5" />
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{d.code}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {d.code}
+                  </TableCell>
                   <TableCell className="text-sm font-medium">{d.name}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{d.parent}</TableCell>
                   <TableCell className="text-xs">{d.bu}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="grid h-6 w-6 place-items-center rounded-full bg-muted text-[10px] font-semibold">
-                        {d.head.split(" ").map((n) => n[0]).join("")}
+                        {d.head
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </div>
                       <span className="text-xs">{d.head}</span>
                     </div>
@@ -634,7 +730,9 @@ function DepartmentList() {
                   </TableCell>
                   <TableCell>
                     <StatusPill
-                      tone={d.status === "Active" ? "success" : d.status === "Draft" ? "warn" : "muted"}
+                      tone={
+                        d.status === "Active" ? "success" : d.status === "Draft" ? "warn" : "muted"
+                      }
                       label={d.status}
                     />
                   </TableCell>
@@ -664,8 +762,12 @@ function DepartmentList() {
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="outline" size="sm" className="h-7 w-7 p-0">1</Button>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">2</Button>
+              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                1
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                2
+              </Button>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
@@ -690,8 +792,12 @@ function DepartmentForm() {
         description="Departments roll up to a Business Unit and inherit its cost centre defaults."
         actions={
           <>
-            <Button variant="outline" size="sm">Cancel</Button>
-            <Button variant="outline" size="sm">Save as Draft</Button>
+            <Button variant="outline" size="sm">
+              Cancel
+            </Button>
+            <Button variant="outline" size="sm">
+              Save as Draft
+            </Button>
             <Button size="sm" className="gap-1.5">
               <Check className="h-3.5 w-3.5" /> Save & Publish
             </Button>
@@ -704,10 +810,16 @@ function DepartmentForm() {
           <Card className="p-6">
             <div className="mb-4">
               <h3 className="text-sm font-semibold">Basic details</h3>
-              <p className="text-xs text-muted-foreground">Required for reporting and directory listings.</p>
+              <p className="text-xs text-muted-foreground">
+                Required for reporting and directory listings.
+              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Department code" required hint="Uppercase, 3–8 characters. Immutable after publish.">
+              <Field
+                label="Department code"
+                required
+                hint="Uppercase, 3–8 characters. Immutable after publish."
+              >
                 <Input defaultValue="PLT" className="h-9 font-mono uppercase" />
               </Field>
               <Field label="Display name" required>
@@ -715,7 +827,9 @@ function DepartmentForm() {
               </Field>
               <Field label="Parent department">
                 <Select defaultValue="eng">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="eng">Engineering</SelectItem>
                     <SelectItem value="none">— None (top level)</SelectItem>
@@ -724,7 +838,9 @@ function DepartmentForm() {
               </Field>
               <Field label="Business Unit" required>
                 <Select defaultValue="prod">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="prod">Product</SelectItem>
                     <SelectItem value="gtm">GTM</SelectItem>
@@ -736,7 +852,9 @@ function DepartmentForm() {
               </Field>
               <Field label="Status">
                 <Select defaultValue="active">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
@@ -746,7 +864,10 @@ function DepartmentForm() {
               </Field>
               <div className="md:col-span-2">
                 <Field label="Description">
-                  <Textarea rows={3} defaultValue="Owns core platform services, developer tooling, and infrastructure reliability across product engineering." />
+                  <Textarea
+                    rows={3}
+                    defaultValue="Owns core platform services, developer tooling, and infrastructure reliability across product engineering."
+                  />
                 </Field>
               </div>
             </div>
@@ -755,12 +876,16 @@ function DepartmentForm() {
           <Card className="p-6">
             <div className="mb-4">
               <h3 className="text-sm font-semibold">Assignments</h3>
-              <p className="text-xs text-muted-foreground">Head and cost allocation for this department.</p>
+              <p className="text-xs text-muted-foreground">
+                Head and cost allocation for this department.
+              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Department Head">
                 <div className="flex h-9 items-center gap-2 rounded-md border bg-background px-2">
-                  <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">IK</div>
+                  <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                    IK
+                  </div>
                   <span className="text-sm">Ishaan Kapoor</span>
                   <span className="text-xs text-muted-foreground">· ishaan.k@acme.com</span>
                   <X className="ml-auto h-3.5 w-3.5 cursor-pointer text-muted-foreground" />
@@ -768,7 +893,9 @@ function DepartmentForm() {
               </Field>
               <Field label="Default Cost Centre">
                 <Select defaultValue="cc-100">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cc-100">CC-100 · Engineering OpEx</SelectItem>
                   </SelectContent>
@@ -776,7 +903,9 @@ function DepartmentForm() {
               </Field>
               <Field label="Primary Location">
                 <Select defaultValue="blr">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="blr">Bengaluru — HQ Campus</SelectItem>
                   </SelectContent>
@@ -784,7 +913,9 @@ function DepartmentForm() {
               </Field>
               <Field label="Approval workflow">
                 <Select defaultValue="std">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="std">Standard (Head → HRBP)</SelectItem>
                   </SelectContent>
@@ -797,7 +928,9 @@ function DepartmentForm() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold">Access & visibility</h3>
-                <p className="text-xs text-muted-foreground">Controls who can view or edit records in this department.</p>
+                <p className="text-xs text-muted-foreground">
+                  Controls who can view or edit records in this department.
+                </p>
               </div>
             </div>
             <div className="space-y-3">
@@ -826,9 +959,15 @@ function DepartmentForm() {
           <Card className="p-4">
             <div className="mb-2 text-xs font-semibold">Validation</div>
             <ul className="space-y-1.5 text-xs">
-              <li className="flex items-center gap-2 text-emerald-600"><Check className="h-3 w-3" /> Code is unique</li>
-              <li className="flex items-center gap-2 text-emerald-600"><Check className="h-3 w-3" /> Parent is valid</li>
-              <li className="flex items-center gap-2 text-amber-600"><AlertTriangle className="h-3 w-3" /> No secondary approver set</li>
+              <li className="flex items-center gap-2 text-emerald-600">
+                <Check className="h-3 w-3" /> Code is unique
+              </li>
+              <li className="flex items-center gap-2 text-emerald-600">
+                <Check className="h-3 w-3" /> Parent is valid
+              </li>
+              <li className="flex items-center gap-2 text-amber-600">
+                <AlertTriangle className="h-3 w-3" /> No secondary approver set
+              </li>
             </ul>
           </Card>
           <Card className="p-4">
@@ -885,7 +1024,14 @@ function Toggle({ label, defaultChecked }: { label: string; defaultChecked?: boo
 /* ------------------------------------------------------------------ */
 
 const COMPANIES = [
-  { code: "ACM-IN", name: "Acme Holdings Ltd.", country: "India", ccy: "INR", emp: 428, primary: true },
+  {
+    code: "ACM-IN",
+    name: "Acme Holdings Ltd.",
+    country: "India",
+    ccy: "INR",
+    emp: 428,
+    primary: true,
+  },
   { code: "ACM-UK", name: "Acme UK Ltd.", country: "United Kingdom", ccy: "GBP", emp: 62 },
   { code: "ACM-SG", name: "Acme Asia Pte. Ltd.", country: "Singapore", ccy: "SGD", emp: 41 },
   { code: "ACM-AE", name: "Acme MEA FZ-LLC", country: "United Arab Emirates", ccy: "AED", emp: 18 },
@@ -901,16 +1047,25 @@ function CompanyGrid() {
         actions={
           <>
             <div className="hidden overflow-hidden rounded-md border md:flex">
-              <button className="bg-muted px-2.5 py-1.5"><LayoutDashboard className="h-3.5 w-3.5" /></button>
-              <button className="border-l px-2.5 py-1.5"><Menu className="h-3.5 w-3.5" /></button>
+              <button className="bg-muted px-2.5 py-1.5">
+                <LayoutDashboard className="h-3.5 w-3.5" />
+              </button>
+              <button className="border-l px-2.5 py-1.5">
+                <Menu className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> New Company</Button>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> New Company
+            </Button>
           </>
         }
       />
       <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
         {COMPANIES.map((c) => (
-          <Card key={c.code} className="group relative flex flex-col p-5 transition-shadow hover:shadow-md">
+          <Card
+            key={c.code}
+            className="group relative flex flex-col p-5 transition-shadow hover:shadow-md"
+          >
             {c.primary && (
               <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                 <Star className="h-3 w-3" /> Primary
@@ -928,18 +1083,24 @@ function CompanyGrid() {
 
             <dl className="mt-4 grid grid-cols-3 gap-3 border-t pt-4 text-xs">
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Country</dt>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Country
+                </dt>
                 <dd className="mt-0.5 flex items-center gap-1 font-medium">
                   <Globe className="h-3 w-3 text-muted-foreground" />
                   {c.country}
                 </dd>
               </div>
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Currency</dt>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Currency
+                </dt>
                 <dd className="mt-0.5 font-mono font-medium">{c.ccy}</dd>
               </div>
               <div>
-                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Employees</dt>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Employees
+                </dt>
                 <dd className="mt-0.5 font-medium tabular-nums">{c.emp}</dd>
               </div>
             </dl>
@@ -971,21 +1132,33 @@ function LocationDetail() {
         description="Prestige Tech Park, Marathahalli · Karnataka, India"
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-1.5"><Pencil className="h-3.5 w-3.5" /> Edit</Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive"><Trash2 className="h-3.5 w-3.5" /> Archive</Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 text-destructive">
+              <Trash2 className="h-3.5 w-3.5" /> Archive
+            </Button>
           </>
         }
       />
       <div className="grid gap-6 p-6 lg:grid-cols-3">
         <Card className="col-span-2 overflow-hidden">
           <div className="relative h-64 bg-gradient-to-br from-sky-100 to-indigo-100 dark:from-sky-950 dark:to-indigo-950">
-            <div className="absolute inset-0" style={{
-              backgroundImage: "radial-gradient(circle at 30% 40%, rgba(59,130,246,0.15) 0, transparent 40%), radial-gradient(circle at 70% 60%, rgba(99,102,241,0.15) 0, transparent 40%)"
-            }} />
-            <div className="absolute inset-0 opacity-40" style={{
-              backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)",
-              backgroundSize: "24px 24px",
-            }} />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 30% 40%, rgba(59,130,246,0.15) 0, transparent 40%), radial-gradient(circle at 70% 60%, rgba(99,102,241,0.15) 0, transparent 40%)",
+              }}
+            />
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)",
+                backgroundSize: "24px 24px",
+              }}
+            />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div className="relative">
                 <div className="absolute inset-0 animate-none rounded-full bg-primary/30 blur-xl" />
@@ -994,7 +1167,9 @@ function LocationDetail() {
                 </div>
               </div>
             </div>
-            <span className="absolute bottom-3 left-3 rounded bg-background/90 px-2 py-1 text-[10px] text-muted-foreground">12.9584° N, 77.7010° E</span>
+            <span className="absolute bottom-3 left-3 rounded bg-background/90 px-2 py-1 text-[10px] text-muted-foreground">
+              12.9584° N, 77.7010° E
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-4 border-t p-5 md:grid-cols-4">
             <Stat label="Employees" value="128" />
@@ -1006,7 +1181,14 @@ function LocationDetail() {
         <div className="space-y-4">
           <Card className="p-4">
             <p className="text-xs font-semibold">Address</p>
-            <p className="mt-2 text-sm">Tower B, Level 6<br/>Prestige Tech Park<br/>Marathahalli — 560103<br/>Karnataka, India</p>
+            <p className="mt-2 text-sm">
+              Tower B, Level 6<br />
+              Prestige Tech Park
+              <br />
+              Marathahalli — 560103
+              <br />
+              Karnataka, India
+            </p>
           </Card>
           <Card className="p-4">
             <p className="text-xs font-semibold">Holiday Calendar</p>
@@ -1019,8 +1201,12 @@ function LocationDetail() {
           <Card className="p-4">
             <p className="text-xs font-semibold">Contacts</p>
             <div className="mt-2 space-y-2 text-sm">
-              <p>Site Admin · <span className="text-muted-foreground">Priya Nair</span></p>
-              <p>Facilities · <span className="text-muted-foreground">Ravi Kumar</span></p>
+              <p>
+                Site Admin · <span className="text-muted-foreground">Priya Nair</span>
+              </p>
+              <p>
+                Facilities · <span className="text-muted-foreground">Ravi Kumar</span>
+              </p>
             </div>
           </Card>
         </div>
@@ -1053,7 +1239,7 @@ function HolidayCalendar() {
     Array.from({ length: 7 }, (_, d) => {
       const day = w * 7 + d - 3; // Jan 1 2026 falls on Thursday
       return day > 0 && day <= 31 ? day : null;
-    })
+    }),
   );
   return (
     <>
@@ -1063,27 +1249,45 @@ function HolidayCalendar() {
         description="Applies to 3 locations · 428 employees · 14 holidays"
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-1.5"><Download className="h-3.5 w-3.5" /> Export ICS</Button>
-            <Button variant="outline" size="sm" className="gap-1.5"><Copy className="h-3.5 w-3.5" /> Duplicate</Button>
-            <Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> Add Holiday</Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="h-3.5 w-3.5" /> Export ICS
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Copy className="h-3.5 w-3.5" /> Duplicate
+            </Button>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Add Holiday
+            </Button>
           </>
         }
       />
       <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="p-5">
           <div className="mb-4 flex items-center gap-2">
-            <Button variant="outline" size="icon" className="h-7 w-7"><ChevronLeft className="h-3.5 w-3.5" /></Button>
+            <Button variant="outline" size="icon" className="h-7 w-7">
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
             <h3 className="text-sm font-semibold">January 2026</h3>
-            <Button variant="outline" size="icon" className="h-7 w-7"><ChevronRight className="h-3.5 w-3.5" /></Button>
+            <Button variant="outline" size="icon" className="h-7 w-7">
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
             <div className="ml-auto flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Public</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Optional</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground/40" /> Weekend</span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-primary" /> Public
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-amber-500" /> Optional
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-muted-foreground/40" /> Weekend
+              </span>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-              <div key={d} className="py-1">{d}</div>
+              <div key={d} className="py-1">
+                {d}
+              </div>
             ))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
@@ -1109,7 +1313,9 @@ function HolidayCalendar() {
                     <>
                       <div className="text-[11px] font-medium">{day}</div>
                       {hol && (
-                        <div className={`mt-0.5 truncate text-[10px] font-medium ${hol.type === "Public" ? "text-primary" : "text-amber-700 dark:text-amber-400"}`}>
+                        <div
+                          className={`mt-0.5 truncate text-[10px] font-medium ${hol.type === "Public" ? "text-primary" : "text-amber-700 dark:text-amber-400"}`}
+                        >
                           {hol.name}
                         </div>
                       )}
@@ -1123,7 +1329,9 @@ function HolidayCalendar() {
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide">Upcoming</p>
-            <Badge variant="secondary" className="text-[10px]">14 total</Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              14 total
+            </Badge>
           </div>
           <ul className="divide-y">
             {[
@@ -1136,8 +1344,12 @@ function HolidayCalendar() {
             ].map((h) => (
               <li key={h.d} className="flex items-center gap-3 py-2.5">
                 <div className="grid h-10 w-10 place-items-center rounded-md bg-muted text-center">
-                  <div className="text-[9px] uppercase text-muted-foreground">{h.d.split(" ")[0]}</div>
-                  <div className="-mt-0.5 text-sm font-semibold leading-none">{h.d.split(" ")[1]}</div>
+                  <div className="text-[9px] uppercase text-muted-foreground">
+                    {h.d.split(" ")[0]}
+                  </div>
+                  <div className="-mt-0.5 text-sm font-semibold leading-none">
+                    {h.d.split(" ")[1]}
+                  </div>
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{h.n}</p>
@@ -1159,10 +1371,38 @@ function HolidayCalendar() {
 
 function PayrollCalendar() {
   const cycles = [
-    { m: "Aug 2026", period: "1 – 31 Aug", cutoff: "22 Aug", pay: "28 Aug", status: "Open", tone: "info" as const },
-    { m: "Jul 2026", period: "1 – 31 Jul", cutoff: "22 Jul", pay: "28 Jul", status: "Processing", tone: "warn" as const },
-    { m: "Jun 2026", period: "1 – 30 Jun", cutoff: "22 Jun", pay: "28 Jun", status: "Paid", tone: "success" as const },
-    { m: "May 2026", period: "1 – 31 May", cutoff: "22 May", pay: "28 May", status: "Paid", tone: "success" as const },
+    {
+      m: "Aug 2026",
+      period: "1 – 31 Aug",
+      cutoff: "22 Aug",
+      pay: "28 Aug",
+      status: "Open",
+      tone: "info" as const,
+    },
+    {
+      m: "Jul 2026",
+      period: "1 – 31 Jul",
+      cutoff: "22 Jul",
+      pay: "28 Jul",
+      status: "Processing",
+      tone: "warn" as const,
+    },
+    {
+      m: "Jun 2026",
+      period: "1 – 30 Jun",
+      cutoff: "22 Jun",
+      pay: "28 Jun",
+      status: "Paid",
+      tone: "success" as const,
+    },
+    {
+      m: "May 2026",
+      period: "1 – 31 May",
+      cutoff: "22 May",
+      pay: "28 May",
+      status: "Paid",
+      tone: "success" as const,
+    },
   ];
   return (
     <>
@@ -1172,8 +1412,12 @@ function PayrollCalendar() {
         description="Runs on the 28th, cut-off on the 22nd. 428 employees."
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-1.5"><Download className="h-3.5 w-3.5" /> Export</Button>
-            <Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> New Cycle</Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="h-3.5 w-3.5" /> Export
+            </Button>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> New Cycle
+            </Button>
           </>
         }
       />
@@ -1182,30 +1426,50 @@ function PayrollCalendar() {
           <ol className="relative space-y-6 border-l pl-6">
             {cycles.map((c, i) => (
               <li key={c.m} className="relative">
-                <span className={`absolute -left-[29px] grid h-5 w-5 place-items-center rounded-full ring-4 ring-background ${
-                  c.tone === "success" ? "bg-emerald-500" : c.tone === "warn" ? "bg-amber-500" : "bg-primary"
-                }`}>
-                  {c.tone === "success" ? <Check className="h-3 w-3 text-white" /> : <Clock className="h-3 w-3 text-white" />}
+                <span
+                  className={`absolute -left-[29px] grid h-5 w-5 place-items-center rounded-full ring-4 ring-background ${
+                    c.tone === "success"
+                      ? "bg-emerald-500"
+                      : c.tone === "warn"
+                        ? "bg-amber-500"
+                        : "bg-primary"
+                  }`}
+                >
+                  {c.tone === "success" ? (
+                    <Check className="h-3 w-3 text-white" />
+                  ) : (
+                    <Clock className="h-3 w-3 text-white" />
+                  )}
                 </span>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-semibold">{c.m}</h4>
                       <StatusPill tone={c.tone} label={c.status} />
-                      {i === 0 && <Badge variant="secondary" className="text-[10px]">Current</Badge>}
+                      {i === 0 && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Current
+                        </Badge>
+                      )}
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">Period {c.period}</p>
                   </div>
                   <div className="flex items-center gap-6 text-xs">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Cut-off</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Cut-off
+                      </p>
                       <p className="font-medium">{c.cutoff}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Pay date</p>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Pay date
+                      </p>
                       <p className="font-medium">{c.pay}</p>
                     </div>
-                    <Button variant="outline" size="sm" className="h-7 text-xs">Open</Button>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      Open
+                    </Button>
                   </div>
                 </div>
                 {i === 1 && (
@@ -1243,13 +1507,20 @@ function FilterDrawer() {
             <h3 className="text-sm font-semibold">Filters</h3>
             <p className="text-[11px] text-muted-foreground">Refine the department list</p>
           </div>
-          <button className="rounded p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
+          <button className="rounded p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
         </div>
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
           <FilterGroup title="Status">
             <div className="flex flex-wrap gap-1.5">
               {["Active", "Draft", "Archived"].map((s, i) => (
-                <button key={s} className={`rounded-full border px-2.5 py-1 text-xs ${i === 0 ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"}`}>{s}</button>
+                <button
+                  key={s}
+                  className={`rounded-full border px-2.5 py-1 text-xs ${i === 0 ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"}`}
+                >
+                  {s}
+                </button>
               ))}
             </div>
           </FilterGroup>
@@ -1259,7 +1530,9 @@ function FilterDrawer() {
                 <label key={bu} className="flex items-center gap-2 text-sm">
                   <Checkbox defaultChecked={i < 2} className="h-3.5 w-3.5" />
                   <span className="flex-1">{bu}</span>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">{[12, 8, 14, 4][i]}</span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {[12, 8, 14, 4][i]}
+                  </span>
                 </label>
               ))}
             </div>
@@ -1283,7 +1556,9 @@ function FilterDrawer() {
           </FilterGroup>
           <FilterGroup title="Created">
             <Select defaultValue="90">
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="7">Last 7 days</SelectItem>
                 <SelectItem value="30">Last 30 days</SelectItem>
@@ -1293,9 +1568,13 @@ function FilterDrawer() {
           </FilterGroup>
         </div>
         <div className="flex items-center gap-2 border-t px-5 py-3">
-          <Button variant="ghost" size="sm" className="text-xs">Reset</Button>
+          <Button variant="ghost" size="sm" className="text-xs">
+            Reset
+          </Button>
           <div className="ml-auto flex gap-2">
-            <Button variant="outline" size="sm">Cancel</Button>
+            <Button variant="outline" size="sm">
+              Cancel
+            </Button>
             <Button size="sm">Apply · 9 results</Button>
           </div>
         </div>
@@ -1331,10 +1610,14 @@ function ImportWizard() {
           <div className="border-b bg-muted/40 px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Bulk import</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Bulk import
+                </p>
                 <h3 className="text-base font-semibold">Import Departments</h3>
               </div>
-              <button className="rounded p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
+              <button className="rounded p-1 hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
             </div>
             <ol className="mt-4 grid grid-cols-4 gap-2 text-xs">
               {[
@@ -1344,9 +1627,15 @@ function ImportWizard() {
                 { n: 4, l: "Import" },
               ].map((s) => (
                 <li key={s.n} className="flex items-center gap-2">
-                  <span className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-semibold ${
-                    s.done ? "bg-emerald-500 text-white" : s.active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}>
+                  <span
+                    className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-semibold ${
+                      s.done
+                        ? "bg-emerald-500 text-white"
+                        : s.active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
                     {s.done ? <Check className="h-3 w-3" /> : s.n}
                   </span>
                   <span className={s.active ? "font-medium" : "text-muted-foreground"}>{s.l}</span>
@@ -1360,21 +1649,27 @@ function ImportWizard() {
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="text-xs font-medium">Valid</span>
               </div>
-              <p className="mt-1 text-2xl font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums">124</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                124
+              </p>
             </div>
             <div className="rounded-md border bg-amber-50 p-4 dark:bg-amber-500/10">
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
                 <AlertTriangle className="h-4 w-4" />
                 <span className="text-xs font-medium">Warnings</span>
               </div>
-              <p className="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300 tabular-nums">6</p>
+              <p className="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300 tabular-nums">
+                6
+              </p>
             </div>
             <div className="rounded-md border bg-red-50 p-4 dark:bg-red-500/10">
               <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
                 <X className="h-4 w-4" />
                 <span className="text-xs font-medium">Errors</span>
               </div>
-              <p className="mt-1 text-2xl font-semibold text-red-700 dark:text-red-300 tabular-nums">2</p>
+              <p className="mt-1 text-2xl font-semibold text-red-700 dark:text-red-300 tabular-nums">
+                2
+              </p>
             </div>
           </div>
           <div className="border-t">
@@ -1383,8 +1678,12 @@ function ImportWizard() {
               <span className="font-mono">departments_q3.xlsx</span>
               <span className="text-muted-foreground">· 132 rows</span>
               <div className="ml-auto flex gap-1.5">
-                <Button variant="ghost" size="sm" className="h-7 text-xs">All (132)</Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs">Issues (8)</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs">
+                  All (132)
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  Issues (8)
+                </Button>
               </div>
             </div>
             <Table>
@@ -1403,31 +1702,45 @@ function ImportWizard() {
                   <TableCell className="font-mono text-xs">ENG</TableCell>
                   <TableCell className="text-xs">Engineering</TableCell>
                   <TableCell className="text-xs">Product</TableCell>
-                  <TableCell className="text-xs text-red-600">Duplicate code "ENG" already exists</TableCell>
+                  <TableCell className="text-xs text-red-600">
+                    Duplicate code "ENG" already exists
+                  </TableCell>
                 </TableRow>
                 <TableRow className="bg-red-50/50 dark:bg-red-500/5">
                   <TableCell className="font-mono text-xs">37</TableCell>
                   <TableCell className="font-mono text-xs">—</TableCell>
                   <TableCell className="text-xs">Growth Marketing</TableCell>
                   <TableCell className="text-xs">GTM</TableCell>
-                  <TableCell className="text-xs text-red-600">Missing required field: Code</TableCell>
+                  <TableCell className="text-xs text-red-600">
+                    Missing required field: Code
+                  </TableCell>
                 </TableRow>
                 <TableRow className="bg-amber-50/50 dark:bg-amber-500/5">
                   <TableCell className="font-mono text-xs">52</TableCell>
                   <TableCell className="font-mono text-xs">R&D-2</TableCell>
                   <TableCell className="text-xs">Research & Development</TableCell>
                   <TableCell className="text-xs">—</TableCell>
-                  <TableCell className="text-xs text-amber-700">Business Unit blank — will default to "Unassigned"</TableCell>
+                  <TableCell className="text-xs text-amber-700">
+                    Business Unit blank — will default to "Unassigned"
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </div>
           <div className="flex items-center gap-2 border-t bg-muted/40 px-6 py-3">
-            <Button variant="ghost" size="sm">Cancel</Button>
-            <Button variant="outline" size="sm" className="gap-1.5"><Download className="h-3.5 w-3.5" /> Download error report</Button>
+            <Button variant="ghost" size="sm">
+              Cancel
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="h-3.5 w-3.5" /> Download error report
+            </Button>
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5"><ChevronLeft className="h-3.5 w-3.5" /> Back</Button>
-              <Button size="sm" className="gap-1.5">Import 124 valid rows <ChevronRight className="h-3.5 w-3.5" /></Button>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ChevronLeft className="h-3.5 w-3.5" /> Back
+              </Button>
+              <Button size="sm" className="gap-1.5">
+                Import 124 valid rows <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </Card>
@@ -1463,25 +1776,44 @@ function DeleteDialog() {
             <div className="rounded-md border bg-muted/40 p-3 text-xs">
               <p className="font-semibold">What will happen</p>
               <ul className="mt-2 space-y-1 text-muted-foreground">
-                <li className="flex gap-2"><span className="text-emerald-600">•</span> Employees will keep their history and be reassigned to "Sales" (parent).</li>
-                <li className="flex gap-2"><span className="text-emerald-600">•</span> Historical payroll references remain intact.</li>
-                <li className="flex gap-2"><span className="text-red-600">•</span> The code <code className="rounded bg-background px-1 font-mono">SAL</code> becomes available again after 30 days.</li>
+                <li className="flex gap-2">
+                  <span className="text-emerald-600">•</span> Employees will keep their history and
+                  be reassigned to "Sales" (parent).
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-emerald-600">•</span> Historical payroll references remain
+                  intact.
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-red-600">•</span> The code{" "}
+                  <code className="rounded bg-background px-1 font-mono">SAL</code> becomes
+                  available again after 30 days.
+                </li>
               </ul>
             </div>
             <div>
               <Label className="text-xs font-medium">
-                Type <span className="rounded bg-muted px-1 font-mono text-[11px]">Sales — EMEA</span> to confirm
+                Type{" "}
+                <span className="rounded bg-muted px-1 font-mono text-[11px]">Sales — EMEA</span> to
+                confirm
               </Label>
               <Input className="mt-1.5 h-9 font-mono text-sm" defaultValue="Sales — EMEA" />
             </div>
             <label className="flex items-start gap-2 text-xs">
               <Checkbox defaultChecked className="mt-0.5 h-3.5 w-3.5" />
-              <span>I understand this action requires HR Admin approval and will be logged in the audit trail.</span>
+              <span>
+                I understand this action requires HR Admin approval and will be logged in the audit
+                trail.
+              </span>
             </label>
           </div>
           <div className="flex items-center justify-end gap-2 border-t bg-muted/30 px-5 py-3">
-            <Button variant="ghost" size="sm">Cancel</Button>
-            <Button variant="outline" size="sm">Archive instead</Button>
+            <Button variant="ghost" size="sm">
+              Cancel
+            </Button>
+            <Button variant="outline" size="sm">
+              Archive instead
+            </Button>
             <Button size="sm" variant="destructive" className="gap-1.5">
               <Trash2 className="h-3.5 w-3.5" /> Delete department
             </Button>
@@ -1502,7 +1834,11 @@ function EmptyScreen() {
       <PageTitle
         eyebrow="Organization"
         title="Cost Centres"
-        actions={<Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> New Cost Centre</Button>}
+        actions={
+          <Button size="sm" className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> New Cost Centre
+          </Button>
+        }
       />
       <div className="p-6">
         <Card className="grid place-items-center px-6 py-16 text-center">
@@ -1511,13 +1847,19 @@ function EmptyScreen() {
           </div>
           <h3 className="mt-4 text-base font-semibold">No cost centres yet</h3>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Cost centres let you attribute payroll and expenses to a budget owner.
-            Start by creating one, or bulk import from a spreadsheet.
+            Cost centres let you attribute payroll and expenses to a budget owner. Start by creating
+            one, or bulk import from a spreadsheet.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <Button size="sm" className="gap-1.5"><Plus className="h-3.5 w-3.5" /> New Cost Centre</Button>
-            <Button variant="outline" size="sm" className="gap-1.5"><Upload className="h-3.5 w-3.5" /> Import from Excel</Button>
-            <Button variant="ghost" size="sm" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Read the guide</Button>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> New Cost Centre
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Upload className="h-3.5 w-3.5" /> Import from Excel
+            </Button>
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Read the guide
+            </Button>
           </div>
         </Card>
       </div>
@@ -1539,10 +1881,16 @@ function ErrorScreen() {
             The server responded with an error. Your changes are safe — nothing was lost.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button size="sm" className="gap-1.5"><RefreshCw className="h-3.5 w-3.5" /> Try again</Button>
-            <Button variant="outline" size="sm">Contact support</Button>
+            <Button size="sm" className="gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" /> Try again
+            </Button>
+            <Button variant="outline" size="sm">
+              Contact support
+            </Button>
           </div>
-          <p className="mt-4 font-mono text-[11px] text-muted-foreground">Request ID · req_7bh2q9x · 502 Bad Gateway</p>
+          <p className="mt-4 font-mono text-[11px] text-muted-foreground">
+            Request ID · req_7bh2q9x · 502 Bad Gateway
+          </p>
         </Card>
       </div>
     </>
@@ -1605,10 +1953,14 @@ function SuccessToast() {
             </p>
             <div className="mt-2 flex gap-3 text-xs">
               <button className="font-medium text-primary hover:underline">View</button>
-              <button className="font-medium text-muted-foreground hover:text-foreground">Undo</button>
+              <button className="font-medium text-muted-foreground hover:text-foreground">
+                Undo
+              </button>
             </div>
           </div>
-          <button className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
+          <button className="text-muted-foreground hover:text-foreground">
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
     </>
@@ -1623,19 +1975,33 @@ function MobileList() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b bg-background px-3 py-3">
-        <button className="rounded p-1.5 hover:bg-muted"><Menu className="h-4 w-4" /></button>
+        <button className="rounded p-1.5 hover:bg-muted">
+          <Menu className="h-4 w-4" />
+        </button>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] text-muted-foreground">Organization</p>
           <p className="truncate text-sm font-semibold">Departments</p>
         </div>
-        <button className="rounded p-1.5 hover:bg-muted"><Search className="h-4 w-4" /></button>
-        <button className="rounded p-1.5 hover:bg-muted"><Filter className="h-4 w-4" /></button>
+        <button className="rounded p-1.5 hover:bg-muted">
+          <Search className="h-4 w-4" />
+        </button>
+        <button className="rounded p-1.5 hover:bg-muted">
+          <Filter className="h-4 w-4" />
+        </button>
       </header>
       <div className="flex gap-1.5 overflow-x-auto border-b bg-background px-3 py-2 text-xs">
-        <Badge variant="secondary" className="shrink-0">All · 38</Badge>
-        <Badge variant="outline" className="shrink-0">Product</Badge>
-        <Badge variant="outline" className="shrink-0">GTM</Badge>
-        <Badge variant="outline" className="shrink-0">Corporate</Badge>
+        <Badge variant="secondary" className="shrink-0">
+          All · 38
+        </Badge>
+        <Badge variant="outline" className="shrink-0">
+          Product
+        </Badge>
+        <Badge variant="outline" className="shrink-0">
+          GTM
+        </Badge>
+        <Badge variant="outline" className="shrink-0">
+          Corporate
+        </Badge>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {DEPARTMENTS.slice(0, 6).map((d) => (
@@ -1648,14 +2014,23 @@ function MobileList() {
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-semibold">{d.name}</p>
                 </div>
-                <p className="font-mono text-[10px] text-muted-foreground">{d.code} · {d.bu}</p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {d.code} · {d.bu}
+                </p>
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {d.headcount}</span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" /> {d.headcount}
+                  </span>
                   <span>·</span>
-                  <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {d.loc}</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {d.loc}
+                  </span>
                 </div>
               </div>
-              <StatusPill tone={d.status === "Active" ? "success" : d.status === "Draft" ? "warn" : "muted"} label={d.status} />
+              <StatusPill
+                tone={d.status === "Active" ? "success" : d.status === "Draft" ? "warn" : "muted"}
+                label={d.status}
+              />
             </div>
           </Card>
         ))}
@@ -1670,7 +2045,10 @@ function MobileList() {
           { i: Users, l: "People" },
           { i: Settings, l: "More" },
         ].map((n) => (
-          <button key={n.l} className={`flex flex-col items-center gap-1 py-2.5 text-[10px] ${n.a ? "text-primary" : "text-muted-foreground"}`}>
+          <button
+            key={n.l}
+            className={`flex flex-col items-center gap-1 py-2.5 text-[10px] ${n.a ? "text-primary" : "text-muted-foreground"}`}
+          >
             <n.i className="h-4 w-4" />
             {n.l}
           </button>
@@ -1684,7 +2062,9 @@ function MobileForm() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b bg-background px-3 py-3">
-        <button className="rounded p-1.5 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></button>
+        <button className="rounded p-1.5 hover:bg-muted">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] text-muted-foreground">New</p>
           <p className="truncate text-sm font-semibold">Department</p>
@@ -1692,7 +2072,9 @@ function MobileForm() {
       </header>
       <div className="flex-1 space-y-4 overflow-y-auto bg-muted/30 p-3">
         <Card className="p-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Basic</p>
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Basic
+          </p>
           <div className="space-y-3">
             <Field label="Department code" required>
               <Input className="h-10 font-mono uppercase" defaultValue="PLT" />
@@ -1702,7 +2084,9 @@ function MobileForm() {
             </Field>
             <Field label="Business Unit" required>
               <Select defaultValue="prod">
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="prod">Product</SelectItem>
                 </SelectContent>
@@ -1711,30 +2095,42 @@ function MobileForm() {
           </div>
         </Card>
         <Card className="p-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Assignments</p>
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Assignments
+          </p>
           <div className="space-y-3">
             <Field label="Department Head">
               <div className="flex h-10 items-center gap-2 rounded-md border bg-background px-2">
-                <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">IK</div>
+                <div className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                  IK
+                </div>
                 <span className="text-sm">Ishaan Kapoor</span>
               </div>
             </Field>
             <Field label="Location">
               <Select defaultValue="blr">
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="blr">Bengaluru — HQ Campus</SelectItem></SelectContent>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="blr">Bengaluru — HQ Campus</SelectItem>
+                </SelectContent>
               </Select>
             </Field>
           </div>
         </Card>
         <Card className="p-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Options</p>
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Options
+          </p>
           <Toggle label="List in directory" defaultChecked />
         </Card>
       </div>
       <div className="grid grid-cols-2 gap-2 border-t bg-background p-3">
         <Button variant="outline">Save Draft</Button>
-        <Button className="gap-1.5"><Check className="h-4 w-4" /> Publish</Button>
+        <Button className="gap-1.5">
+          <Check className="h-4 w-4" /> Publish
+        </Button>
       </div>
     </div>
   );
@@ -1743,7 +2139,16 @@ function MobileForm() {
 /* Icon alias for copy used in Holiday screen */
 function Copy(props: React.ComponentProps<"svg">) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
       <rect width="14" height="14" x="8" y="8" rx="2" />
       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
     </svg>
