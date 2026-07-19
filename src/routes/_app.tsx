@@ -125,7 +125,14 @@ function AppShell() {
             <Menu className="h-5 w-5" />
           </Button>
           <CompanySwitcher />
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="mx-2 hidden flex-1 sm:block">
+            <GlobalSearch />
+          </div>
+          <div className="ml-auto flex items-center gap-1 sm:gap-2 sm:ml-0">
+            <div className="sm:hidden">
+              <GlobalSearch />
+            </div>
+            <ThemeToggle />
             <NotificationPanel />
             <UserMenu
               name={displayName(user)}
