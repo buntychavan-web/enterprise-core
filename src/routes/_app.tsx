@@ -44,14 +44,6 @@ function AppShell() {
     }
   }, [isAuthenticated, isInitializing, navigate]);
 
-  if (isInitializing || !isAuthenticated) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (!mobileOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -60,6 +52,15 @@ function AppShell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
+
+  if (isInitializing || !isAuthenticated) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-dvh bg-muted/30 text-foreground">
