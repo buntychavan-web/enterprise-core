@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DesignSystemRouteImport } from './routes/design-system'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
@@ -37,6 +38,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesignSystemOrganizationRoute =
+  DesignSystemOrganizationRouteImport.update({
+    id: '/organization',
+    path: '/organization',
+    getParentRoute: () => DesignSystemRoute,
+  } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -60,32 +67,35 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/design-system': typeof DesignSystemRoute
+  '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/organization': typeof AppOrganizationRoute
   '/users': typeof AppUsersRoute
+  '/design-system/organization': typeof DesignSystemOrganizationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/design-system': typeof DesignSystemRoute
+  '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRoute
   '/organization': typeof AppOrganizationRoute
   '/users': typeof AppUsersRoute
+  '/design-system/organization': typeof DesignSystemOrganizationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
-  '/design-system': typeof DesignSystemRoute
+  '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRoute
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/users': typeof AppUsersRoute
+  '/design-system/organization': typeof DesignSystemOrganizationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/employees'
     | '/organization'
     | '/users'
+    | '/design-system/organization'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/employees'
     | '/organization'
     | '/users'
+    | '/design-system/organization'
   id:
     | '__root__'
     | '/'
@@ -116,12 +128,13 @@ export interface FileRouteTypes {
     | '/_app/employees'
     | '/_app/organization'
     | '/_app/users'
+    | '/design-system/organization'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  DesignSystemRoute: typeof DesignSystemRoute
+  DesignSystemRoute: typeof DesignSystemRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/design-system/organization': {
+      id: '/design-system/organization'
+      path: '/organization'
+      fullPath: '/design-system/organization'
+      preLoaderRoute: typeof DesignSystemOrganizationRouteImport
+      parentRoute: typeof DesignSystemRoute
     }
     '/_app/users': {
       id: '/_app/users'
@@ -202,22 +222,24 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface DesignSystemRouteChildren {
+  DesignSystemOrganizationRoute: typeof DesignSystemOrganizationRoute
+}
+
+const DesignSystemRouteChildren: DesignSystemRouteChildren = {
+  DesignSystemOrganizationRoute: DesignSystemOrganizationRoute,
+}
+
+const DesignSystemRouteWithChildren = DesignSystemRoute._addFileChildren(
+  DesignSystemRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  DesignSystemRoute: DesignSystemRoute,
+  DesignSystemRoute: DesignSystemRouteWithChildren,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
