@@ -8,6 +8,9 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { dashboardApi, type DashboardSummary } from "@/lib/api-client";
+import { PageHeader } from "@/components/ewos/PageHeader";
+import { StatCard } from "@/components/ewos/StatCard";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -43,39 +46,36 @@ function DashboardPage() {
     };
   }, []);
 
+  const loading = status === "loading";
+  const cards = [
+    { label: "Employees", value: summary.employees, icon: <UserSquare2 className="h-5 w-5" /> },
+    { label: "Users", value: summary.users, icon: <UsersIcon className="h-5 w-5" /> },
+    { label: "Departments", value: summary.departments, icon: <Building2 className="h-5 w-5" /> },
+    { label: "Roles", value: summary.roles, icon: <ShieldCheck className="h-5 w-5" /> },
+  ];
+
   return (
     <div className="space-y-8">
-      <header>
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Overview of workforce entities in your organization.
-        </p>
-      </header>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of workforce entities in your organization."
+      />
 
       <section aria-labelledby="metrics-heading">
         <h3 id="metrics-heading" className="sr-only">
           Key metrics
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            label="Employees"
-            icon={UserSquare2}
-            value={summary.employees}
-            status={status}
-          />
-          <MetricCard label="Users" icon={UsersIcon} value={summary.users} status={status} />
-          <MetricCard
-            label="Departments"
-            icon={Building2}
-            value={summary.departments}
-            status={status}
-          />
-          <MetricCard
-            label="Roles"
-            icon={ShieldCheck}
-            value={summary.roles}
-            status={status}
-          />
+          {cards.map((c) => (
+            <StatCard
+              key={c.label}
+              label={c.label}
+              icon={c.icon}
+              value={c.value}
+              loading={loading}
+              unavailable={!loading && c.value === null}
+            />
+          ))}
         </div>
       </section>
 
@@ -108,52 +108,6 @@ function DashboardPage() {
   );
 }
 
-function MetricCard({
-  label,
-  icon: Icon,
-  value,
-  status,
-}: {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  value: number | null;
-  status: Status;
-}) {
-  const isLoading = status === "loading";
-  const isReady = status === "ready" && value !== null;
-  const isUnavailable = status === "ready" && value === null;
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-xs">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {label}
-          </div>
-          <div className="mt-2 min-h-[2.25rem] text-3xl font-semibold tracking-tight text-foreground">
-            {isReady && (value as number).toLocaleString()}
-            {isLoading && (
-              <span
-                className="inline-block h-7 w-20 rounded bg-muted align-middle"
-                aria-label="Loading"
-              />
-            )}
-            {isUnavailable && <span className="text-muted-foreground">—</span>}
-          </div>
-        </div>
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-          <Icon className="h-5 w-5" />
-        </span>
-      </div>
-      <div className="mt-3 text-xs text-muted-foreground">
-        {isLoading && "Loading…"}
-        {isReady && "Total records"}
-        {isUnavailable && "Coming soon"}
-      </div>
-    </div>
-  );
-}
-
 function ActionCard({
   to,
   title,
@@ -164,15 +118,16 @@ function ActionCard({
   description: string;
 }) {
   return (
-    <Link
-      to={to}
-      className="group flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-5 shadow-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
-    >
-      <div>
-        <div className="text-sm font-semibold text-foreground">{title}</div>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </div>
-      <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+    <Link to={to} className="group block">
+      <Card className="transition-colors hover:border-primary/40 hover:bg-primary/5">
+        <CardContent className="flex items-start justify-between gap-3 p-5">
+          <div>
+            <div className="text-sm font-semibold text-foreground">{title}</div>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+        </CardContent>
+      </Card>
     </Link>
   );
 }
