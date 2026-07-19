@@ -15,9 +15,12 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -49,6 +52,16 @@ const AppUsersRoute = AppUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrganizationRoute = AppOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
@@ -64,26 +77,37 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppEmployeesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
-  '/employees': typeof AppEmployeesRoute
+  '/employees': typeof AppEmployeesRouteWithChildren
   '/organization': typeof AppOrganizationRoute
+  '/profile': typeof AppProfileRoute
+  '/settings': typeof AppSettingsRoute
   '/users': typeof AppUsersRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
+  '/employees/$id': typeof AppEmployeesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
-  '/employees': typeof AppEmployeesRoute
+  '/employees': typeof AppEmployeesRouteWithChildren
   '/organization': typeof AppOrganizationRoute
+  '/profile': typeof AppProfileRoute
+  '/settings': typeof AppSettingsRoute
   '/users': typeof AppUsersRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
+  '/employees/$id': typeof AppEmployeesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,10 +116,13 @@ export interface FileRoutesById {
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/employees': typeof AppEmployeesRoute
+  '/_app/employees': typeof AppEmployeesRouteWithChildren
   '/_app/organization': typeof AppOrganizationRoute
+  '/_app/profile': typeof AppProfileRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/users': typeof AppUsersRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
+  '/_app/employees/$id': typeof AppEmployeesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -106,8 +133,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/employees'
     | '/organization'
+    | '/profile'
+    | '/settings'
     | '/users'
     | '/design-system/organization'
+    | '/employees/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,8 +146,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/employees'
     | '/organization'
+    | '/profile'
+    | '/settings'
     | '/users'
     | '/design-system/organization'
+    | '/employees/$id'
   id:
     | '__root__'
     | '/'
@@ -127,8 +160,11 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/employees'
     | '/_app/organization'
+    | '/_app/profile'
+    | '/_app/settings'
     | '/_app/users'
     | '/design-system/organization'
+    | '/_app/employees/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/organization': {
       id: '/_app/organization'
       path: '/organization'
@@ -203,20 +253,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/employees/$id': {
+      id: '/_app/employees/$id'
+      path: '/$id'
+      fullPath: '/employees/$id'
+      preLoaderRoute: typeof AppEmployeesIdRouteImport
+      parentRoute: typeof AppEmployeesRoute
+    }
   }
 }
 
+interface AppEmployeesRouteChildren {
+  AppEmployeesIdRoute: typeof AppEmployeesIdRoute
+}
+
+const AppEmployeesRouteChildren: AppEmployeesRouteChildren = {
+  AppEmployeesIdRoute: AppEmployeesIdRoute,
+}
+
+const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
+  AppEmployeesRouteChildren,
+)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
-  AppEmployeesRoute: typeof AppEmployeesRoute
+  AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
   AppOrganizationRoute: typeof AppOrganizationRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppUsersRoute: typeof AppUsersRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
-  AppEmployeesRoute: AppEmployeesRoute,
+  AppEmployeesRoute: AppEmployeesRouteWithChildren,
   AppOrganizationRoute: AppOrganizationRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppUsersRoute: AppUsersRoute,
 }
 

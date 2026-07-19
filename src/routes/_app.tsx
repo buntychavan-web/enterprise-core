@@ -6,6 +6,8 @@ import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
 import { UserMenu } from "@/components/ewos/UserMenu";
 import { Footer } from "@/components/ewos/Footer";
+import { GlobalSearch } from "@/components/ewos/GlobalSearch";
+import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { displayName, initials } from "@/lib/api-client";
@@ -123,7 +125,14 @@ function AppShell() {
             <Menu className="h-5 w-5" />
           </Button>
           <CompanySwitcher />
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="mx-2 hidden flex-1 sm:block">
+            <GlobalSearch />
+          </div>
+          <div className="ml-auto flex items-center gap-1 sm:gap-2 sm:ml-0">
+            <div className="sm:hidden">
+              <GlobalSearch />
+            </div>
+            <ThemeToggle />
             <NotificationPanel />
             <UserMenu
               name={displayName(user)}
