@@ -1,8 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -68,120 +75,77 @@ function LoginPage() {
           <EwosLogo />
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-8 shadow-sm">
-          <div className="mb-6">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Enter your credentials to access your workspace.
-            </p>
-          </div>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Sign in</CardTitle>
+            <CardDescription>Enter your credentials to access your workspace.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {formError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Sign in failed</AlertTitle>
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
+            )}
 
-          {formError && (
-            <div
-              role="alert"
-              className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-            >
-              {formError}
-            </div>
-          )}
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  autoFocus
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={submitting}
+                  aria-invalid={!!fieldErrors.username}
+                  aria-describedby={fieldErrors.username ? "username-error" : undefined}
+                />
+                {fieldErrors.username && (
+                  <p id="username-error" className="text-xs text-destructive">
+                    {fieldErrors.username}
+                  </p>
+                )}
+              </div>
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <div>
-              <label
-                htmlFor="username"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Username
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={submitting}
+                  aria-invalid={!!fieldErrors.password}
+                  aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                />
+                {fieldErrors.password && (
+                  <p id="password-error" className="text-xs text-destructive">
+                    {fieldErrors.password}
+                  </p>
+                )}
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={remember}
+                  onCheckedChange={(v) => setRemember(v === true)}
+                  disabled={submitting}
+                />
+                Remember me
               </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
-                autoFocus
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={submitting}
-                aria-invalid={!!fieldErrors.username}
-                aria-describedby={fieldErrors.username ? "username-error" : undefined}
-                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-              {fieldErrors.username && (
-                <p id="username-error" className="mt-1 text-xs text-destructive">
-                  {fieldErrors.username}
-                </p>
-              )}
-            </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={submitting}
-                aria-invalid={!!fieldErrors.password}
-                aria-describedby={fieldErrors.password ? "password-error" : undefined}
-                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-              {fieldErrors.password && (
-                <p id="password-error" className="mt-1 text-xs text-destructive">
-                  {fieldErrors.password}
-                </p>
-              )}
-            </div>
-
-            <label className="flex items-center gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                disabled={submitting}
-                className="h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring/40"
-              />
-              Remember me
-            </label>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting && (
-                <svg
-                  className="h-4 w-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeOpacity="0.25"
-                    strokeWidth="4"
-                  />
-                  <path
-                    d="M22 12a10 10 0 0 1-10 10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              )}
-              {submitting ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-        </div>
+              <Button type="submit" disabled={submitting} className="w-full">
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                {submitting ? "Signing in…" : "Sign in"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} EWOS. All rights reserved.
