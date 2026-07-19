@@ -42,12 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -92,7 +87,10 @@ export const Route = createFileRoute("/design-system")({
   head: () => ({
     meta: [
       { title: "Design System — EWOS" },
-      { name: "description", content: "The EWOS design system: tokens, components, and layout primitives." },
+      {
+        name: "description",
+        content: "The EWOS design system: tokens, components, and layout primitives.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -120,16 +118,10 @@ function DesignSystemPage() {
           <EwosLogo />
           <span className="text-xs text-muted-foreground">Design System · WP-001</span>
           <div className="ml-auto flex items-center gap-2">
-            <Link
-              to="/login"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
               Login
             </Link>
-            <Link
-              to="/dashboard"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+            <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
               Dashboard
             </Link>
           </div>
@@ -196,9 +188,7 @@ function Section({
         <h2 id={`${id}-title`} className="text-xl font-semibold tracking-tight text-foreground">
           {title}
         </h2>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       <div className="space-y-6">{children}</div>
     </section>
@@ -278,11 +268,7 @@ function TokensSection() {
         <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
           {COLOR_TOKENS.map((t) => (
             <div key={t} className="rounded-md border border-border overflow-hidden">
-              <div
-                className="h-14 w-full"
-                style={{ backgroundColor: `var(--${t})` }}
-                aria-hidden
-              />
+              <div className="h-14 w-full" style={{ backgroundColor: `var(--${t})` }} aria-hidden />
               <div className="px-2 py-1.5 text-xs">
                 <div className="font-medium text-foreground">{t}</div>
                 <div className="text-muted-foreground">--{t}</div>
@@ -329,7 +315,10 @@ function TokensSection() {
 
       <Example title="Icons — Lucide (24px @ stroke 2)">
         {[Users, Bell, Check, XCircle, Plus, Trash2, Search, Info].map((I, i) => (
-          <div key={i} className="grid h-10 w-10 place-items-center rounded-md border border-border text-muted-foreground">
+          <div
+            key={i}
+            className="grid h-10 w-10 place-items-center rounded-md border border-border text-muted-foreground"
+          >
             <I className="h-5 w-5" />
           </div>
         ))}
@@ -454,14 +443,23 @@ function FormsSection() {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn("justify-start text-left font-normal", !date && "text-muted-foreground")}
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !date && "text-muted-foreground",
+                )}
               >
                 <CalendarIcon />
                 {date ? format(date, "PPP") : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={date} onSelect={setDate} initialFocus className="pointer-events-auto p-3" />
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+                className="pointer-events-auto p-3"
+              />
             </PopoverContent>
           </Popover>
         </Example>
@@ -770,7 +768,12 @@ function LayoutSection() {
         <NotificationPanel />
         <NotificationPanel
           notifications={[
-            { id: "1", title: "Payroll approved", description: "October cycle", createdAt: "5 min ago" },
+            {
+              id: "1",
+              title: "Payroll approved",
+              description: "October cycle",
+              createdAt: "5 min ago",
+            },
             { id: "2", title: "New employee added", createdAt: "1 hr ago", read: true },
           ]}
         />
@@ -814,14 +817,20 @@ function StatesSection() {
       description="Standard responses for loading, empty, and error conditions."
     >
       <Example title="Loading">
-        <div className="w-full"><LoadingState /></div>
+        <div className="w-full">
+          <LoadingState />
+        </div>
       </Example>
       <Example title="Empty">
         <div className="w-full">
           <EmptyState
             title="No employees yet"
             description="Add your first employee to get started."
-            action={<Button><Plus /> Add employee</Button>}
+            action={
+              <Button>
+                <Plus /> Add employee
+              </Button>
+            }
           />
         </div>
       </Example>
@@ -829,9 +838,7 @@ function StatesSection() {
         <Alert variant="destructive" className="w-full">
           <AlertTriangle />
           <AlertTitle>We couldn't load this data</AlertTitle>
-          <AlertDescription>
-            Check your connection and try again.
-          </AlertDescription>
+          <AlertDescription>Check your connection and try again.</AlertDescription>
         </Alert>
       </Example>
     </Section>

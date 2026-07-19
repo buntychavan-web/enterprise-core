@@ -164,10 +164,7 @@ function OrganizationPage() {
         </p>
       </div>
 
-      <nav
-        aria-label="Organization modules"
-        className="-mx-1 flex gap-1 overflow-x-auto pb-1"
-      >
+      <nav aria-label="Organization modules" className="-mx-1 flex gap-1 overflow-x-auto pb-1">
         {MODULES.map((m) => {
           const Icon = m.icon;
           const isActive = m.key === active;

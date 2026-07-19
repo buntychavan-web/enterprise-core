@@ -1,9 +1,5 @@
 import { Bell } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "./EmptyState";
@@ -20,11 +16,7 @@ export type NotificationItem = {
  * NotificationPanel — UI shell. Notifications must be sourced from a backend
  * endpoint. Renders an empty state until real data is wired in.
  */
-export function NotificationPanel({
-  notifications,
-}: {
-  notifications?: NotificationItem[];
-}) {
+export function NotificationPanel({ notifications }: { notifications?: NotificationItem[] }) {
   const list = notifications ?? [];
   const unread = list.filter((n) => !n.read).length;
 

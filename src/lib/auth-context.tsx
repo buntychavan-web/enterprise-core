@@ -23,27 +23,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsInitializing(false);
   }, []);
 
-  const login = useCallback(
-    async (username: string, password: string, remember: boolean) => {
-      const res = await authApi.login({ username, password });
-      const token = res.accessToken ?? res.token;
-      if (!token) {
-        throw new Error("Login succeeded but no access token was returned by the server.");
-      }
-      tokenStore.set(token, res.refreshToken, remember);
+  const login = useCallback(async (username: string, password: string, remember: boolean) => {
+    const res = await authApi.login({ username, password });
+    const token = res.accessToken ?? res.token;
+    if (!token) {
+      throw new Error("Login succeeded but no access token was returned by the server.");
+    }
+    tokenStore.set(token, res.refreshToken, remember);
 
-      let nextUser: UserDto | null = res.user ?? null;
-      if (!nextUser) {
-        nextUser = await authApi.me();
-      }
-      if (!nextUser) {
-        nextUser = { username };
-      }
-      userStore.set(nextUser, remember);
-      setUser(nextUser);
-    },
-    [],
-  );
+    let nextUser: UserDto | null = res.user ?? null;
+    if (!nextUser) {
+      nextUser = await authApi.me();
+    }
+    if (!nextUser) {
+      nextUser = { username };
+    }
+    userStore.set(nextUser, remember);
+    setUser(nextUser);
+  }, []);
 
   const logout = useCallback(async () => {
     await authApi.logout();

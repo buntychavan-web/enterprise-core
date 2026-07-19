@@ -71,7 +71,6 @@ function LoginPage() {
   return (
     <div className="min-h-dvh bg-muted/40">
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
-
         <div className="mb-8 flex justify-center">
           <EwosLogo />
         </div>
@@ -153,6 +152,5 @@ function LoginPage() {
         </p>
       </main>
     </div>
-
   );
 }

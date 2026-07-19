@@ -131,8 +131,7 @@ export function CrudScreen({
         return;
       }
       if (raw !== undefined) {
-        payload[f.name] =
-          f.type === "number" && raw !== "" ? Number(raw) : raw;
+        payload[f.name] = f.type === "number" && raw !== "" ? Number(raw) : raw;
       }
     }
     setSaving(true);
@@ -291,9 +290,7 @@ export function CrudScreen({
       <Dialog open={editing !== null} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {creating ? `New ${singular}` : `Edit ${singular}`}
-            </DialogTitle>
+            <DialogTitle>{creating ? `New ${singular}` : `Edit ${singular}`}</DialogTitle>
             <DialogDescription>
               {creating
                 ? `Create a new ${singular.toLowerCase()} record.`
@@ -313,19 +310,15 @@ export function CrudScreen({
                       id={f.name}
                       value={String(editing[f.name] ?? "")}
                       placeholder={f.placeholder}
-                      onChange={(e) =>
-                        setEditing({ ...editing, [f.name]: e.target.value })
-                      }
+                      onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                     />
                   ) : (
                     <Input
                       id={f.name}
-                      type={f.type === "number" ? "number" : f.type ?? "text"}
+                      type={f.type === "number" ? "number" : (f.type ?? "text")}
                       value={String(editing[f.name] ?? "")}
                       placeholder={f.placeholder}
-                      onChange={(e) =>
-                        setEditing({ ...editing, [f.name]: e.target.value })
-                      }
+                      onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                     />
                   )}
                 </div>
