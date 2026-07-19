@@ -141,7 +141,12 @@ const NAV = [
   { icon: Settings, label: "Settings" },
 ];
 
-const ORG_SUBNAV: { icon: any; label: string; key: ScreenKey | "any"; count?: number }[] = [
+const ORG_SUBNAV: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  key: ScreenKey | "any";
+  count?: number;
+}[] = [
   { icon: Building2, label: "Company", key: "company-grid", count: 4 },
   { icon: Layers, label: "Business Unit", key: "any", count: 12 },
   { icon: Network, label: "Department", key: "dept-list", count: 38 },
