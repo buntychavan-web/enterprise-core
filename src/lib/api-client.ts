@@ -215,6 +215,71 @@ export const usersApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Generic REST resource                                                      */
+/* -------------------------------------------------------------------------- */
+
+export type ResourceRecord = Record<string, unknown> & { id?: string | number };
+
+export type ResourceListResult<T> = {
+  items: T[];
+  total: number;
+  /** true when the endpoint returned 404 (not yet implemented by backend). */
+  unavailable: boolean;
+};
+
+/**
+ * Build a CRUD client for a REST resource. Missing endpoints (404) resolve
+ * to `unavailable: true` so the UI can render "Coming soon" without crashing.
+ */
+export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath: string) {
+  const normalize = (data: unknown): { items: T[]; total: number } => {
+    if (Array.isArray(data)) return { items: data as T[], total: data.length };
+    if (data && typeof data === "object") {
+      const d = data as { content?: T[]; items?: T[]; totalElements?: number; total?: number };
+      const items = d.content ?? d.items ?? [];
+      const total =
+        typeof d.totalElements === "number"
+          ? d.totalElements
+          : typeof d.total === "number"
+            ? d.total
+            : items.length;
+      return { items, total };
+    }
+    return { items: [], total: 0 };
+  };
+
+  return {
+    async list(signal?: AbortSignal): Promise<ResourceListResult<T>> {
+      try {
+        const data = await request<unknown>(basePath, { signal });
+        const { items, total } = normalize(data);
+        return { items, total, unavailable: false };
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          return { items: [], total: 0, unavailable: true };
+        }
+        throw err;
+      }
+    },
+    async get(id: string | number): Promise<T> {
+      return request<T>(`${basePath}/${id}`);
+    },
+    async create(payload: Partial<T>): Promise<T> {
+      return request<T>(basePath, { method: "POST", body: payload });
+    },
+    async update(id: string | number, payload: Partial<T>): Promise<T> {
+      return request<T>(`${basePath}/${id}`, { method: "PUT", body: payload });
+    },
+    async remove(id: string | number): Promise<void> {
+      await request<void>(`${basePath}/${id}`, { method: "DELETE" });
+    },
+  };
+}
+
+const _dummy = {
+
+
+/* -------------------------------------------------------------------------- */
 /* Dashboard                                                                  */
 /* -------------------------------------------------------------------------- */
 
