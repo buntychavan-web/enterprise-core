@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
@@ -55,6 +56,11 @@ const DesignSystemOrganizationRoute =
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamRoute = AppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
+  '/team': typeof AppTeamRoute
   '/users': typeof AppUsersRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
+  '/team': typeof AppTeamRoute
   '/users': typeof AppUsersRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/team': typeof AppTeamRoute
   '/_app/users': typeof AppUsersRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/payslips'
     | '/profile'
     | '/settings'
+    | '/team'
     | '/users'
     | '/design-system/organization'
     | '/employees/$id'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/payslips'
     | '/profile'
     | '/settings'
+    | '/team'
     | '/users'
     | '/design-system/organization'
     | '/employees/$id'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
+    | '/_app/team'
     | '/_app/users'
     | '/design-system/organization'
     | '/_app/employees/$id'
@@ -276,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team': {
+      id: '/_app/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -381,6 +400,7 @@ interface AppRouteChildren {
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTeamRoute: typeof AppTeamRoute
   AppUsersRoute: typeof AppUsersRoute
 }
 
@@ -395,6 +415,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTeamRoute: AppTeamRoute,
   AppUsersRoute: AppUsersRoute,
 }
 
