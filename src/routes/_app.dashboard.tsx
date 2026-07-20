@@ -210,10 +210,22 @@ function DashboardPage() {
 
         <TabsContent value="hr" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="New joiners (MTD)" icon={<UserPlus className="h-5 w-5" />} value={42} />
+            <StatCard
+              label="New joiners (MTD)"
+              icon={<UserPlus className="h-5 w-5" />}
+              value={42}
+            />
             <StatCard label="Exits (MTD)" icon={<TrendingUp className="h-5 w-5" />} value={10} />
-            <StatCard label="Attrition (12m)" icon={<TrendingUp className="h-5 w-5" />} value="6.2%" />
-            <StatCard label="Open positions" icon={<ClipboardList className="h-5 w-5" />} value={28} />
+            <StatCard
+              label="Attrition (12m)"
+              icon={<TrendingUp className="h-5 w-5" />}
+              value="6.2%"
+            />
+            <StatCard
+              label="Open positions"
+              icon={<ClipboardList className="h-5 w-5" />}
+              value={28}
+            />
           </div>
           <Card>
             <CardHeader className="pb-2">
@@ -237,14 +249,32 @@ function DashboardPage() {
 
         <TabsContent value="payroll" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Gross this month" icon={<Wallet className="h-5 w-5" />} value="₹4.47 Cr" />
-            <StatCard label="Net this month" icon={<DollarSign className="h-5 w-5" />} value="₹3.41 Cr" />
-            <StatCard label="Tax withheld" icon={<FileText className="h-5 w-5" />} value="₹0.85 Cr" />
-            <StatCard label="Next run" icon={<CalendarClock className="h-5 w-5" />} value="Aug 28" />
+            <StatCard
+              label="Gross this month"
+              icon={<Wallet className="h-5 w-5" />}
+              value="₹4.47 Cr"
+            />
+            <StatCard
+              label="Net this month"
+              icon={<DollarSign className="h-5 w-5" />}
+              value="₹3.41 Cr"
+            />
+            <StatCard
+              label="Tax withheld"
+              icon={<FileText className="h-5 w-5" />}
+              value="₹0.85 Cr"
+            />
+            <StatCard
+              label="Next run"
+              icon={<CalendarClock className="h-5 w-5" />}
+              value="Aug 28"
+            />
           </div>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Payroll — gross vs net (₹ crores)</CardTitle>
+              <CardTitle className="text-sm font-semibold">
+                Payroll — gross vs net (₹ crores)
+              </CardTitle>
             </CardHeader>
             <CardContent className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -253,9 +283,27 @@ function DashboardPage() {
                   <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
                   <YAxis stroke="var(--muted-foreground)" fontSize={12} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="gross" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="net" stroke="var(--primary)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="tax" stroke="var(--chart-4)" strokeWidth={2} dot={false} />
+                  <Line
+                    type="monotone"
+                    dataKey="gross"
+                    stroke="var(--chart-1)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="net"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="tax"
+                    stroke="var(--chart-4)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -264,9 +312,21 @@ function DashboardPage() {
 
         <TabsContent value="employee" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Leave balance" icon={<CalendarClock className="h-5 w-5" />} value="14 days" />
-            <StatCard label="Pending approvals" icon={<ClipboardList className="h-5 w-5" />} value={3} />
-            <StatCard label="Payslips available" icon={<FileText className="h-5 w-5" />} value={12} />
+            <StatCard
+              label="Leave balance"
+              icon={<CalendarClock className="h-5 w-5" />}
+              value="14 days"
+            />
+            <StatCard
+              label="Pending approvals"
+              icon={<ClipboardList className="h-5 w-5" />}
+              value={3}
+            />
+            <StatCard
+              label="Payslips available"
+              icon={<FileText className="h-5 w-5" />}
+              value={12}
+            />
             <StatCard label="Next holiday" icon={<Clock className="h-5 w-5" />} value="Aug 15" />
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -306,10 +366,30 @@ function QuickActions() {
     description: string;
     icon: typeof UsersIcon;
   }> = [
-    { to: "/employees", title: "Add employee", description: "Onboard a new team member.", icon: UserPlus },
-    { to: "/organization", title: "Organization setup", description: "Departments, grades, calendars.", icon: Building2 },
-    { to: "/users", title: "Manage users", description: "Accounts and access controls.", icon: ShieldCheck },
-    { to: "/settings", title: "Settings", description: "Theme and preferences.", icon: ClipboardList },
+    {
+      to: "/employees",
+      title: "Add employee",
+      description: "Onboard a new team member.",
+      icon: UserPlus,
+    },
+    {
+      to: "/organization",
+      title: "Organization setup",
+      description: "Departments, grades, calendars.",
+      icon: Building2,
+    },
+    {
+      to: "/users",
+      title: "Manage users",
+      description: "Accounts and access controls.",
+      icon: ShieldCheck,
+    },
+    {
+      to: "/settings",
+      title: "Settings",
+      description: "Theme and preferences.",
+      icon: ClipboardList,
+    },
   ];
   return (
     <Card>
@@ -341,7 +421,12 @@ function QuickActions() {
 }
 
 function RecentActivity() {
-  const toneMap = { info: "info", success: "success", warning: "warning", neutral: "neutral" } as const;
+  const toneMap = {
+    info: "info",
+    success: "success",
+    warning: "warning",
+    neutral: "neutral",
+  } as const;
   return (
     <Card className="lg:col-span-2">
       <CardHeader className="flex-row items-center justify-between pb-2">
