@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Bell,
   Building2,
+  CalendarDays,
+  Clock,
+  Contact2,
+  HelpCircle,
+  Info,
   LayoutDashboard,
+  Megaphone,
+  PartyPopper,
   Search,
   Settings,
   UserCircle2,
   UserSquare2,
   Users as UsersIcon,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,16 +31,42 @@ import {
 
 type Nav = {
   label: string;
-  to: "/dashboard" | "/users" | "/organization" | "/employees" | "/profile" | "/settings";
+  to:
+    | "/dashboard"
+    | "/users"
+    | "/organization"
+    | "/employees"
+    | "/profile"
+    | "/settings"
+    | "/attendance"
+    | "/leave"
+    | "/payslips"
+    | "/notifications"
+    | "/team"
+    | "/directory"
+    | "/holidays"
+    | "/announcements"
+    | "/help"
+    | "/about";
   icon: typeof LayoutDashboard;
   hint?: string;
 };
 
 const NAV: Nav[] = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard, hint: "Executive overview" },
-  { label: "Users", to: "/users", icon: UsersIcon, hint: "Accounts & access" },
-  { label: "Organization", to: "/organization", icon: Building2, hint: "Companies, departments…" },
   { label: "Employees", to: "/employees", icon: UserSquare2, hint: "Workforce directory" },
+  { label: "Attendance", to: "/attendance", icon: Clock, hint: "Daily punches" },
+  { label: "Leave", to: "/leave", icon: CalendarDays, hint: "Balances & requests" },
+  { label: "Payslips", to: "/payslips", icon: Wallet, hint: "Salary history" },
+  { label: "My Team", to: "/team", icon: UsersIcon, hint: "Manager & reports" },
+  { label: "Directory", to: "/directory", icon: Contact2, hint: "Company-wide people" },
+  { label: "Holidays", to: "/holidays", icon: PartyPopper, hint: "Company calendar" },
+  { label: "Announcements", to: "/announcements", icon: Megaphone, hint: "Latest news" },
+  { label: "Notifications", to: "/notifications", icon: Bell, hint: "Inbox" },
+  { label: "Organization", to: "/organization", icon: Building2, hint: "Setup" },
+  { label: "Users", to: "/users", icon: UsersIcon, hint: "Access & roles" },
+  { label: "Help Center", to: "/help", icon: HelpCircle, hint: "Guides & shortcuts" },
+  { label: "About EWOS", to: "/about", icon: Info },
   { label: "My profile", to: "/profile", icon: UserCircle2 },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
@@ -96,9 +131,7 @@ export function GlobalSearch() {
               >
                 <n.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                 <span>{n.label}</span>
-                {n.hint && (
-                  <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span>
-                )}
+                {n.hint && <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span>}
               </CommandItem>
             ))}
           </CommandGroup>

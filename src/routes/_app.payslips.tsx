@@ -34,7 +34,11 @@ const TONE: Record<Payslip["status"], StatusTone> = {
 };
 
 const inr = (n: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
 
 function PayslipsPage() {
   const ytdGross = PAYSLIPS.reduce((s, p) => s + p.gross, 0);
@@ -55,7 +59,11 @@ function PayslipsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="YTD gross" icon={<Wallet className="h-5 w-5" />} value={inr(ytdGross)} />
         <StatCard label="YTD net" icon={<Wallet className="h-5 w-5" />} value={inr(ytdNet)} />
-        <StatCard label="YTD tax & deductions" icon={<FileText className="h-5 w-5" />} value={inr(ytdTax)} />
+        <StatCard
+          label="YTD tax & deductions"
+          icon={<FileText className="h-5 w-5" />}
+          value={inr(ytdTax)}
+        />
       </div>
 
       <Card>
@@ -86,7 +94,9 @@ function PayslipsPage() {
                     <TableCell className="text-right tabular-nums text-muted-foreground">
                       −{inr(p.deductions)}
                     </TableCell>
-                    <TableCell className="text-right font-medium tabular-nums">{inr(p.net)}</TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {inr(p.net)}
+                    </TableCell>
                     <TableCell>
                       <StatusChip tone={TONE[p.status]}>{p.status}</StatusChip>
                     </TableCell>
@@ -114,7 +124,12 @@ function PayslipsPage() {
                   <span>{p.paidOn ?? "—"}</span>
                 </div>
                 <div className="mt-2">
-                  <Button size="sm" variant="outline" onClick={() => download(p)} className="w-full">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => download(p)}
+                    className="w-full"
+                  >
                     <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
                   </Button>
                 </div>

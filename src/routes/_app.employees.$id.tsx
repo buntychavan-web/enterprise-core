@@ -33,10 +33,7 @@ import { SAMPLE_EMPLOYEE, type EmployeeProfile } from "@/lib/mock/employee";
 
 export const Route = createFileRoute("/_app/employees/$id")({
   head: ({ params }) => ({
-    meta: [
-      { title: `Employee ${params.id} — EWOS` },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: `Employee ${params.id} — EWOS` }, { name: "robots", content: "noindex" }],
   }),
   component: EmployeeProfilePage,
 });
@@ -48,7 +45,11 @@ function EmployeeProfilePage() {
   const initials = (employee.firstName[0] ?? "") + (employee.lastName[0] ?? "");
 
   const statusTone =
-    employee.status === "Active" ? "success" : employee.status === "On Leave" ? "warning" : "neutral";
+    employee.status === "Active"
+      ? "success"
+      : employee.status === "On Leave"
+        ? "warning"
+        : "neutral";
 
   return (
     <div className="space-y-6">
@@ -178,8 +179,16 @@ function EmployeeProfilePage() {
         <TabsContent value="contact" className="mt-4">
           <div className="grid gap-4 md:grid-cols-2">
             <SectionCard title="Contact">
-              <Field label="Work email" value={employee.email} icon={<Mail className="h-3.5 w-3.5" />} />
-              <Field label="Phone" value={employee.phone} icon={<Phone className="h-3.5 w-3.5" />} />
+              <Field
+                label="Work email"
+                value={employee.email}
+                icon={<Mail className="h-3.5 w-3.5" />}
+              />
+              <Field
+                label="Phone"
+                value={employee.phone}
+                icon={<Phone className="h-3.5 w-3.5" />}
+              />
             </SectionCard>
             <SectionCard title="Address">
               <Field label="Current address" value={employee.address.current} />

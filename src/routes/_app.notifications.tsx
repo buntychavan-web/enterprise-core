@@ -6,12 +6,7 @@ import { StatusChip } from "@/components/ewos/StatusChip";
 import { EmptyState } from "@/components/ewos/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NOTIFICATIONS, type AppNotification } from "@/lib/mock/self-service";
 
 export const Route = createFileRoute("/_app/notifications")({
