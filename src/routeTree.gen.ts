@@ -29,6 +29,7 @@ import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
+import { Route as AppAboutRouteImport } from './routes/_app.about'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -131,6 +132,11 @@ const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
   path: '/announcements',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAboutRoute = AppAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
+  '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
+  '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/about': typeof AppAboutRoute
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/'
     | '/design-system'
     | '/login'
+    | '/about'
     | '/announcements'
     | '/attendance'
     | '/dashboard'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/'
     | '/design-system'
     | '/login'
+    | '/about'
     | '/announcements'
     | '/attendance'
     | '/dashboard'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/design-system'
     | '/login'
+    | '/_app/about'
     | '/_app/announcements'
     | '/_app/attendance'
     | '/_app/dashboard'
@@ -424,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnnouncementsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/about': {
+      id: '/_app/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AppAboutRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/employees/$id': {
       id: '/_app/employees/$id'
       path: '/$id'
@@ -447,6 +466,7 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAboutRoute: typeof AppAboutRoute
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -465,6 +485,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAboutRoute: AppAboutRoute,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppDashboardRoute: AppDashboardRoute,
