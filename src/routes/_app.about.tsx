@@ -56,7 +56,11 @@ function AboutPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <ResourceLink icon={Globe} label="ewos.example" href="https://ewos.example" />
-            <ResourceLink icon={Mail} label="support@ewos.example" href="mailto:support@ewos.example" />
+            <ResourceLink
+              icon={Mail}
+              label="support@ewos.example"
+              href="mailto:support@ewos.example"
+            />
             <ResourceLink icon={Github} label="Release notes" href="#" />
             <ResourceLink icon={ShieldCheck} label="Security & compliance" href="#" />
           </CardContent>
@@ -68,9 +72,9 @@ function AboutPage() {
           <CardTitle className="text-sm font-semibold">Legal</CardTitle>
         </CardHeader>
         <CardContent className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} EWOS Technologies Pvt. Ltd. All rights reserved. EWOS,
-          the EWOS logo and product names are trademarks of EWOS Technologies. Use of this
-          product is governed by your Enterprise Agreement.
+          © {new Date().getFullYear()} EWOS Technologies Pvt. Ltd. All rights reserved. EWOS, the
+          EWOS logo and product names are trademarks of EWOS Technologies. Use of this product is
+          governed by your Enterprise Agreement.
         </CardContent>
       </Card>
     </div>

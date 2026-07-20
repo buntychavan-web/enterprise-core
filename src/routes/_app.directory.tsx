@@ -35,10 +35,7 @@ function DirectoryPage() {
     () => Array.from(new Set(DIRECTORY.map((p) => p.department))).sort(),
     [],
   );
-  const locations = useMemo(
-    () => Array.from(new Set(DIRECTORY.map((p) => p.location))).sort(),
-    [],
-  );
+  const locations = useMemo(() => Array.from(new Set(DIRECTORY.map((p) => p.location))).sort(), []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -80,7 +77,9 @@ function DirectoryPage() {
           <SelectContent>
             <SelectItem value="all">All departments</SelectItem>
             {departments.map((d) => (
-              <SelectItem key={d} value={d}>{d}</SelectItem>
+              <SelectItem key={d} value={d}>
+                {d}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -91,7 +90,9 @@ function DirectoryPage() {
           <SelectContent>
             <SelectItem value="all">All locations</SelectItem>
             {locations.map((l) => (
-              <SelectItem key={l} value={l}>{l}</SelectItem>
+              <SelectItem key={l} value={l}>
+                {l}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

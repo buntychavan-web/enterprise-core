@@ -35,7 +35,9 @@ const TONE: Record<AttendanceEntry["status"], StatusTone> = {
 };
 
 function AttendancePage() {
-  const present = ATTENDANCE_MONTH.filter((e) => e.status === "Present" || e.status === "Late").length;
+  const present = ATTENDANCE_MONTH.filter(
+    (e) => e.status === "Present" || e.status === "Late",
+  ).length;
   const late = ATTENDANCE_MONTH.filter((e) => e.status === "Late").length;
   const leave = ATTENDANCE_MONTH.filter((e) => e.status === "Leave").length;
   const totalHours = ATTENDANCE_MONTH.reduce((s, e) => s + e.hours, 0);
@@ -115,7 +117,9 @@ function AttendancePage() {
                   <span className="inline-flex items-center gap-1">
                     <LogOut className="h-3 w-3" /> {e.checkOut ?? "—"}
                   </span>
-                  <span className="ml-auto tabular-nums">{e.hours ? `${e.hours.toFixed(2)} h` : "—"}</span>
+                  <span className="ml-auto tabular-nums">
+                    {e.hours ? `${e.hours.toFixed(2)} h` : "—"}
+                  </span>
                 </div>
                 {e.note && <div className="mt-1 text-xs text-muted-foreground">{e.note}</div>}
               </li>

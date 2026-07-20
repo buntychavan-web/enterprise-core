@@ -131,9 +131,7 @@ export function GlobalSearch() {
               >
                 <n.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                 <span>{n.label}</span>
-                {n.hint && (
-                  <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span>
-                )}
+                {n.hint && <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span>}
               </CommandItem>
             ))}
           </CommandGroup>

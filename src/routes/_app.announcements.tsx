@@ -5,12 +5,7 @@ import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
 import { EmptyState } from "@/components/ewos/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ANNOUNCEMENTS_FULL, type Announcement } from "@/lib/mock/workspace";
 
 export const Route = createFileRoute("/_app/announcements")({
@@ -37,9 +32,7 @@ function AnnouncementsPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("All");
   const filtered = useMemo(
     () =>
-      tab === "All"
-        ? ANNOUNCEMENTS_FULL
-        : ANNOUNCEMENTS_FULL.filter((a) => a.category === tab),
+      tab === "All" ? ANNOUNCEMENTS_FULL : ANNOUNCEMENTS_FULL.filter((a) => a.category === tab),
     [tab],
   );
 
@@ -54,7 +47,9 @@ function AnnouncementsPage() {
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
           {TABS.map((t) => (
-            <TabsTrigger key={t} value={t}>{t}</TabsTrigger>
+            <TabsTrigger key={t} value={t}>
+              {t}
+            </TabsTrigger>
           ))}
         </TabsList>
         <TabsContent value={tab} className="mt-4 space-y-3">
@@ -74,7 +69,9 @@ function AnnouncementsPage() {
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex flex-wrap items-center gap-2">
                     {a.pinned && (
-                      <StatusChip tone="warning" icon={<Pin className="h-3 w-3" />}>Pinned</StatusChip>
+                      <StatusChip tone="warning" icon={<Pin className="h-3 w-3" />}>
+                        Pinned
+                      </StatusChip>
                     )}
                     <StatusChip tone={TONE[a.category]}>{a.category}</StatusChip>
                     <span className="ml-auto text-xs text-muted-foreground">{a.publishedAt}</span>

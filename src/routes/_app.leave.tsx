@@ -216,11 +216,23 @@ function ApplyLeaveDialog({ onSubmit }: { onSubmit: (r: LeaveRequest) => void })
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="from">From</Label>
-            <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} required />
+            <Input
+              id="from"
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="to">To</Label>
-            <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} required />
+            <Input
+              id="to"
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="reason">Reason</Label>
