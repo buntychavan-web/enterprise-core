@@ -23,6 +23,7 @@ import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppHolidaysRouteImport } from './routes/_app.holidays'
+import { Route as AppHelpRouteImport } from './routes/_app.help'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
@@ -100,6 +101,11 @@ const AppHolidaysRoute = AppHolidaysRouteImport.update({
   path: '/holidays',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHelpRoute = AppHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeesRoute = AppEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
+  '/help': typeof AppHelpRoute
   '/holidays': typeof AppHolidaysRoute
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
+  '/help': typeof AppHelpRoute
   '/holidays': typeof AppHolidaysRoute
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/directory': typeof AppDirectoryRoute
   '/_app/employees': typeof AppEmployeesRouteWithChildren
+  '/_app/help': typeof AppHelpRoute
   '/_app/holidays': typeof AppHolidaysRoute
   '/_app/leave': typeof AppLeaveRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/directory'
     | '/employees'
+    | '/help'
     | '/holidays'
     | '/leave'
     | '/notifications'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/directory'
     | '/employees'
+    | '/help'
     | '/holidays'
     | '/leave'
     | '/notifications'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/directory'
     | '/_app/employees'
+    | '/_app/help'
     | '/_app/holidays'
     | '/_app/leave'
     | '/_app/notifications'
@@ -370,6 +382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHolidaysRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/help': {
+      id: '/_app/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof AppHelpRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/employees': {
       id: '/_app/employees'
       path: '/employees'
@@ -433,6 +452,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppDirectoryRoute: typeof AppDirectoryRoute
   AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
+  AppHelpRoute: typeof AppHelpRoute
   AppHolidaysRoute: typeof AppHolidaysRoute
   AppLeaveRoute: typeof AppLeaveRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -450,6 +470,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppDirectoryRoute: AppDirectoryRoute,
   AppEmployeesRoute: AppEmployeesRouteWithChildren,
+  AppHelpRoute: AppHelpRoute,
   AppHolidaysRoute: AppHolidaysRoute,
   AppLeaveRoute: AppLeaveRoute,
   AppNotificationsRoute: AppNotificationsRoute,
