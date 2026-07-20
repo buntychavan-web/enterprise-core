@@ -1,6 +1,17 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, LayoutDashboard, Menu, Users as UsersIcon, UserSquare2, X } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  CalendarDays,
+  Clock,
+  LayoutDashboard,
+  Menu,
+  Users as UsersIcon,
+  UserSquare2,
+  Wallet,
+  X,
+} from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
 import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
