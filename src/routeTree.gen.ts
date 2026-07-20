@@ -17,9 +17,13 @@ import { Route as DesignSystemOrganizationRouteImport } from './routes/design-sy
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -62,9 +66,24 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPayslipsRoute = AppPayslipsRouteImport.update({
+  id: '/payslips',
+  path: '/payslips',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrganizationRoute = AppOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLeaveRoute = AppLeaveRouteImport.update({
+  id: '/leave',
+  path: '/leave',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEmployeesRoute = AppEmployeesRouteImport.update({
@@ -77,6 +96,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAttendanceRoute = AppAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -87,9 +111,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
+  '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRouteWithChildren
+  '/leave': typeof AppLeaveRoute
+  '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
+  '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
   '/users': typeof AppUsersRoute
@@ -100,9 +128,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
+  '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRouteWithChildren
+  '/leave': typeof AppLeaveRoute
+  '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
+  '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
   '/users': typeof AppUsersRoute
@@ -115,9 +147,13 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/design-system': typeof DesignSystemRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/attendance': typeof AppAttendanceRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRouteWithChildren
+  '/_app/leave': typeof AppLeaveRoute
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/organization': typeof AppOrganizationRoute
+  '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/users': typeof AppUsersRoute
@@ -130,9 +166,13 @@ export interface FileRouteTypes {
     | '/'
     | '/design-system'
     | '/login'
+    | '/attendance'
     | '/dashboard'
     | '/employees'
+    | '/leave'
+    | '/notifications'
     | '/organization'
+    | '/payslips'
     | '/profile'
     | '/settings'
     | '/users'
@@ -143,9 +183,13 @@ export interface FileRouteTypes {
     | '/'
     | '/design-system'
     | '/login'
+    | '/attendance'
     | '/dashboard'
     | '/employees'
+    | '/leave'
+    | '/notifications'
     | '/organization'
+    | '/payslips'
     | '/profile'
     | '/settings'
     | '/users'
@@ -157,9 +201,13 @@ export interface FileRouteTypes {
     | '/_app'
     | '/design-system'
     | '/login'
+    | '/_app/attendance'
     | '/_app/dashboard'
     | '/_app/employees'
+    | '/_app/leave'
+    | '/_app/notifications'
     | '/_app/organization'
+    | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
     | '/_app/users'
@@ -232,11 +280,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/payslips': {
+      id: '/_app/payslips'
+      path: '/payslips'
+      fullPath: '/payslips'
+      preLoaderRoute: typeof AppPayslipsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/organization': {
       id: '/_app/organization'
       path: '/organization'
       fullPath: '/organization'
       preLoaderRoute: typeof AppOrganizationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/leave': {
+      id: '/_app/leave'
+      path: '/leave'
+      fullPath: '/leave'
+      preLoaderRoute: typeof AppLeaveRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/employees': {
@@ -251,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/attendance': {
+      id: '/_app/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/employees/$id': {
@@ -276,18 +352,26 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAttendanceRoute: typeof AppAttendanceRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
+  AppLeaveRoute: typeof AppLeaveRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
+  AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppUsersRoute: typeof AppUsersRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAttendanceRoute: AppAttendanceRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRouteWithChildren,
+  AppLeaveRoute: AppLeaveRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppOrganizationRoute: AppOrganizationRoute,
+  AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppUsersRoute: AppUsersRoute,

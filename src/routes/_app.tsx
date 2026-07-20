@@ -1,6 +1,17 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, LayoutDashboard, Menu, Users as UsersIcon, UserSquare2, X } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  CalendarDays,
+  Clock,
+  LayoutDashboard,
+  Menu,
+  Users as UsersIcon,
+  UserSquare2,
+  Wallet,
+  X,
+} from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
 import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
@@ -18,9 +29,13 @@ export const Route = createFileRoute("/_app")({
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/users", label: "Users", icon: UsersIcon },
-  { to: "/organization", label: "Organization", icon: Building2 },
   { to: "/employees", label: "Employees", icon: UserSquare2 },
+  { to: "/attendance", label: "Attendance", icon: Clock },
+  { to: "/leave", label: "Leave", icon: CalendarDays },
+  { to: "/payslips", label: "Payslips", icon: Wallet },
+  { to: "/notifications", label: "Notifications", icon: Bell },
+  { to: "/organization", label: "Organization", icon: Building2 },
+  { to: "/users", label: "Users", icon: UsersIcon },
 ] as const;
 
 function AppShell() {
