@@ -19,6 +19,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
@@ -74,6 +75,11 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLeaveRoute = AppLeaveRouteImport.update({
+  id: '/leave',
+  path: '/leave',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeesRoute = AppEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRouteWithChildren
+  '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
   '/profile': typeof AppProfileRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
   '/employees': typeof AppEmployeesRouteWithChildren
+  '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
   '/profile': typeof AppProfileRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/employees': typeof AppEmployeesRouteWithChildren
+  '/_app/leave': typeof AppLeaveRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/profile': typeof AppProfileRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/dashboard'
     | '/employees'
+    | '/leave'
     | '/notifications'
     | '/organization'
     | '/profile'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/attendance'
     | '/dashboard'
     | '/employees'
+    | '/leave'
     | '/notifications'
     | '/organization'
     | '/profile'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/_app/attendance'
     | '/_app/dashboard'
     | '/_app/employees'
+    | '/_app/leave'
     | '/_app/notifications'
     | '/_app/organization'
     | '/_app/profile'
@@ -270,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/leave': {
+      id: '/_app/leave'
+      path: '/leave'
+      fullPath: '/leave'
+      preLoaderRoute: typeof AppLeaveRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/employees': {
       id: '/_app/employees'
       path: '/employees'
@@ -317,6 +336,7 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
+  AppLeaveRoute: typeof AppLeaveRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -328,6 +348,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEmployeesRoute: AppEmployeesRouteWithChildren,
+  AppLeaveRoute: AppLeaveRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrganizationRoute: AppOrganizationRoute,
   AppProfileRoute: AppProfileRoute,
