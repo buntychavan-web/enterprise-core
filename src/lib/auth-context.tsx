@@ -7,8 +7,11 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isInitializing: boolean;
   login: (username: string, password: string, remember: boolean) => Promise<void>;
+  loginAsDemo: (remember?: boolean) => Promise<void>;
   logout: () => Promise<void>;
 };
+
+export const DEMO_CREDENTIALS = { username: "demo", password: "demo1234" } as const;
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
