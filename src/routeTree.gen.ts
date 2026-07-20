@@ -14,6 +14,7 @@ import { Route as DesignSystemRouteImport } from './routes/design-system'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
+import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -57,6 +58,11 @@ const DesignSystemOrganizationRoute =
     path: '/organization',
     getParentRoute: () => DesignSystemRoute,
   } as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
   '/users': typeof AppUsersRoute
+  '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
 }
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
   '/users': typeof AppUsersRoute
+  '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
 }
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/team': typeof AppTeamRoute
   '/_app/users': typeof AppUsersRoute
+  '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
 }
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/users'
+    | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/users'
+    | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
   id:
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/team'
     | '/_app/users'
+    | '/api/$'
     | '/design-system/organization'
     | '/_app/employees/$id'
   fileRoutesById: FileRoutesById
@@ -292,6 +304,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   DesignSystemRoute: typeof DesignSystemRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiSplatRoute: typeof ApiSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/design-system/organization'
       preLoaderRoute: typeof DesignSystemOrganizationRouteImport
       parentRoute: typeof DesignSystemRoute
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/users': {
       id: '/_app/users'
@@ -522,17 +542,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   DesignSystemRoute: DesignSystemRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiSplatRoute: ApiSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
