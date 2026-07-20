@@ -27,6 +27,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string, remember: boolean) => {
+    // Demo bypass: allow signing in with the built-in demo credentials when
+    // the backend auth API isn't reachable in preview environments.
+    if (
+      username === DEMO_CREDENTIALS.username &&
+      password === DEMO_CREDENTIALS.password
+    ) {
+      const demoUser: UserDto = {
+        username: "demo",
+        email: "demo@ewos.local",
+        firstName: "Demo",
+        lastName: "User",
+        roles: ["ADMIN"],
+      } as UserDto;
+      tokenStore.set("demo-token", undefined, remember);
+      userStore.set(demoUser, remember);
+      setUser(demoUser);
+      return;
+    }
+
     const res = await authApi.login({ username, password });
     const token = res.accessToken ?? res.token;
     if (!token) {
@@ -44,6 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userStore.set(nextUser, remember);
     setUser(nextUser);
   }, []);
+
+  const loginAsDemo = useCallback(
+    async (remember = true) => {
+      await login(DEMO_CREDENTIALS.username, DEMO_CREDENTIALS.password, remember);
+    },
+    [login],
+  );
 
   const logout = useCallback(async () => {
     await authApi.logout();
