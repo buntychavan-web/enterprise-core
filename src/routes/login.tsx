@@ -144,6 +144,46 @@ function LoginPage() {
                 {submitting ? "Signing in…" : "Sign in"}
               </Button>
             </form>
+
+            <div className="mt-6 space-y-3">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Preview</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={submitting}
+                onClick={async () => {
+                  setFormError(null);
+                  setSubmitting(true);
+                  try {
+                    await loginAsDemo(remember);
+                    navigate({ to: "/dashboard", replace: true });
+                  } catch (err) {
+                    setFormError(
+                      err instanceof Error ? err.message : "Demo sign in failed.",
+                    );
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+              >
+                Continue with demo account
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Demo credentials:{" "}
+                <code className="font-mono">{DEMO_CREDENTIALS.username}</code> /{" "}
+                <code className="font-mono">{DEMO_CREDENTIALS.password}</code>
+              </p>
+            </div>
           </CardContent>
         </Card>
 
