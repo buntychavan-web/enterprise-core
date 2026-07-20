@@ -22,6 +22,7 @@ import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
+import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
@@ -91,6 +92,11 @@ const AppEmployeesRoute = AppEmployeesRouteImport.update({
   path: '/employees',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDirectoryRoute = AppDirectoryRouteImport.update({
+  id: '/directory',
+  path: '/directory',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
+  '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
+  '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/directory': typeof AppDirectoryRoute
   '/_app/employees': typeof AppEmployeesRouteWithChildren
   '/_app/leave': typeof AppLeaveRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/attendance'
     | '/dashboard'
+    | '/directory'
     | '/employees'
     | '/leave'
     | '/notifications'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/attendance'
     | '/dashboard'
+    | '/directory'
     | '/employees'
     | '/leave'
     | '/notifications'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/attendance'
     | '/_app/dashboard'
+    | '/_app/directory'
     | '/_app/employees'
     | '/_app/leave'
     | '/_app/notifications'
@@ -315,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEmployeesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/directory': {
+      id: '/_app/directory'
+      path: '/directory'
+      fullPath: '/directory'
+      preLoaderRoute: typeof AppDirectoryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -354,6 +373,7 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDirectoryRoute: typeof AppDirectoryRoute
   AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
   AppLeaveRoute: typeof AppLeaveRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -367,6 +387,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDirectoryRoute: AppDirectoryRoute,
   AppEmployeesRoute: AppEmployeesRouteWithChildren,
   AppLeaveRoute: AppLeaveRoute,
   AppNotificationsRoute: AppNotificationsRoute,
