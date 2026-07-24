@@ -2,20 +2,38 @@
  * EWOS API client.
  *
  * SINGLE SOURCE OF TRUTH for talking to the backend.
- * All requests go through `/api/*` and are proxied to http://localhost:8080
- * by Vite (see vite.config.ts).
+ * All requests go through `/api/v1/*` and are proxied to http://localhost:8080
+ * by Vite (see vite.config.ts). The backend mounts every controller under
+ * `/api/v1/...` (confirmed against source: AuthController, UserController,
+ * EmployeeController, OrganizationUnit(Type)Controller, Attendance*Controller,
+ * Leave*Controller, PayslipController) — there is no un-versioned `/api/*`
+ * route on the backend. Sprint 13 fixed this file from a stale `/api/*`
+ * assumption; see SPRINT_13_COMPLETION_REPORT.md for the mismatch report.
  *
+ * ─────────────────────────────────────────────────────────────────────────
+ *  TENANT ID — KNOWN GAP, NOT FIXED HERE
+ * ─────────────────────────────────────────────────────────────────────────
+ *  Every tenant-scoped controller (Employees, Organization, Attendance,
+ *  Leave, Payroll) requires a `tenantId` — either as an `X-Tenant-Id` header
+ *  or a `tenantId` query/body field — and there is currently NO backend
+ *  endpoint that lists or resolves tenants. The Tenant/Company module was
+ *  rejected during the mid-2026 architecture reset and never rebuilt.
+ *  `DEFAULT_TENANT_ID` / `DEFAULT_COMPANY_ID` below are placeholders so
+ *  requests are well-formed and reach the backend instead of failing
+ *  client-side; they are NOT a real tenant resolution and must be replaced
+ *  once a Tenant module exists. Do not treat data returned under this id as
+ *  meaningful multi-tenant behavior.
  * ─────────────────────────────────────────────────────────────────────────
  *  CONTRACT ASSUMPTIONS (adjust to match your OpenAPI spec)
  * ─────────────────────────────────────────────────────────────────────────
- *  POST /api/auth/login
+ *  POST /api/v1/auth/login
  *      request : { username: string, password: string }
  *      200     : { accessToken: string, refreshToken?: string, user?: UserDto }
  *      4xx/5xx : { message?: string, error?: string, errors?: string[] }
  *
- *  POST /api/auth/logout           (optional; called if it exists)
- *  GET  /api/auth/me               (optional; used to hydrate current user)
- *  GET  /api/users                 (used for Users dashboard card count)
+ *  POST /api/v1/auth/logout        (optional; called if it exists)
+ *  GET  /api/v1/auth/me            (optional; used to hydrate current user)
+ *  GET  /api/v1/users              (used for Users dashboard card count)
  *      may return either a plain array `UserDto[]` OR a Spring page
  *      `{ content: UserDto[], totalElements: number }` — both are handled.
  *
@@ -26,6 +44,10 @@
 const TOKEN_KEY = "ewos.accessToken";
 const REFRESH_KEY = "ewos.refreshToken";
 const USER_KEY = "ewos.user";
+
+/** See "TENANT ID — KNOWN GAP" note above. */
+export const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+export const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
 export type UserDto = {
   id?: string | number;
@@ -118,11 +140,14 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   if (auth) {
     const token = tokenStore.get();
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Every tenant-scoped backend controller requires this header. Sending it
+    // unconditionally is harmless for endpoints that ignore it (auth, users).
+    headers["X-Tenant-Id"] = DEFAULT_TENANT_ID;
   }
 
   let response: Response;
   try {
-    response = await fetch(`/api${path}`, {
+    response = await fetch(`/api/v1${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -227,11 +252,34 @@ export type ResourceListResult<T> = {
   unavailable: boolean;
 };
 
+export type ResourceApiOptions = {
+  /** Appended as a query string to the list call, e.g. { tenantId } for search endpoints
+   *  that bind tenantId from query params rather than the X-Tenant-Id header. */
+  extraQuery?: Record<string, string>;
+  /** Merged into create/update payloads for fields the backend requires but the UI
+   *  form doesn't collect (tenantId, companyId, ...). */
+  extraBody?: Record<string, unknown>;
+  /** The backend's update verb for this resource. Confirmed per-controller —
+   *  Users uses PUT, Employees and Organization use PATCH. Default: PATCH. */
+  updateMethod?: "PUT" | "PATCH";
+};
+
+function toQueryString(params?: Record<string, string>): string {
+  if (!params || Object.keys(params).length === 0) return "";
+  return `?${new URLSearchParams(params).toString()}`;
+}
+
 /**
  * Build a CRUD client for a REST resource. Missing endpoints (404) resolve
  * to `unavailable: true` so the UI can render "Coming soon" without crashing.
  */
-export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath: string) {
+export function resourceApi<T extends ResourceRecord = ResourceRecord>(
+  basePath: string,
+  opts: ResourceApiOptions = {},
+) {
+  const { extraQuery, extraBody, updateMethod = "PATCH" } = opts;
+  const qs = toQueryString(extraQuery);
+
   const normalize = (data: unknown): { items: T[]; total: number } => {
     if (Array.isArray(data)) return { items: data as T[], total: data.length };
     if (data && typeof data === "object") {
@@ -251,7 +299,7 @@ export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath:
   return {
     async list(signal?: AbortSignal): Promise<ResourceListResult<T>> {
       try {
-        const data = await request<unknown>(basePath, { signal });
+        const data = await request<unknown>(`${basePath}${qs}`, { signal });
         const { items, total } = normalize(data);
         return { items, total, unavailable: false };
       } catch (err) {
@@ -265,10 +313,13 @@ export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath:
       return request<T>(`${basePath}/${id}`);
     },
     async create(payload: Partial<T>): Promise<T> {
-      return request<T>(basePath, { method: "POST", body: payload });
+      return request<T>(basePath, { method: "POST", body: { ...extraBody, ...payload } });
     },
     async update(id: string | number, payload: Partial<T>): Promise<T> {
-      return request<T>(`${basePath}/${id}`, { method: "PUT", body: payload });
+      return request<T>(`${basePath}/${id}`, {
+        method: updateMethod,
+        body: { ...extraBody, ...payload },
+      });
     },
     async remove(id: string | number): Promise<void> {
       await request<void>(`${basePath}/${id}`, { method: "DELETE" });
@@ -290,19 +341,23 @@ export type DashboardSummary = {
 /**
  * Fetches consolidated dashboard counts.
  *
- * Preferred endpoint (to be implemented by the backend team):
- *   GET /api/dashboard/summary
- *   { "employees": 0, "users": 0, "departments": 0, "roles": 0 }
+ * Consolidated endpoint: there is no `/api/v1/dashboard/summary` on the
+ * current backend at all (the old Sprint-8.1.1 dashboard controller was
+ * removed in the mid-2026 architecture reset and never rebuilt) — the call
+ * below always 404s today and exists so the dashboard picks it up for free
+ * if/when the backend ships it.
  *
- * Fallback: if the consolidated endpoint returns 404, try individual count
- * endpoints for each card independently. Each card that has no backend
- * endpoint stays `null` and the UI renders "—" without blocking.
+ * Fallback: per-resource counts. `/employees` requires a `tenantId` query
+ * param (see DEFAULT_TENANT_ID note); `/departments` and `/roles` have no
+ * backend endpoint at all (Company/Organization concepts, not implemented as
+ * standalone list resources) and will always resolve to `null` — the UI
+ * renders "—" for those cards without blocking the rest.
  *
  * Never throws: the dashboard must never be blocked by unimplemented endpoints.
  */
 export const dashboardApi = {
   async summary(): Promise<DashboardSummary> {
-    // 1) Consolidated endpoint (preferred).
+    // 1) Consolidated endpoint (preferred, currently unimplemented — see above).
     try {
       const data = await request<Partial<DashboardSummary>>("/dashboard/summary");
       return {
@@ -311,17 +366,14 @@ export const dashboardApi = {
         departments: numOrNull(data.departments),
         roles: numOrNull(data.roles),
       };
-    } catch (err) {
-      if (!(err instanceof ApiError) || err.status !== 404) {
-        // Non-404 errors (network / auth / 5xx) still fall through to
-        // per-card fetches so partial data can render.
-      }
+    } catch {
+      // Falls through to per-card fetches below regardless of error type.
     }
 
     // 2) Fallback to per-resource counts. Each call is independent; a failure
     //    on one card leaves it as null (renders "—") without affecting others.
     const [employees, users, departments, roles] = await Promise.all([
-      safeCount("/employees"),
+      safeCount(`/employees?tenantId=${DEFAULT_TENANT_ID}`),
       safeCount("/users"),
       safeCount("/departments"),
       safeCount("/roles"),

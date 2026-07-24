@@ -33,7 +33,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { EmptyState } from "@/components/ewos/EmptyState";
-import { ApiError, resourceApi, type ResourceRecord } from "@/lib/api-client";
+import {
+  ApiError,
+  resourceApi,
+  type ResourceApiOptions,
+  type ResourceRecord,
+} from "@/lib/api-client";
 
 export type CrudField = {
   name: string;
@@ -43,15 +48,21 @@ export type CrudField = {
   placeholder?: string;
   /** Show in the list table. */
   listColumn?: boolean;
+  /** Only sent (and only editable) on create — e.g. a password field the
+   *  backend's update DTO doesn't accept. Rendered disabled when editing. */
+  createOnly?: boolean;
 };
 
 export type CrudScreenProps = {
   title: string;
   description?: string;
-  /** e.g. "/departments" — mounted under /api by the client. */
+  /** e.g. "/employees" — mounted under /api/v1 by the client. */
   resourcePath: string;
   singular: string;
   fields: CrudField[];
+  /** tenantId/companyId query+body injection and the correct update verb
+   *  for this resource — see ResourceApiOptions in lib/api-client.ts. */
+  apiOptions?: ResourceApiOptions;
 };
 
 type Row = ResourceRecord;
@@ -62,8 +73,13 @@ export function CrudScreen({
   resourcePath,
   singular,
   fields,
+  apiOptions,
 }: CrudScreenProps) {
-  const api = useMemo(() => resourceApi(resourcePath), [resourcePath]);
+  const api = useMemo(
+    () => resourceApi(resourcePath, apiOptions),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resourcePath],
+  );
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
@@ -125,6 +141,7 @@ export function CrudScreen({
     if (!editing) return;
     const payload: Record<string, unknown> = {};
     for (const f of fields) {
+      if (f.createOnly && !creating) continue;
       const raw = editing[f.name];
       if (f.required && (raw === undefined || raw === null || raw === "")) {
         toast.error(`${f.label} is required`);
@@ -216,7 +233,7 @@ export function CrudScreen({
         ) : unavailable ? (
           <EmptyState
             title="Coming soon"
-            description={`The ${title} endpoint (GET /api${resourcePath}) is not yet available on the backend. The screen is ready and will populate once the backend team ships it.`}
+            description={`The ${title} endpoint (GET /api/v1${resourcePath}) is not yet available on the backend. The screen is ready and will populate once the backend team ships it.`}
           />
         ) : error ? (
           <div className="p-8 text-center">
@@ -310,6 +327,7 @@ export function CrudScreen({
                       id={f.name}
                       value={String(editing[f.name] ?? "")}
                       placeholder={f.placeholder}
+                      disabled={f.createOnly && !creating}
                       onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                     />
                   ) : (
@@ -318,6 +336,7 @@ export function CrudScreen({
                       type={f.type === "number" ? "number" : (f.type ?? "text")}
                       value={String(editing[f.name] ?? "")}
                       placeholder={f.placeholder}
+                      disabled={f.createOnly && !creating}
                       onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                     />
                   )}
