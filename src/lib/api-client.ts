@@ -291,6 +291,140 @@ export const providerDashboardApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Data Exchange (Sprint 14.3)                                               */
+/* -------------------------------------------------------------------------- */
+
+export type DataExchangeStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SUCCESS"
+  | "FAILED"
+  | "RETRY"
+  | "ACKNOWLEDGED"
+  | "CANCELLED";
+
+export type DataExchangeRecordDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  exchangeType: string;
+  sourceEventType?: string;
+  correlationId: string;
+  payloadJson?: string;
+  status: DataExchangeStatus;
+  retryCount: number;
+  nextRetryAt?: string;
+  acknowledgedAt?: string;
+  acknowledgedBy?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DataExchangeHistoryEntry = {
+  id: string;
+  fromStatus?: DataExchangeStatus;
+  toStatus: DataExchangeStatus;
+  actorId?: string;
+  notes?: string;
+  occurredAt: string;
+};
+
+export const dataExchangeApi = {
+  async list(companyId: string, status?: DataExchangeStatus): Promise<DataExchangeRecordDto[]> {
+    const qs = status ? `&status=${status}` : "";
+    return request<DataExchangeRecordDto[]>(`/data-exchange?companyId=${companyId}${qs}`);
+  },
+  async getById(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}`);
+  },
+  async history(id: string): Promise<DataExchangeHistoryEntry[]> {
+    return request<DataExchangeHistoryEntry[]>(`/data-exchange/${id}/history`);
+  },
+  async retry(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}/retry`, { method: "POST" });
+  },
+  async acknowledge(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}/acknowledge`, { method: "POST" });
+  },
+  async cancel(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}/cancel`, { method: "POST" });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Workflow (generic engine, reused for Client Approval — Sprint 14.3)       */
+/* -------------------------------------------------------------------------- */
+
+export type WorkflowInstanceDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  definitionId: string;
+  definitionCode: string;
+  subjectType: string;
+  subjectId: string;
+  currentStateCode: string;
+  status: "RUNNING" | "COMPLETED" | "CANCELLED" | "ERROR";
+  startedAt: string;
+  completedAt?: string;
+};
+
+export type WorkflowHistoryEntry = {
+  id: string;
+  fromStateCode?: string;
+  toStateCode: string;
+  actionCode: string;
+  actorId?: string;
+  notes?: string;
+  occurredAt: string;
+};
+
+export type WorkflowTaskDto = {
+  id: string;
+  instanceId: string;
+  stateCode: string;
+  assigneeActorType: "USER" | "EMPLOYEE" | "ROLE" | "SYSTEM";
+  assigneeActorId?: string;
+  assigneeRoleCode?: string;
+  status: "OPEN" | "CLAIMED" | "COMPLETED" | "CANCELLED" | "ESCALATED";
+  dueAt?: string;
+};
+
+export const workflowApi = {
+  async getInstance(id: string): Promise<WorkflowInstanceDto> {
+    return request<WorkflowInstanceDto>(`/workflow/instances/${id}`);
+  },
+  async findBySubject(subjectType: string, subjectId: string): Promise<WorkflowInstanceDto[]> {
+    return request<WorkflowInstanceDto[]>(
+      `/workflow/instances?subjectType=${subjectType}&subjectId=${subjectId}`,
+    );
+  },
+  async historyOf(instanceId: string): Promise<WorkflowHistoryEntry[]> {
+    return request<WorkflowHistoryEntry[]>(`/workflow/instances/${instanceId}/history`);
+  },
+  async tasksOfInstance(instanceId: string): Promise<WorkflowTaskDto[]> {
+    return request<WorkflowTaskDto[]>(`/workflow/tasks/of-instance/${instanceId}`);
+  },
+  async tasksByRole(roleCode: string): Promise<WorkflowTaskDto[]> {
+    return request<WorkflowTaskDto[]>(`/workflow/tasks/by-role?roleCode=${roleCode}`);
+  },
+  async claimTask(taskId: string): Promise<WorkflowTaskDto> {
+    return request<WorkflowTaskDto>(`/workflow/tasks/${taskId}/claim`, { method: "POST" });
+  },
+  async completeTask(
+    taskId: string,
+    payload: { actionCode: string; outcomeCode?: string; notes?: string },
+  ): Promise<WorkflowTaskDto> {
+    return request<WorkflowTaskDto>(`/workflow/tasks/${taskId}/complete`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Generic REST resource                                                      */
 /* -------------------------------------------------------------------------- */
 

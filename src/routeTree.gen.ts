@@ -20,6 +20,8 @@ import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppDataExchangeRouteImport } from './routes/_app.data-exchange'
+import { Route as AppClientApprovalsRouteImport } from './routes/_app.client-approvals'
 import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
 import { Route as AppOutsourcingRouteImport } from './routes/_app.outsourcing'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
@@ -105,6 +107,16 @@ const AppProviderDashboardRoute = AppProviderDashboardRouteImport.update({
   path: '/provider-dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDataExchangeRoute = AppDataExchangeRouteImport.update({
+  id: '/data-exchange',
+  path: '/data-exchange',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientApprovalsRoute = AppClientApprovalsRouteImport.update({
+  id: '/client-approvals',
+  path: '/client-approvals',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -178,6 +190,8 @@ export interface FileRoutesByFullPath {
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
+  '/data-exchange': typeof AppDataExchangeRoute
+  '/client-approvals': typeof AppClientApprovalsRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -204,6 +218,8 @@ export interface FileRoutesByTo {
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
+  '/data-exchange': typeof AppDataExchangeRoute
+  '/client-approvals': typeof AppClientApprovalsRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -232,6 +248,8 @@ export interface FileRoutesById {
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/outsourcing': typeof AppOutsourcingRoute
   '/_app/provider-dashboard': typeof AppProviderDashboardRoute
+  '/_app/data-exchange': typeof AppDataExchangeRoute
+  '/_app/client-approvals': typeof AppClientApprovalsRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -260,6 +278,8 @@ export interface FileRouteTypes {
     | '/organization'
     | '/outsourcing'
     | '/provider-dashboard'
+    | '/data-exchange'
+    | '/client-approvals'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -286,6 +306,8 @@ export interface FileRouteTypes {
     | '/organization'
     | '/outsourcing'
     | '/provider-dashboard'
+    | '/data-exchange'
+    | '/client-approvals'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -313,6 +335,8 @@ export interface FileRouteTypes {
     | '/_app/organization'
     | '/_app/outsourcing'
     | '/_app/provider-dashboard'
+    | '/_app/data-exchange'
+    | '/_app/client-approvals'
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
@@ -431,6 +455,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProviderDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/data-exchange': {
+      id: '/_app/data-exchange'
+      path: '/data-exchange'
+      fullPath: '/data-exchange'
+      preLoaderRoute: typeof AppDataExchangeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/client-approvals': {
+      id: '/_app/client-approvals'
+      path: '/client-approvals'
+      fullPath: '/client-approvals'
+      preLoaderRoute: typeof AppClientApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notifications': {
       id: '/_app/notifications'
       path: '/notifications'
@@ -537,6 +575,8 @@ interface AppRouteChildren {
   AppOrganizationRoute: typeof AppOrganizationRoute
   AppOutsourcingRoute: typeof AppOutsourcingRoute
   AppProviderDashboardRoute: typeof AppProviderDashboardRoute
+  AppDataExchangeRoute: typeof AppDataExchangeRoute
+  AppClientApprovalsRoute: typeof AppClientApprovalsRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -558,6 +598,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppOrganizationRoute: AppOrganizationRoute,
   AppOutsourcingRoute: AppOutsourcingRoute,
   AppProviderDashboardRoute: AppProviderDashboardRoute,
+  AppDataExchangeRoute: AppDataExchangeRoute,
+  AppClientApprovalsRoute: AppClientApprovalsRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,

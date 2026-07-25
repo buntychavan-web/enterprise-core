@@ -1,9 +1,11 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  ArrowLeftRight,
   Bell,
   Building2,
   CalendarDays,
+  ClipboardCheck,
   Clock,
   Contact2,
   HelpCircle,
@@ -57,6 +59,8 @@ const NAV = [
   { to: "/organization", label: "Organization", icon: Building2 },
   { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
   { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
+  { to: "/data-exchange", label: "Data Exchange", icon: ArrowLeftRight },
+  { to: "/client-approvals", label: "Client Approvals", icon: ClipboardCheck },
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;
