@@ -20,6 +20,7 @@ import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
 import { Route as AppOutsourcingRouteImport } from './routes/_app.outsourcing'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
@@ -99,6 +100,11 @@ const AppOutsourcingRoute = AppOutsourcingRouteImport.update({
   path: '/outsourcing',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProviderDashboardRoute = AppProviderDashboardRouteImport.update({
+  id: '/provider-dashboard',
+  path: '/provider-dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
+  '/provider-dashboard': typeof AppProviderDashboardRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
+  '/provider-dashboard': typeof AppProviderDashboardRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/outsourcing': typeof AppOutsourcingRoute
+  '/_app/provider-dashboard': typeof AppProviderDashboardRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/organization'
     | '/outsourcing'
+    | '/provider-dashboard'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/organization'
     | '/outsourcing'
+    | '/provider-dashboard'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/organization'
     | '/_app/outsourcing'
+    | '/_app/provider-dashboard'
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
@@ -412,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOutsourcingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/provider-dashboard': {
+      id: '/_app/provider-dashboard'
+      path: '/provider-dashboard'
+      fullPath: '/provider-dashboard'
+      preLoaderRoute: typeof AppProviderDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notifications': {
       id: '/_app/notifications'
       path: '/notifications'
@@ -517,6 +536,7 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
   AppOutsourcingRoute: typeof AppOutsourcingRoute
+  AppProviderDashboardRoute: typeof AppProviderDashboardRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -537,6 +557,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrganizationRoute: AppOrganizationRoute,
   AppOutsourcingRoute: AppOutsourcingRoute,
+  AppProviderDashboardRoute: AppProviderDashboardRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Building2, Landmark, LayoutList, Network } from "lucide-react";
+import { Building2, HandshakeIcon, Landmark, LayoutList, Network } from "lucide-react";
 import { CrudScreen, type CrudField } from "@/components/ewos/CrudScreen";
 import { DEFAULT_TENANT_ID, type ResourceApiOptions } from "@/lib/api-client";
 
@@ -13,6 +13,14 @@ import { DEFAULT_TENANT_ID, type ResourceApiOptions } from "@/lib/api-client";
 // unnecessary abstraction Sprint 14.1 was scoped to avoid. The API is complete and
 // tested (see ClientAssignmentController) — a dedicated screen with client/provider
 // pickers is a natural follow-up.
+//
+// Sprint 14.2 — Payroll Collaboration tab added below. Its list endpoint has the
+// same required-filter shape as Client Assignment (clientId or providerId), so it
+// reuses the same resolution the rest of this screen already relies on: the
+// CrudScreen's `extraQuery` option defaults the filter to the bootstrap Client seeded
+// by migration V34 (DEFAULT_TENANT_ID doubles as that bootstrap Client's id — see
+// api-client.ts). Filtering by an arbitrary client/provider is a picker UI follow-up,
+// same as the note above for Client Assignment.
 
 export const Route = createFileRoute("/_app/outsourcing")({
   head: () => ({
@@ -97,6 +105,48 @@ const MODULES: ModuleDef[] = [
       { name: "sortOrder", label: "Sort order", type: "number", listColumn: false },
     ],
     apiOptions: { extraBody: { tenantId: DEFAULT_TENANT_ID } },
+  },
+  {
+    key: "payroll-collaboration",
+    title: "Payroll Collaborations",
+    singular: "Payroll Collaboration",
+    description:
+      "The engagement between a Client and a Payroll Service Provider — scope, status, and SLA. Authorization on every payroll operation is enforced against this record via the Chinese Wall.",
+    icon: HandshakeIcon,
+    resourcePath: "/payroll-collaborations",
+    fields: [
+      {
+        name: "clientId",
+        label: "Client ID",
+        required: true,
+        createOnly: true,
+        placeholder: "UUID from the Clients tab",
+      },
+      {
+        name: "providerId",
+        label: "Provider ID",
+        required: true,
+        createOnly: true,
+        placeholder: "UUID from the Payroll Service Providers tab",
+      },
+      {
+        name: "scope",
+        label: "Scope",
+        required: true,
+        placeholder: "FULL / STATUTORY_ONLY / REVIEW_ONLY",
+      },
+      { name: "status", label: "Status", placeholder: "ACTIVE / SUSPENDED / TERMINATED" },
+      {
+        name: "effectiveFrom",
+        label: "Effective from",
+        required: true,
+        createOnly: true,
+        placeholder: "YYYY-MM-DD",
+      },
+      { name: "effectiveTo", label: "Effective to", listColumn: false, placeholder: "YYYY-MM-DD" },
+      { name: "slaDays", label: "SLA (days)", type: "number", listColumn: false },
+    ],
+    apiOptions: { extraQuery: { clientId: DEFAULT_TENANT_ID } },
   },
 ];
 

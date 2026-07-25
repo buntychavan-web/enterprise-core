@@ -12,6 +12,7 @@ import {
   Megaphone,
   Menu,
   PartyPopper,
+  ScrollText,
   Users as UsersIcon,
   UserSquare2,
   Wallet,
@@ -55,6 +56,7 @@ const NAV = [
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/organization", label: "Organization", icon: Building2 },
   { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
+  { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;

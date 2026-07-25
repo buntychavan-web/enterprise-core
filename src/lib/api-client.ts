@@ -240,6 +240,57 @@ export const usersApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Provider Dashboard (Sprint 14.2)                                          */
+/* -------------------------------------------------------------------------- */
+
+export type ProviderDashboardClient = {
+  id: string;
+  code: string;
+  legalName: string;
+  status: string;
+};
+
+export type ProviderDashboardPeriod = {
+  id: string;
+  companyId: string;
+  code: string;
+  name: string;
+  status: string;
+  periodStart: string;
+  periodEnd: string;
+  payDate: string;
+};
+
+export type ProviderDashboardRun = {
+  id: string;
+  companyId: string;
+  status: string;
+  runType: string;
+};
+
+export type ProviderDashboardSummary = {
+  assignedClients: ProviderDashboardClient[];
+  activePayrollPeriods: ProviderDashboardPeriod[];
+  payrollStatusCounts: Record<string, number>;
+  pendingApprovals: ProviderDashboardRun[];
+  payrollCalendar: ProviderDashboardPeriod[];
+  activeServiceCount: number;
+  totalServiceCount: number;
+};
+
+export const providerDashboardApi = {
+  /** Returns null when the endpoint isn't available yet (404) instead of throwing. */
+  async get(): Promise<ProviderDashboardSummary | null> {
+    try {
+      return await request<ProviderDashboardSummary>("/payroll/provider-dashboard");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Generic REST resource                                                      */
 /* -------------------------------------------------------------------------- */
 
