@@ -7,6 +7,7 @@ import {
   Clock,
   Contact2,
   HelpCircle,
+  Landmark,
   LayoutDashboard,
   Megaphone,
   Menu,
@@ -25,7 +26,17 @@ import { GlobalSearch } from "@/components/ewos/GlobalSearch";
 import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
-import { displayName, initials } from "@/lib/api-client";
+import { displayName, initials, resourceApi, type ResourceRecord } from "@/lib/api-client";
+
+// Sprint 14.1 — Company Switcher backend integration. CompanySwitcher.tsx was shipped
+// disabled ("until a backend endpoint is available") — GET /api/v1/companies now exists
+// (com.ewos.tenancy) and is already Chinese-Wall filtered server-side to the companies
+// under the caller's accessible clients, so no client-side filtering is needed here.
+// The selected company is persisted locally; propagating it into other screens' API
+// calls is not part of this integration and is left for a later sprint.
+type CompanyRow = ResourceRecord & { name?: string };
+const companiesApi = resourceApi<CompanyRow>("/companies");
+const ACTIVE_COMPANY_KEY = "ewos.activeCompanyId";
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
@@ -43,6 +54,7 @@ const NAV = [
   { to: "/announcements", label: "Announcements", icon: Megaphone },
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/organization", label: "Organization", icon: Building2 },
+  { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;
@@ -51,12 +63,37 @@ function AppShell() {
   const { isAuthenticated, isInitializing, user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  const [activeCompanyId, setActiveCompanyId] = useState<string | undefined>(
+    () => localStorage.getItem(ACTIVE_COMPANY_KEY) ?? undefined,
+  );
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
       navigate({ to: "/login", replace: true });
     }
   }, [isAuthenticated, isInitializing, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    companiesApi.list().then((res) => {
+      if (cancelled || res.unavailable) return;
+      const list = res.items.map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) }));
+      setCompanies(list);
+      setActiveCompanyId((current) =>
+        current && list.some((c) => c.id === current) ? current : list[0]?.id,
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const selectCompany = (id: string) => {
+    setActiveCompanyId(id);
+    localStorage.setItem(ACTIVE_COMPANY_KEY, id);
+  };
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -148,7 +185,11 @@ function AppShell() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <CompanySwitcher />
+          <CompanySwitcher
+            companies={companies}
+            activeId={activeCompanyId}
+            onSelect={selectCompany}
+          />
           <div className="mx-2 hidden flex-1 sm:block">
             <GlobalSearch />
           </div>
