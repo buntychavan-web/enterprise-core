@@ -425,6 +425,203 @@ export const workflowApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Integration Adapter Framework + Monitoring + Operations Dashboard          */
+/* + Client Go-Live Configuration (Sprint 14.4)                              */
+/* -------------------------------------------------------------------------- */
+
+export type IntegrationAdapterType = "REST" | "SFTP" | "CSV" | "EXCEL" | "FILE_UPLOAD";
+
+export type ErrorClassification =
+  | "VALIDATION"
+  | "AUTHENTICATION"
+  | "TRANSIENT_NETWORK"
+  | "DATA_MAPPING"
+  | "EXTERNAL_SYSTEM"
+  | "CONFIGURATION"
+  | "UNKNOWN";
+
+export type IntegrationExecutionOutcome = "SUCCESS" | "FAILURE";
+
+export type IntegrationConfigurationDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  exchangeType: string;
+  adapterType: IntegrationAdapterType;
+  configJson: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type IntegrationExecutionDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  dataExchangeRecordId: string;
+  configurationId?: string;
+  adapterType?: IntegrationAdapterType;
+  attemptNumber: number;
+  outcome: IntegrationExecutionOutcome;
+  errorClassification?: ErrorClassification;
+  errorMessage?: string;
+  startedAt: string;
+  completedAt: string;
+  durationMs?: number;
+};
+
+export const integrationConfigurationApi = {
+  async forCompany(companyId: string): Promise<IntegrationConfigurationDto[]> {
+    return request<IntegrationConfigurationDto[]>(
+      `/integration/configurations?companyId=${companyId}`,
+    );
+  },
+  async create(payload: {
+    tenantId: string;
+    companyId: string;
+    exchangeType: string;
+    adapterType: IntegrationAdapterType;
+    configJson: string;
+  }): Promise<IntegrationConfigurationDto> {
+    return request<IntegrationConfigurationDto>("/integration/configurations", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async update(
+    id: string,
+    payload: { configJson?: string; active?: boolean },
+  ): Promise<IntegrationConfigurationDto> {
+    return request<IntegrationConfigurationDto>(`/integration/configurations/${id}`, {
+      method: "PATCH",
+      body: payload,
+    });
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/integration/configurations/${id}`, { method: "DELETE" });
+  },
+};
+
+export const integrationExecutionApi = {
+  async process(dataExchangeRecordId: string): Promise<IntegrationExecutionDto> {
+    return request<IntegrationExecutionDto>(
+      `/integration/executions/process/${dataExchangeRecordId}`,
+      { method: "POST" },
+    );
+  },
+  async historyOf(dataExchangeRecordId: string): Promise<IntegrationExecutionDto[]> {
+    return request<IntegrationExecutionDto[]>(
+      `/integration/executions/of-record/${dataExchangeRecordId}`,
+    );
+  },
+};
+
+export type IntegrationMonitoringSummary = {
+  companyId: string;
+  totalExecutions: number;
+  successCount: number;
+  failureCount: number;
+  byAdapterType: Partial<Record<IntegrationAdapterType, number>>;
+  byErrorClassification: Partial<Record<ErrorClassification, number>>;
+  recentFailures: IntegrationExecutionDto[];
+};
+
+export const integrationMonitoringApi = {
+  /** Returns null when the endpoint isn't available yet (404) instead of throwing. */
+  async summary(companyId: string): Promise<IntegrationMonitoringSummary | null> {
+    try {
+      return await request<IntegrationMonitoringSummary>(
+        `/integration/monitoring/summary?companyId=${companyId}`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+export type OperationsPipelineRow = {
+  payrollRunId: string;
+  companyId: string;
+  payrollRunStatus: string;
+  payrollRunCreatedAt: string;
+  clientApprovalInstanceStatus?: "RUNNING" | "COMPLETED" | "CANCELLED" | "ERROR";
+  clientApprovalStateCode?: string;
+  dataExchangeRecordId?: string;
+  dataExchangeStatus?: DataExchangeStatus;
+  lastIntegrationOutcome?: IntegrationExecutionOutcome;
+  acknowledged: boolean;
+};
+
+export type OperationsDashboardData = {
+  companyId: string;
+  rows: OperationsPipelineRow[];
+};
+
+export const operationsDashboardApi = {
+  /** Returns null when the endpoint isn't available yet (404) instead of throwing. */
+  async forCompany(companyId: string): Promise<OperationsDashboardData | null> {
+    try {
+      return await request<OperationsDashboardData>(
+        `/integration/operations-dashboard?companyId=${companyId}`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+export type ClientGoLiveStatus = "PLANNING" | "READY" | "LIVE" | "SUSPENDED";
+
+export type ClientGoLiveConfigurationDto = {
+  id: string;
+  tenantId: string;
+  clientId: string;
+  companyId: string;
+  goLiveDate?: string;
+  status: ClientGoLiveStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const clientGoLiveApi = {
+  /** Returns null when there's no go-live configuration yet for this company (404). */
+  async forCompany(companyId: string): Promise<ClientGoLiveConfigurationDto | null> {
+    try {
+      return await request<ClientGoLiveConfigurationDto>(
+        `/integration/golive/by-company?companyId=${companyId}`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+  async create(payload: {
+    tenantId: string;
+    clientId: string;
+    companyId: string;
+    goLiveDate?: string;
+    notes?: string;
+  }): Promise<ClientGoLiveConfigurationDto> {
+    return request<ClientGoLiveConfigurationDto>("/integration/golive", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async update(
+    id: string,
+    payload: { goLiveDate?: string; status?: ClientGoLiveStatus; notes?: string },
+  ): Promise<ClientGoLiveConfigurationDto> {
+    return request<ClientGoLiveConfigurationDto>(`/integration/golive/${id}`, {
+      method: "PATCH",
+      body: payload,
+    });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Generic REST resource                                                      */
 /* -------------------------------------------------------------------------- */
 

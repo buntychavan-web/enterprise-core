@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  Activity,
   ArrowLeftRight,
   Bell,
   Building2,
@@ -13,11 +14,14 @@ import {
   LayoutDashboard,
   Megaphone,
   Menu,
+  Network,
   PartyPopper,
+  Rocket,
   ScrollText,
   Users as UsersIcon,
   UserSquare2,
   Wallet,
+  Workflow as WorkflowIcon,
   X,
 } from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
@@ -61,6 +65,10 @@ const NAV = [
   { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
   { to: "/data-exchange", label: "Data Exchange", icon: ArrowLeftRight },
   { to: "/client-approvals", label: "Client Approvals", icon: ClipboardCheck },
+  { to: "/integration-configurations", label: "Integration Configurations", icon: Network },
+  { to: "/integration-monitoring", label: "Integration Monitoring", icon: Activity },
+  { to: "/operations-dashboard", label: "Operations Dashboard", icon: WorkflowIcon },
+  { to: "/client-golive", label: "Client Go-Live", icon: Rocket },
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;

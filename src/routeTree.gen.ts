@@ -20,6 +20,10 @@ import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppOperationsDashboardRouteImport } from './routes/_app.operations-dashboard'
+import { Route as AppIntegrationMonitoringRouteImport } from './routes/_app.integration-monitoring'
+import { Route as AppIntegrationConfigurationsRouteImport } from './routes/_app.integration-configurations'
+import { Route as AppClientGoLiveRouteImport } from './routes/_app.client-golive'
 import { Route as AppDataExchangeRouteImport } from './routes/_app.data-exchange'
 import { Route as AppClientApprovalsRouteImport } from './routes/_app.client-approvals'
 import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
@@ -117,6 +121,26 @@ const AppClientApprovalsRoute = AppClientApprovalsRouteImport.update({
   path: '/client-approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOperationsDashboardRoute = AppOperationsDashboardRouteImport.update({
+  id: '/operations-dashboard',
+  path: '/operations-dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIntegrationMonitoringRoute = AppIntegrationMonitoringRouteImport.update({
+  id: '/integration-monitoring',
+  path: '/integration-monitoring',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIntegrationConfigurationsRoute = AppIntegrationConfigurationsRouteImport.update({
+  id: '/integration-configurations',
+  path: '/integration-configurations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientGoLiveRoute = AppClientGoLiveRouteImport.update({
+  id: '/client-golive',
+  path: '/client-golive',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -192,6 +216,10 @@ export interface FileRoutesByFullPath {
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/data-exchange': typeof AppDataExchangeRoute
   '/client-approvals': typeof AppClientApprovalsRoute
+  '/operations-dashboard': typeof AppOperationsDashboardRoute
+  '/integration-monitoring': typeof AppIntegrationMonitoringRoute
+  '/integration-configurations': typeof AppIntegrationConfigurationsRoute
+  '/client-golive': typeof AppClientGoLiveRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -220,6 +248,10 @@ export interface FileRoutesByTo {
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/data-exchange': typeof AppDataExchangeRoute
   '/client-approvals': typeof AppClientApprovalsRoute
+  '/operations-dashboard': typeof AppOperationsDashboardRoute
+  '/integration-monitoring': typeof AppIntegrationMonitoringRoute
+  '/integration-configurations': typeof AppIntegrationConfigurationsRoute
+  '/client-golive': typeof AppClientGoLiveRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -250,6 +282,10 @@ export interface FileRoutesById {
   '/_app/provider-dashboard': typeof AppProviderDashboardRoute
   '/_app/data-exchange': typeof AppDataExchangeRoute
   '/_app/client-approvals': typeof AppClientApprovalsRoute
+  '/_app/operations-dashboard': typeof AppOperationsDashboardRoute
+  '/_app/integration-monitoring': typeof AppIntegrationMonitoringRoute
+  '/_app/integration-configurations': typeof AppIntegrationConfigurationsRoute
+  '/_app/client-golive': typeof AppClientGoLiveRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -280,6 +316,10 @@ export interface FileRouteTypes {
     | '/provider-dashboard'
     | '/data-exchange'
     | '/client-approvals'
+    | '/operations-dashboard'
+    | '/integration-monitoring'
+    | '/integration-configurations'
+    | '/client-golive'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -308,6 +348,10 @@ export interface FileRouteTypes {
     | '/provider-dashboard'
     | '/data-exchange'
     | '/client-approvals'
+    | '/operations-dashboard'
+    | '/integration-monitoring'
+    | '/integration-configurations'
+    | '/client-golive'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -337,6 +381,10 @@ export interface FileRouteTypes {
     | '/_app/provider-dashboard'
     | '/_app/data-exchange'
     | '/_app/client-approvals'
+    | '/_app/operations-dashboard'
+    | '/_app/integration-monitoring'
+    | '/_app/integration-configurations'
+    | '/_app/client-golive'
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
@@ -469,6 +517,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/operations-dashboard': {
+      id: '/_app/operations-dashboard'
+      path: '/operations-dashboard'
+      fullPath: '/operations-dashboard'
+      preLoaderRoute: typeof AppOperationsDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/integration-monitoring': {
+      id: '/_app/integration-monitoring'
+      path: '/integration-monitoring'
+      fullPath: '/integration-monitoring'
+      preLoaderRoute: typeof AppIntegrationMonitoringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/integration-configurations': {
+      id: '/_app/integration-configurations'
+      path: '/integration-configurations'
+      fullPath: '/integration-configurations'
+      preLoaderRoute: typeof AppIntegrationConfigurationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/client-golive': {
+      id: '/_app/client-golive'
+      path: '/client-golive'
+      fullPath: '/client-golive'
+      preLoaderRoute: typeof AppClientGoLiveRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notifications': {
       id: '/_app/notifications'
       path: '/notifications'
@@ -577,6 +653,10 @@ interface AppRouteChildren {
   AppProviderDashboardRoute: typeof AppProviderDashboardRoute
   AppDataExchangeRoute: typeof AppDataExchangeRoute
   AppClientApprovalsRoute: typeof AppClientApprovalsRoute
+  AppOperationsDashboardRoute: typeof AppOperationsDashboardRoute
+  AppIntegrationMonitoringRoute: typeof AppIntegrationMonitoringRoute
+  AppIntegrationConfigurationsRoute: typeof AppIntegrationConfigurationsRoute
+  AppClientGoLiveRoute: typeof AppClientGoLiveRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -600,6 +680,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppProviderDashboardRoute: AppProviderDashboardRoute,
   AppDataExchangeRoute: AppDataExchangeRoute,
   AppClientApprovalsRoute: AppClientApprovalsRoute,
+  AppOperationsDashboardRoute: AppOperationsDashboardRoute,
+  AppIntegrationMonitoringRoute: AppIntegrationMonitoringRoute,
+  AppIntegrationConfigurationsRoute: AppIntegrationConfigurationsRoute,
+  AppClientGoLiveRoute: AppClientGoLiveRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
