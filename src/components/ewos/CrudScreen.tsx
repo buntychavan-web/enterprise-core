@@ -75,11 +75,10 @@ export function CrudScreen({
   fields,
   apiOptions,
 }: CrudScreenProps) {
-  const api = useMemo(
-    () => resourceApi(resourcePath, apiOptions),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [resourcePath],
-  );
+  // Callers must pass a stable (memoized) `apiOptions` object — a fresh
+  // literal on every render would thrash this memo and re-fetch on every
+  // render. useTenant()'s `apiOptions` is memoized for this reason.
+  const api = useMemo(() => resourceApi(resourcePath, apiOptions), [resourcePath, apiOptions]);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
@@ -112,7 +111,7 @@ export function CrudScreen({
     load(ctrl.signal);
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourcePath]);
+  }, [api]);
 
   const filtered = query
     ? rows.filter((row) =>

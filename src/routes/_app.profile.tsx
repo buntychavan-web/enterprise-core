@@ -61,7 +61,7 @@ function ProfilePage() {
           <Field label="Username" value={user?.username ?? "—"} />
           <Field label="Full name" value={name} />
           <Field label="Email" value={user?.email ?? "—"} />
-          <Field label="User ID" value={String(user?.id ?? "—")} />
+          <Field label="User ID" value={String(user?.userId ?? user?.id ?? "—")} />
         </CardContent>
       </Card>
 

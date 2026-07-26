@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Building2, Network } from "lucide-react";
 import { CrudScreen, type CrudField } from "@/components/ewos/CrudScreen";
-import { DEFAULT_COMPANY_ID, DEFAULT_TENANT_ID, type ResourceApiOptions } from "@/lib/api-client";
+import type { ResourceApiOptions } from "@/lib/api-client";
+import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/organization")({
@@ -20,7 +21,6 @@ type ModuleDef = {
   icon: typeof Building2;
   resourcePath: string;
   fields: CrudField[];
-  apiOptions: ResourceApiOptions;
 };
 
 // Sprint 13 fix — the previous 9 tabs (Companies, Business Units, Departments,
@@ -48,10 +48,6 @@ const MODULES: ModuleDef[] = [
       { name: "description", label: "Description", type: "textarea", listColumn: false },
       { name: "sortOrder", label: "Sort order", type: "number", listColumn: false },
     ],
-    apiOptions: {
-      extraBody: { tenantId: DEFAULT_TENANT_ID },
-      updateMethod: "PATCH",
-    },
   },
   {
     key: "unit",
@@ -86,17 +82,29 @@ const MODULES: ModuleDef[] = [
       { name: "costCenterCode", label: "Cost centre code", listColumn: false },
       { name: "description", label: "Description", type: "textarea", listColumn: false },
     ],
-    apiOptions: {
-      extraQuery: { tenantId: DEFAULT_TENANT_ID },
-      extraBody: { tenantId: DEFAULT_TENANT_ID, companyId: DEFAULT_COMPANY_ID },
-      updateMethod: "PATCH",
-    },
   },
 ];
 
 function OrganizationPage() {
   const [active, setActive] = useState(MODULES[0].key);
   const current = MODULES.find((m) => m.key === active)!;
+  const { tenantId, apiOptions } = useTenant();
+
+  // "unit-type" is a per-tenant dictionary — no companyId. "unit" needs both
+  // tenantId (query, for the search endpoint) and companyId (body) — see the
+  // Sprint 13 note above on why these two resources differ.
+  const unitTypeApiOptions = useMemo<ResourceApiOptions>(
+    () => ({
+      extraBody: tenantId ? { tenantId } : undefined,
+      updateMethod: "PATCH",
+    }),
+    [tenantId],
+  );
+  const unitApiOptions = useMemo<ResourceApiOptions>(
+    () => ({ ...apiOptions, updateMethod: "PATCH" }),
+    [apiOptions],
+  );
+  const currentApiOptions = current.key === "unit" ? unitApiOptions : unitTypeApiOptions;
 
   return (
     <div className="space-y-6">
@@ -141,7 +149,7 @@ function OrganizationPage() {
         resourcePath={current.resourcePath}
         singular={current.singular}
         fields={current.fields}
-        apiOptions={current.apiOptions}
+        apiOptions={currentApiOptions}
       />
     </div>
   );

@@ -33,17 +33,15 @@ import { GlobalSearch } from "@/components/ewos/GlobalSearch";
 import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
-import { displayName, initials, resourceApi, type ResourceRecord } from "@/lib/api-client";
+import { displayName, initials } from "@/lib/api-client";
+import { TenantProvider, useTenant } from "@/lib/tenant-context";
 
-// Sprint 14.1 — Company Switcher backend integration. CompanySwitcher.tsx was shipped
-// disabled ("until a backend endpoint is available") — GET /api/v1/companies now exists
-// (com.ewos.tenancy) and is already Chinese-Wall filtered server-side to the companies
-// under the caller's accessible clients, so no client-side filtering is needed here.
-// The selected company is persisted locally; propagating it into other screens' API
-// calls is not part of this integration and is left for a later sprint.
-type CompanyRow = ResourceRecord & { name?: string };
-const companiesApi = resourceApi<CompanyRow>("/companies");
-const ACTIVE_COMPANY_KEY = "ewos.activeCompanyId";
+// Sprint 14.1 / 2.1 — Company Switcher backend integration. GET /api/v1/companies
+// is already Chinese-Wall filtered server-side to the companies under the
+// caller's accessible clients. Sprint 2.1 lifted the companies/activeCompanyId
+// state out of this route into TenantProvider (lib/tenant-context.tsx) so
+// sibling routes (Employees, Organization) can consume the active tenant and
+// company via useTenant() instead of hardcoding DEFAULT_TENANT_ID/DEFAULT_COMPANY_ID.
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
@@ -74,13 +72,8 @@ const NAV = [
 ] as const;
 
 function AppShell() {
-  const { isAuthenticated, isInitializing, user, logout } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
-  const [activeCompanyId, setActiveCompanyId] = useState<string | undefined>(
-    () => localStorage.getItem(ACTIVE_COMPANY_KEY) ?? undefined,
-  );
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
@@ -88,26 +81,26 @@ function AppShell() {
     }
   }, [isAuthenticated, isInitializing, navigate]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    let cancelled = false;
-    companiesApi.list().then((res) => {
-      if (cancelled || res.unavailable) return;
-      const list = res.items.map((c) => ({ id: String(c.id), name: c.name ?? String(c.id) }));
-      setCompanies(list);
-      setActiveCompanyId((current) =>
-        current && list.some((c) => c.id === current) ? current : list[0]?.id,
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated]);
+  if (isInitializing || !isAuthenticated) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
 
-  const selectCompany = (id: string) => {
-    setActiveCompanyId(id);
-    localStorage.setItem(ACTIVE_COMPANY_KEY, id);
-  };
+  return (
+    <TenantProvider>
+      <AppShellContent />
+    </TenantProvider>
+  );
+}
+
+function AppShellContent() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { companies, activeCompanyId, selectCompany } = useTenant();
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -117,14 +110,6 @@ function AppShell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
-
-  if (isInitializing || !isAuthenticated) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-dvh bg-muted/30 text-foreground">

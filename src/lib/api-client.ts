@@ -11,18 +11,16 @@
  * assumption; see SPRINT_13_COMPLETION_REPORT.md for the mismatch report.
  *
  * ─────────────────────────────────────────────────────────────────────────
- *  TENANT ID — KNOWN GAP, NOT FIXED HERE
+ *  TENANT ID — Sprint 2.1 update
  * ─────────────────────────────────────────────────────────────────────────
- *  Every tenant-scoped controller (Employees, Organization, Attendance,
- *  Leave, Payroll) requires a `tenantId` — either as an `X-Tenant-Id` header
- *  or a `tenantId` query/body field — and there is currently NO backend
- *  endpoint that lists or resolves tenants. The Tenant/Company module was
- *  rejected during the mid-2026 architecture reset and never rebuilt.
- *  `DEFAULT_TENANT_ID` / `DEFAULT_COMPANY_ID` below are placeholders so
- *  requests are well-formed and reach the backend instead of failing
- *  client-side; they are NOT a real tenant resolution and must be replaced
- *  once a Tenant module exists. Do not treat data returned under this id as
- *  meaningful multi-tenant behavior.
+ *  `GET /api/v1/auth/me` (com.ewos.identity.api.dto.MeResponse) returns the
+ *  caller's real `tenantId`. Sprint 2.1 wires this through `tenantStore` and
+ *  the `X-Tenant-Id` request header — see TenantProvider in tenant-context.tsx
+ *  for the per-request active tenant/company. `DEFAULT_TENANT_ID` /
+ *  `DEFAULT_COMPANY_ID` remain exported as a fallback for the handful of
+ *  screens outside Sprint 2's scope (ESS/MSS/payroll-provider) that still
+ *  reference them directly; do not add new usages — consume `useTenant()`
+ *  instead.
  * ─────────────────────────────────────────────────────────────────────────
  *  CONTRACT ASSUMPTIONS (adjust to match your OpenAPI spec)
  * ─────────────────────────────────────────────────────────────────────────
@@ -32,7 +30,8 @@
  *      4xx/5xx : { message?: string, error?: string, errors?: string[] }
  *
  *  POST /api/v1/auth/logout        (optional; called if it exists)
- *  GET  /api/v1/auth/me            (optional; used to hydrate current user)
+ *  GET  /api/v1/auth/me            → MeResponse { userId, username, email,
+ *                                    roles: {name}[], tenantId, employeeId }
  *  GET  /api/v1/users              (used for Users dashboard card count)
  *      may return either a plain array `UserDto[]` OR a Spring page
  *      `{ content: UserDto[], totalElements: number }` — both are handled.
@@ -44,19 +43,25 @@
 const TOKEN_KEY = "ewos.accessToken";
 const REFRESH_KEY = "ewos.refreshToken";
 const USER_KEY = "ewos.user";
+const TENANT_KEY = "ewos.tenantId";
 
-/** See "TENANT ID — KNOWN GAP" note above. */
+/** Fallback only — see "TENANT ID — Sprint 2.1 update" note above. */
 export const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 export const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
+export type RoleSummary = { name: string; [k: string]: unknown };
+
 export type UserDto = {
+  userId?: string;
   id?: string | number;
   username?: string;
   fullName?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
-  roles?: Array<string | { name: string }>;
+  roles?: Array<string | RoleSummary>;
+  tenantId?: string;
+  employeeId?: string;
   [k: string]: unknown;
 };
 
@@ -120,6 +125,23 @@ export const userStore = {
   },
 };
 
+/** Active tenant for the `X-Tenant-Id` header, sourced from MeResponse.tenantId. */
+export const tenantStore = {
+  get(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(TENANT_KEY) ?? sessionStorage.getItem(TENANT_KEY);
+  },
+  set(tenantId: string, remember = true) {
+    const store = remember ? localStorage : sessionStorage;
+    store.setItem(TENANT_KEY, tenantId);
+  },
+  clear() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(TENANT_KEY);
+    sessionStorage.removeItem(TENANT_KEY);
+  },
+};
+
 /* -------------------------------------------------------------------------- */
 /* Core request                                                               */
 /* -------------------------------------------------------------------------- */
@@ -140,9 +162,11 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   if (auth) {
     const token = tokenStore.get();
     if (token) headers.Authorization = `Bearer ${token}`;
-    // Every tenant-scoped backend controller requires this header. Sending it
-    // unconditionally is harmless for endpoints that ignore it (auth, users).
-    headers["X-Tenant-Id"] = DEFAULT_TENANT_ID;
+    // Every tenant-scoped backend controller requires this header. Sourced
+    // from MeResponse.tenantId (see tenantStore) once the caller has signed
+    // in; falls back to the bootstrap tenant only if that hasn't happened yet
+    // (e.g. a request fired before /auth/me resolves).
+    headers["X-Tenant-Id"] = tenantStore.get() ?? DEFAULT_TENANT_ID;
   }
 
   let response: Response;
@@ -217,6 +241,7 @@ export const authApi = {
     }
   },
 
+  /** GET /auth/me → MeResponse. Returns null if unreachable (e.g. demo mode, or not yet signed in). */
   async me(): Promise<UserDto | null> {
     try {
       return await request<UserDto>("/auth/me");

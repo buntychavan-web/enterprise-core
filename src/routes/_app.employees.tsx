@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { CrudScreen, type CrudField } from "@/components/ewos/CrudScreen";
-import { DEFAULT_COMPANY_ID, DEFAULT_TENANT_ID } from "@/lib/api-client";
+import { useTenant } from "@/lib/tenant-context";
 
 // Field names match com.ewos.employee.api.dto.HireEmployeeRequest / EmployeeResponse
 // exactly (Sprint 13 fix — the previous field set (employeeCode/email/designation/
@@ -41,6 +42,12 @@ export const Route = createFileRoute("/_app/employees")({
 });
 
 function EmployeesPage() {
+  const { apiOptions } = useTenant();
+  const employeesApiOptions = useMemo(
+    () => ({ ...apiOptions, updateMethod: "PATCH" as const }),
+    [apiOptions],
+  );
+
   return (
     <CrudScreen
       title="Employees"
@@ -48,11 +55,7 @@ function EmployeesPage() {
       resourcePath="/employees"
       singular="Employee"
       fields={FIELDS}
-      apiOptions={{
-        extraQuery: { tenantId: DEFAULT_TENANT_ID },
-        extraBody: { tenantId: DEFAULT_TENANT_ID, companyId: DEFAULT_COMPANY_ID },
-        updateMethod: "PATCH",
-      }}
+      apiOptions={employeesApiOptions}
     />
   );
 }
