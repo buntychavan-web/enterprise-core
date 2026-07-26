@@ -262,6 +262,11 @@ export const usersApi = {
     if (data && Array.isArray(data.content)) return data.content.length;
     return 0;
   },
+
+  /** Sprint 2.3 — inline enable/disable toggle, bypassing the edit dialog. */
+  async setStatus(id: string | number, enabled: boolean): Promise<UserDto> {
+    return request<UserDto>(`/users/${id}/status`, { method: "PATCH", body: { enabled } });
+  },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -642,6 +647,92 @@ export const clientGoLiveApi = {
     return request<ClientGoLiveConfigurationDto>(`/integration/golive/${id}`, {
       method: "PATCH",
       body: payload,
+    });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Roles / Permissions catalog (Sprint 2.3) — thin read-only fetchers backing */
+/* RoleMultiSelect and PermissionPicker; the Roles CRUD screen itself still   */
+/* goes through resourceApi("/roles") like any other CrudScreen resource.    */
+/* -------------------------------------------------------------------------- */
+
+export type PermissionDto = { id: string; code: string; description?: string };
+export type RoleDto = {
+  id: string;
+  tenantId?: string;
+  systemRole: boolean;
+  name: string;
+  description?: string;
+  permissions?: PermissionDto[];
+};
+
+export const rolesApi = {
+  async list(): Promise<RoleDto[]> {
+    return request<RoleDto[]>("/roles");
+  },
+};
+
+export const permissionsApi = {
+  async list(): Promise<PermissionDto[]> {
+    return request<PermissionDto[]>("/permissions");
+  },
+};
+
+export type RoleImpactResponse = {
+  roleId: string;
+  roleName: string;
+  systemRole: boolean;
+  assignedUserCount: number;
+  companies: { companyId: string; userCount: number }[];
+  departments: { orgUnitId: string; orgUnitCode: string; userCount: number }[];
+  pendingWorkflowTaskCount: number;
+  canDelete: boolean;
+};
+
+export const roleImpactApi = {
+  async of(roleId: string): Promise<RoleImpactResponse> {
+    return request<RoleImpactResponse>(`/roles/${roleId}/impact`);
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Tenant Access Grants (Sprint 2.2) — not a CrudScreen fit: grants are       */
+/* created/revoked, never edited, and list is per-user (GET ?userId=).       */
+/* -------------------------------------------------------------------------- */
+
+export type TenantAccessGrantDto = {
+  id: string;
+  userId: string;
+  tenantId: string;
+  grantedBy?: string;
+  reason: string;
+  expiresAt: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const tenantAccessGrantApi = {
+  async listForUser(userId: string): Promise<TenantAccessGrantDto[]> {
+    return request<TenantAccessGrantDto[]>(`/tenant-access-grants?userId=${userId}`);
+  },
+  async grant(payload: {
+    userId: string;
+    tenantId: string;
+    reason: string;
+    expiresAt: string;
+  }): Promise<TenantAccessGrantDto> {
+    return request<TenantAccessGrantDto>("/tenant-access-grants", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async revoke(id: string): Promise<TenantAccessGrantDto> {
+    return request<TenantAccessGrantDto>(`/tenant-access-grants/${id}/revoke`, {
+      method: "POST",
     });
   },
 };

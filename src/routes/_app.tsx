@@ -18,6 +18,7 @@ import {
   PartyPopper,
   Rocket,
   ScrollText,
+  ShieldCheck,
   Users as UsersIcon,
   UserSquare2,
   Wallet,
@@ -59,6 +60,7 @@ const NAV = [
   { to: "/announcements", label: "Announcements", icon: Megaphone },
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/organization", label: "Organization", icon: Building2 },
+  { to: "/tenant-management", label: "Tenant Management", icon: Landmark },
   { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
   { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
   { to: "/data-exchange", label: "Data Exchange", icon: ArrowLeftRight },
@@ -68,6 +70,7 @@ const NAV = [
   { to: "/operations-dashboard", label: "Operations Dashboard", icon: WorkflowIcon },
   { to: "/client-golive", label: "Client Go-Live", icon: Rocket },
   { to: "/users", label: "Users", icon: UsersIcon },
+  { to: "/roles", label: "Roles", icon: ShieldCheck },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;
 
