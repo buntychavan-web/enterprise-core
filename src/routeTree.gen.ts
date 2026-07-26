@@ -16,18 +16,29 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
+import { Route as AppTenantManagementRouteImport } from './routes/_app.tenant-management'
 import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppRolesRouteImport } from './routes/_app.roles'
+import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppOutsourcingRouteImport } from './routes/_app.outsourcing'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
+import { Route as AppOperationsDashboardRouteImport } from './routes/_app.operations-dashboard'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
+import { Route as AppIntegrationMonitoringRouteImport } from './routes/_app.integration-monitoring'
+import { Route as AppIntegrationConfigurationsRouteImport } from './routes/_app.integration-configurations'
 import { Route as AppHolidaysRouteImport } from './routes/_app.holidays'
 import { Route as AppHelpRouteImport } from './routes/_app.help'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
+import { Route as AppDataExchangeRouteImport } from './routes/_app.data-exchange'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppClientGoliveRouteImport } from './routes/_app.client-golive'
+import { Route as AppClientApprovalsRouteImport } from './routes/_app.client-approvals'
+import { Route as AppAuditHistoryRouteImport } from './routes/_app.audit-history'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAboutRouteImport } from './routes/_app.about'
@@ -68,6 +79,11 @@ const AppUsersRoute = AppUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTenantManagementRoute = AppTenantManagementRouteImport.update({
+  id: '/tenant-management',
+  path: '/tenant-management',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTeamRoute = AppTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -76,6 +92,16 @@ const AppTeamRoute = AppTeamRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRolesRoute = AppRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProviderDashboardRoute = AppProviderDashboardRouteImport.update({
+  id: '/provider-dashboard',
+  path: '/provider-dashboard',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -88,9 +114,19 @@ const AppPayslipsRoute = AppPayslipsRouteImport.update({
   path: '/payslips',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOutsourcingRoute = AppOutsourcingRouteImport.update({
+  id: '/outsourcing',
+  path: '/outsourcing',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrganizationRoute = AppOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOperationsDashboardRoute = AppOperationsDashboardRouteImport.update({
+  id: '/operations-dashboard',
+  path: '/operations-dashboard',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
@@ -103,6 +139,18 @@ const AppLeaveRoute = AppLeaveRouteImport.update({
   path: '/leave',
   getParentRoute: () => AppRoute,
 } as any)
+const AppIntegrationMonitoringRoute =
+  AppIntegrationMonitoringRouteImport.update({
+    id: '/integration-monitoring',
+    path: '/integration-monitoring',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppIntegrationConfigurationsRoute =
+  AppIntegrationConfigurationsRouteImport.update({
+    id: '/integration-configurations',
+    path: '/integration-configurations',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppHolidaysRoute = AppHolidaysRouteImport.update({
   id: '/holidays',
   path: '/holidays',
@@ -123,9 +171,29 @@ const AppDirectoryRoute = AppDirectoryRouteImport.update({
   path: '/directory',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDataExchangeRoute = AppDataExchangeRouteImport.update({
+  id: '/data-exchange',
+  path: '/data-exchange',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientGoliveRoute = AppClientGoliveRouteImport.update({
+  id: '/client-golive',
+  path: '/client-golive',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientApprovalsRoute = AppClientApprovalsRouteImport.update({
+  id: '/client-approvals',
+  path: '/client-approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAuditHistoryRoute = AppAuditHistoryRouteImport.update({
+  id: '/audit-history',
+  path: '/audit-history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
@@ -156,18 +224,29 @@ export interface FileRoutesByFullPath {
   '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/audit-history': typeof AppAuditHistoryRoute
+  '/client-approvals': typeof AppClientApprovalsRoute
+  '/client-golive': typeof AppClientGoliveRoute
   '/dashboard': typeof AppDashboardRoute
+  '/data-exchange': typeof AppDataExchangeRoute
   '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
   '/help': typeof AppHelpRoute
   '/holidays': typeof AppHolidaysRoute
+  '/integration-configurations': typeof AppIntegrationConfigurationsRoute
+  '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
+  '/operations-dashboard': typeof AppOperationsDashboardRoute
   '/organization': typeof AppOrganizationRoute
+  '/outsourcing': typeof AppOutsourcingRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
+  '/provider-dashboard': typeof AppProviderDashboardRoute
+  '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
+  '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
@@ -180,18 +259,29 @@ export interface FileRoutesByTo {
   '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/audit-history': typeof AppAuditHistoryRoute
+  '/client-approvals': typeof AppClientApprovalsRoute
+  '/client-golive': typeof AppClientGoliveRoute
   '/dashboard': typeof AppDashboardRoute
+  '/data-exchange': typeof AppDataExchangeRoute
   '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
   '/help': typeof AppHelpRoute
   '/holidays': typeof AppHolidaysRoute
+  '/integration-configurations': typeof AppIntegrationConfigurationsRoute
+  '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
+  '/operations-dashboard': typeof AppOperationsDashboardRoute
   '/organization': typeof AppOrganizationRoute
+  '/outsourcing': typeof AppOutsourcingRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
+  '/provider-dashboard': typeof AppProviderDashboardRoute
+  '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
+  '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
@@ -206,18 +296,29 @@ export interface FileRoutesById {
   '/_app/about': typeof AppAboutRoute
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/attendance': typeof AppAttendanceRoute
+  '/_app/audit-history': typeof AppAuditHistoryRoute
+  '/_app/client-approvals': typeof AppClientApprovalsRoute
+  '/_app/client-golive': typeof AppClientGoliveRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/data-exchange': typeof AppDataExchangeRoute
   '/_app/directory': typeof AppDirectoryRoute
   '/_app/employees': typeof AppEmployeesRouteWithChildren
   '/_app/help': typeof AppHelpRoute
   '/_app/holidays': typeof AppHolidaysRoute
+  '/_app/integration-configurations': typeof AppIntegrationConfigurationsRoute
+  '/_app/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/_app/leave': typeof AppLeaveRoute
   '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/operations-dashboard': typeof AppOperationsDashboardRoute
   '/_app/organization': typeof AppOrganizationRoute
+  '/_app/outsourcing': typeof AppOutsourcingRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/provider-dashboard': typeof AppProviderDashboardRoute
+  '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/team': typeof AppTeamRoute
+  '/_app/tenant-management': typeof AppTenantManagementRoute
   '/_app/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
@@ -232,18 +333,29 @@ export interface FileRouteTypes {
     | '/about'
     | '/announcements'
     | '/attendance'
+    | '/audit-history'
+    | '/client-approvals'
+    | '/client-golive'
     | '/dashboard'
+    | '/data-exchange'
     | '/directory'
     | '/employees'
     | '/help'
     | '/holidays'
+    | '/integration-configurations'
+    | '/integration-monitoring'
     | '/leave'
     | '/notifications'
+    | '/operations-dashboard'
     | '/organization'
+    | '/outsourcing'
     | '/payslips'
     | '/profile'
+    | '/provider-dashboard'
+    | '/roles'
     | '/settings'
     | '/team'
+    | '/tenant-management'
     | '/users'
     | '/api/$'
     | '/design-system/organization'
@@ -256,18 +368,29 @@ export interface FileRouteTypes {
     | '/about'
     | '/announcements'
     | '/attendance'
+    | '/audit-history'
+    | '/client-approvals'
+    | '/client-golive'
     | '/dashboard'
+    | '/data-exchange'
     | '/directory'
     | '/employees'
     | '/help'
     | '/holidays'
+    | '/integration-configurations'
+    | '/integration-monitoring'
     | '/leave'
     | '/notifications'
+    | '/operations-dashboard'
     | '/organization'
+    | '/outsourcing'
     | '/payslips'
     | '/profile'
+    | '/provider-dashboard'
+    | '/roles'
     | '/settings'
     | '/team'
+    | '/tenant-management'
     | '/users'
     | '/api/$'
     | '/design-system/organization'
@@ -281,18 +404,29 @@ export interface FileRouteTypes {
     | '/_app/about'
     | '/_app/announcements'
     | '/_app/attendance'
+    | '/_app/audit-history'
+    | '/_app/client-approvals'
+    | '/_app/client-golive'
     | '/_app/dashboard'
+    | '/_app/data-exchange'
     | '/_app/directory'
     | '/_app/employees'
     | '/_app/help'
     | '/_app/holidays'
+    | '/_app/integration-configurations'
+    | '/_app/integration-monitoring'
     | '/_app/leave'
     | '/_app/notifications'
+    | '/_app/operations-dashboard'
     | '/_app/organization'
+    | '/_app/outsourcing'
     | '/_app/payslips'
     | '/_app/profile'
+    | '/_app/provider-dashboard'
+    | '/_app/roles'
     | '/_app/settings'
     | '/_app/team'
+    | '/_app/tenant-management'
     | '/_app/users'
     | '/api/$'
     | '/design-system/organization'
@@ -358,6 +492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tenant-management': {
+      id: '/_app/tenant-management'
+      path: '/tenant-management'
+      fullPath: '/tenant-management'
+      preLoaderRoute: typeof AppTenantManagementRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/team': {
       id: '/_app/team'
       path: '/team'
@@ -370,6 +511,20 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/roles': {
+      id: '/_app/roles'
+      path: '/roles'
+      fullPath: '/roles'
+      preLoaderRoute: typeof AppRolesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/provider-dashboard': {
+      id: '/_app/provider-dashboard'
+      path: '/provider-dashboard'
+      fullPath: '/provider-dashboard'
+      preLoaderRoute: typeof AppProviderDashboardRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -386,11 +541,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPayslipsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/outsourcing': {
+      id: '/_app/outsourcing'
+      path: '/outsourcing'
+      fullPath: '/outsourcing'
+      preLoaderRoute: typeof AppOutsourcingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/organization': {
       id: '/_app/organization'
       path: '/organization'
       fullPath: '/organization'
       preLoaderRoute: typeof AppOrganizationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/operations-dashboard': {
+      id: '/_app/operations-dashboard'
+      path: '/operations-dashboard'
+      fullPath: '/operations-dashboard'
+      preLoaderRoute: typeof AppOperationsDashboardRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/notifications': {
@@ -405,6 +574,20 @@ declare module '@tanstack/react-router' {
       path: '/leave'
       fullPath: '/leave'
       preLoaderRoute: typeof AppLeaveRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/integration-monitoring': {
+      id: '/_app/integration-monitoring'
+      path: '/integration-monitoring'
+      fullPath: '/integration-monitoring'
+      preLoaderRoute: typeof AppIntegrationMonitoringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/integration-configurations': {
+      id: '/_app/integration-configurations'
+      path: '/integration-configurations'
+      fullPath: '/integration-configurations'
+      preLoaderRoute: typeof AppIntegrationConfigurationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/holidays': {
@@ -435,11 +618,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDirectoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/data-exchange': {
+      id: '/_app/data-exchange'
+      path: '/data-exchange'
+      fullPath: '/data-exchange'
+      preLoaderRoute: typeof AppDataExchangeRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/client-golive': {
+      id: '/_app/client-golive'
+      path: '/client-golive'
+      fullPath: '/client-golive'
+      preLoaderRoute: typeof AppClientGoliveRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/client-approvals': {
+      id: '/_app/client-approvals'
+      path: '/client-approvals'
+      fullPath: '/client-approvals'
+      preLoaderRoute: typeof AppClientApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/audit-history': {
+      id: '/_app/audit-history'
+      path: '/audit-history'
+      fullPath: '/audit-history'
+      preLoaderRoute: typeof AppAuditHistoryRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/attendance': {
@@ -489,18 +700,29 @@ interface AppRouteChildren {
   AppAboutRoute: typeof AppAboutRoute
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
+  AppAuditHistoryRoute: typeof AppAuditHistoryRoute
+  AppClientApprovalsRoute: typeof AppClientApprovalsRoute
+  AppClientGoliveRoute: typeof AppClientGoliveRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDataExchangeRoute: typeof AppDataExchangeRoute
   AppDirectoryRoute: typeof AppDirectoryRoute
   AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
   AppHelpRoute: typeof AppHelpRoute
   AppHolidaysRoute: typeof AppHolidaysRoute
+  AppIntegrationConfigurationsRoute: typeof AppIntegrationConfigurationsRoute
+  AppIntegrationMonitoringRoute: typeof AppIntegrationMonitoringRoute
   AppLeaveRoute: typeof AppLeaveRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppOperationsDashboardRoute: typeof AppOperationsDashboardRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
+  AppOutsourcingRoute: typeof AppOutsourcingRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppProviderDashboardRoute: typeof AppProviderDashboardRoute
+  AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTeamRoute: typeof AppTeamRoute
+  AppTenantManagementRoute: typeof AppTenantManagementRoute
   AppUsersRoute: typeof AppUsersRoute
 }
 
@@ -508,18 +730,29 @@ const AppRouteChildren: AppRouteChildren = {
   AppAboutRoute: AppAboutRoute,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
+  AppAuditHistoryRoute: AppAuditHistoryRoute,
+  AppClientApprovalsRoute: AppClientApprovalsRoute,
+  AppClientGoliveRoute: AppClientGoliveRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDataExchangeRoute: AppDataExchangeRoute,
   AppDirectoryRoute: AppDirectoryRoute,
   AppEmployeesRoute: AppEmployeesRouteWithChildren,
   AppHelpRoute: AppHelpRoute,
   AppHolidaysRoute: AppHolidaysRoute,
+  AppIntegrationConfigurationsRoute: AppIntegrationConfigurationsRoute,
+  AppIntegrationMonitoringRoute: AppIntegrationMonitoringRoute,
   AppLeaveRoute: AppLeaveRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppOperationsDashboardRoute: AppOperationsDashboardRoute,
   AppOrganizationRoute: AppOrganizationRoute,
+  AppOutsourcingRoute: AppOutsourcingRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppProviderDashboardRoute: AppProviderDashboardRoute,
+  AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTeamRoute: AppTeamRoute,
+  AppTenantManagementRoute: AppTenantManagementRoute,
   AppUsersRoute: AppUsersRoute,
 }
 
@@ -547,13 +780,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

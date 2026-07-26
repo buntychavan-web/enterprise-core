@@ -2,20 +2,37 @@
  * EWOS API client.
  *
  * SINGLE SOURCE OF TRUTH for talking to the backend.
- * All requests go through `/api/*` and are proxied to http://localhost:8080
- * by Vite (see vite.config.ts).
+ * All requests go through `/api/v1/*` and are proxied to http://localhost:8080
+ * by Vite (see vite.config.ts). The backend mounts every controller under
+ * `/api/v1/...` (confirmed against source: AuthController, UserController,
+ * EmployeeController, OrganizationUnit(Type)Controller, Attendance*Controller,
+ * Leave*Controller, PayslipController) — there is no un-versioned `/api/*`
+ * route on the backend. Sprint 13 fixed this file from a stale `/api/*`
+ * assumption; see SPRINT_13_COMPLETION_REPORT.md for the mismatch report.
  *
+ * ─────────────────────────────────────────────────────────────────────────
+ *  TENANT ID — Sprint 2.1 update
+ * ─────────────────────────────────────────────────────────────────────────
+ *  `GET /api/v1/auth/me` (com.ewos.identity.api.dto.MeResponse) returns the
+ *  caller's real `tenantId`. Sprint 2.1 wires this through `tenantStore` and
+ *  the `X-Tenant-Id` request header — see TenantProvider in tenant-context.tsx
+ *  for the per-request active tenant/company. `DEFAULT_TENANT_ID` /
+ *  `DEFAULT_COMPANY_ID` remain exported as a fallback for the handful of
+ *  screens outside Sprint 2's scope (ESS/MSS/payroll-provider) that still
+ *  reference them directly; do not add new usages — consume `useTenant()`
+ *  instead.
  * ─────────────────────────────────────────────────────────────────────────
  *  CONTRACT ASSUMPTIONS (adjust to match your OpenAPI spec)
  * ─────────────────────────────────────────────────────────────────────────
- *  POST /api/auth/login
+ *  POST /api/v1/auth/login
  *      request : { username: string, password: string }
  *      200     : { accessToken: string, refreshToken?: string, user?: UserDto }
  *      4xx/5xx : { message?: string, error?: string, errors?: string[] }
  *
- *  POST /api/auth/logout           (optional; called if it exists)
- *  GET  /api/auth/me               (optional; used to hydrate current user)
- *  GET  /api/users                 (used for Users dashboard card count)
+ *  POST /api/v1/auth/logout        (optional; called if it exists)
+ *  GET  /api/v1/auth/me            → MeResponse { userId, username, email,
+ *                                    roles: {name}[], tenantId, employeeId }
+ *  GET  /api/v1/users              (used for Users dashboard card count)
  *      may return either a plain array `UserDto[]` OR a Spring page
  *      `{ content: UserDto[], totalElements: number }` — both are handled.
  *
@@ -26,15 +43,25 @@
 const TOKEN_KEY = "ewos.accessToken";
 const REFRESH_KEY = "ewos.refreshToken";
 const USER_KEY = "ewos.user";
+const TENANT_KEY = "ewos.tenantId";
+
+/** Fallback only — see "TENANT ID — Sprint 2.1 update" note above. */
+export const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+export const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+
+export type RoleSummary = { name: string; [k: string]: unknown };
 
 export type UserDto = {
+  userId?: string;
   id?: string | number;
   username?: string;
   fullName?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
-  roles?: Array<string | { name: string }>;
+  roles?: Array<string | RoleSummary>;
+  tenantId?: string;
+  employeeId?: string;
   [k: string]: unknown;
 };
 
@@ -98,6 +125,23 @@ export const userStore = {
   },
 };
 
+/** Active tenant for the `X-Tenant-Id` header, sourced from MeResponse.tenantId. */
+export const tenantStore = {
+  get(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(TENANT_KEY) ?? sessionStorage.getItem(TENANT_KEY);
+  },
+  set(tenantId: string, remember = true) {
+    const store = remember ? localStorage : sessionStorage;
+    store.setItem(TENANT_KEY, tenantId);
+  },
+  clear() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(TENANT_KEY);
+    sessionStorage.removeItem(TENANT_KEY);
+  },
+};
+
 /* -------------------------------------------------------------------------- */
 /* Core request                                                               */
 /* -------------------------------------------------------------------------- */
@@ -118,11 +162,16 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   if (auth) {
     const token = tokenStore.get();
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Every tenant-scoped backend controller requires this header. Sourced
+    // from MeResponse.tenantId (see tenantStore) once the caller has signed
+    // in; falls back to the bootstrap tenant only if that hasn't happened yet
+    // (e.g. a request fired before /auth/me resolves).
+    headers["X-Tenant-Id"] = tenantStore.get() ?? DEFAULT_TENANT_ID;
   }
 
   let response: Response;
   try {
-    response = await fetch(`/api${path}`, {
+    response = await fetch(`/api/v1${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -192,6 +241,7 @@ export const authApi = {
     }
   },
 
+  /** GET /auth/me → MeResponse. Returns null if unreachable (e.g. demo mode, or not yet signed in). */
   async me(): Promise<UserDto | null> {
     try {
       return await request<UserDto>("/auth/me");
@@ -212,6 +262,559 @@ export const usersApi = {
     if (data && Array.isArray(data.content)) return data.content.length;
     return 0;
   },
+
+  /** Sprint 2.3 — inline enable/disable toggle, bypassing the edit dialog. */
+  async setStatus(id: string | number, enabled: boolean): Promise<UserDto> {
+    return request<UserDto>(`/users/${id}/status`, { method: "PATCH", body: { enabled } });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Provider Dashboard (Sprint 14.2)                                          */
+/* -------------------------------------------------------------------------- */
+
+export type ProviderDashboardClient = {
+  id: string;
+  code: string;
+  legalName: string;
+  status: string;
+};
+
+export type ProviderDashboardPeriod = {
+  id: string;
+  companyId: string;
+  code: string;
+  name: string;
+  status: string;
+  periodStart: string;
+  periodEnd: string;
+  payDate: string;
+};
+
+export type ProviderDashboardRun = {
+  id: string;
+  companyId: string;
+  status: string;
+  runType: string;
+};
+
+export type ProviderDashboardSummary = {
+  assignedClients: ProviderDashboardClient[];
+  activePayrollPeriods: ProviderDashboardPeriod[];
+  payrollStatusCounts: Record<string, number>;
+  pendingApprovals: ProviderDashboardRun[];
+  payrollCalendar: ProviderDashboardPeriod[];
+  activeServiceCount: number;
+  totalServiceCount: number;
+};
+
+export const providerDashboardApi = {
+  /** Returns null when the endpoint isn't available yet (404) instead of throwing. */
+  async get(): Promise<ProviderDashboardSummary | null> {
+    try {
+      return await request<ProviderDashboardSummary>("/payroll/provider-dashboard");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Data Exchange (Sprint 14.3)                                               */
+/* -------------------------------------------------------------------------- */
+
+export type DataExchangeStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SUCCESS"
+  | "FAILED"
+  | "RETRY"
+  | "ACKNOWLEDGED"
+  | "CANCELLED";
+
+export type DataExchangeRecordDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  exchangeType: string;
+  sourceEventType?: string;
+  correlationId: string;
+  payloadJson?: string;
+  status: DataExchangeStatus;
+  retryCount: number;
+  nextRetryAt?: string;
+  acknowledgedAt?: string;
+  acknowledgedBy?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DataExchangeHistoryEntry = {
+  id: string;
+  fromStatus?: DataExchangeStatus;
+  toStatus: DataExchangeStatus;
+  actorId?: string;
+  notes?: string;
+  occurredAt: string;
+};
+
+export const dataExchangeApi = {
+  async list(companyId: string, status?: DataExchangeStatus): Promise<DataExchangeRecordDto[]> {
+    const qs = status ? `&status=${status}` : "";
+    return request<DataExchangeRecordDto[]>(`/data-exchange?companyId=${companyId}${qs}`);
+  },
+  async getById(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}`);
+  },
+  async history(id: string): Promise<DataExchangeHistoryEntry[]> {
+    return request<DataExchangeHistoryEntry[]>(`/data-exchange/${id}/history`);
+  },
+  async retry(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}/retry`, { method: "POST" });
+  },
+  async acknowledge(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}/acknowledge`, { method: "POST" });
+  },
+  async cancel(id: string): Promise<DataExchangeRecordDto> {
+    return request<DataExchangeRecordDto>(`/data-exchange/${id}/cancel`, { method: "POST" });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Workflow (generic engine, reused for Client Approval — Sprint 14.3)       */
+/* -------------------------------------------------------------------------- */
+
+export type WorkflowInstanceDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  definitionId: string;
+  definitionCode: string;
+  subjectType: string;
+  subjectId: string;
+  currentStateCode: string;
+  status: "RUNNING" | "COMPLETED" | "CANCELLED" | "ERROR";
+  startedAt: string;
+  completedAt?: string;
+};
+
+export type WorkflowHistoryEntry = {
+  id: string;
+  fromStateCode?: string;
+  toStateCode: string;
+  actionCode: string;
+  actorId?: string;
+  notes?: string;
+  occurredAt: string;
+};
+
+export type WorkflowTaskDto = {
+  id: string;
+  instanceId: string;
+  stateCode: string;
+  assigneeActorType: "USER" | "EMPLOYEE" | "ROLE" | "SYSTEM";
+  assigneeActorId?: string;
+  assigneeRoleCode?: string;
+  status: "OPEN" | "CLAIMED" | "COMPLETED" | "CANCELLED" | "ESCALATED";
+  dueAt?: string;
+};
+
+export const workflowApi = {
+  async getInstance(id: string): Promise<WorkflowInstanceDto> {
+    return request<WorkflowInstanceDto>(`/workflow/instances/${id}`);
+  },
+  async findBySubject(subjectType: string, subjectId: string): Promise<WorkflowInstanceDto[]> {
+    return request<WorkflowInstanceDto[]>(
+      `/workflow/instances?subjectType=${subjectType}&subjectId=${subjectId}`,
+    );
+  },
+  async historyOf(instanceId: string): Promise<WorkflowHistoryEntry[]> {
+    return request<WorkflowHistoryEntry[]>(`/workflow/instances/${instanceId}/history`);
+  },
+  async tasksOfInstance(instanceId: string): Promise<WorkflowTaskDto[]> {
+    return request<WorkflowTaskDto[]>(`/workflow/tasks/of-instance/${instanceId}`);
+  },
+  async tasksByRole(roleCode: string): Promise<WorkflowTaskDto[]> {
+    return request<WorkflowTaskDto[]>(`/workflow/tasks/by-role?roleCode=${roleCode}`);
+  },
+  async claimTask(taskId: string): Promise<WorkflowTaskDto> {
+    return request<WorkflowTaskDto>(`/workflow/tasks/${taskId}/claim`, { method: "POST" });
+  },
+  async completeTask(
+    taskId: string,
+    payload: { actionCode: string; outcomeCode?: string; notes?: string },
+  ): Promise<WorkflowTaskDto> {
+    return request<WorkflowTaskDto>(`/workflow/tasks/${taskId}/complete`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Integration Adapter Framework + Monitoring + Operations Dashboard          */
+/* + Client Go-Live Configuration (Sprint 14.4)                              */
+/* -------------------------------------------------------------------------- */
+
+export type IntegrationAdapterType = "REST" | "SFTP" | "CSV" | "EXCEL" | "FILE_UPLOAD";
+
+export type ErrorClassification =
+  | "VALIDATION"
+  | "AUTHENTICATION"
+  | "TRANSIENT_NETWORK"
+  | "DATA_MAPPING"
+  | "EXTERNAL_SYSTEM"
+  | "CONFIGURATION"
+  | "UNKNOWN";
+
+export type IntegrationExecutionOutcome = "SUCCESS" | "FAILURE";
+
+export type IntegrationConfigurationDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  exchangeType: string;
+  adapterType: IntegrationAdapterType;
+  configJson: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type IntegrationExecutionDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  dataExchangeRecordId: string;
+  configurationId?: string;
+  adapterType?: IntegrationAdapterType;
+  attemptNumber: number;
+  outcome: IntegrationExecutionOutcome;
+  errorClassification?: ErrorClassification;
+  errorMessage?: string;
+  startedAt: string;
+  completedAt: string;
+  durationMs?: number;
+};
+
+export const integrationConfigurationApi = {
+  async forCompany(companyId: string): Promise<IntegrationConfigurationDto[]> {
+    return request<IntegrationConfigurationDto[]>(
+      `/integration/configurations?companyId=${companyId}`,
+    );
+  },
+  async create(payload: {
+    tenantId: string;
+    companyId: string;
+    exchangeType: string;
+    adapterType: IntegrationAdapterType;
+    configJson: string;
+  }): Promise<IntegrationConfigurationDto> {
+    return request<IntegrationConfigurationDto>("/integration/configurations", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async update(
+    id: string,
+    payload: { configJson?: string; active?: boolean },
+  ): Promise<IntegrationConfigurationDto> {
+    return request<IntegrationConfigurationDto>(`/integration/configurations/${id}`, {
+      method: "PATCH",
+      body: payload,
+    });
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/integration/configurations/${id}`, { method: "DELETE" });
+  },
+};
+
+export const integrationExecutionApi = {
+  async process(dataExchangeRecordId: string): Promise<IntegrationExecutionDto> {
+    return request<IntegrationExecutionDto>(
+      `/integration/executions/process/${dataExchangeRecordId}`,
+      { method: "POST" },
+    );
+  },
+  async historyOf(dataExchangeRecordId: string): Promise<IntegrationExecutionDto[]> {
+    return request<IntegrationExecutionDto[]>(
+      `/integration/executions/of-record/${dataExchangeRecordId}`,
+    );
+  },
+};
+
+export type IntegrationMonitoringSummary = {
+  companyId: string;
+  totalExecutions: number;
+  successCount: number;
+  failureCount: number;
+  byAdapterType: Partial<Record<IntegrationAdapterType, number>>;
+  byErrorClassification: Partial<Record<ErrorClassification, number>>;
+  recentFailures: IntegrationExecutionDto[];
+};
+
+export const integrationMonitoringApi = {
+  /** Returns null when the endpoint isn't available yet (404) instead of throwing. */
+  async summary(companyId: string): Promise<IntegrationMonitoringSummary | null> {
+    try {
+      return await request<IntegrationMonitoringSummary>(
+        `/integration/monitoring/summary?companyId=${companyId}`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+export type OperationsPipelineRow = {
+  payrollRunId: string;
+  companyId: string;
+  payrollRunStatus: string;
+  payrollRunCreatedAt: string;
+  clientApprovalInstanceStatus?: "RUNNING" | "COMPLETED" | "CANCELLED" | "ERROR";
+  clientApprovalStateCode?: string;
+  dataExchangeRecordId?: string;
+  dataExchangeStatus?: DataExchangeStatus;
+  lastIntegrationOutcome?: IntegrationExecutionOutcome;
+  acknowledged: boolean;
+};
+
+export type OperationsDashboardData = {
+  companyId: string;
+  rows: OperationsPipelineRow[];
+};
+
+export const operationsDashboardApi = {
+  /** Returns null when the endpoint isn't available yet (404) instead of throwing. */
+  async forCompany(companyId: string): Promise<OperationsDashboardData | null> {
+    try {
+      return await request<OperationsDashboardData>(
+        `/integration/operations-dashboard?companyId=${companyId}`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+export type ClientGoLiveStatus = "PLANNING" | "READY" | "LIVE" | "SUSPENDED";
+
+export type ClientGoLiveConfigurationDto = {
+  id: string;
+  tenantId: string;
+  clientId: string;
+  companyId: string;
+  goLiveDate?: string;
+  status: ClientGoLiveStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const clientGoLiveApi = {
+  /** Returns null when there's no go-live configuration yet for this company (404). */
+  async forCompany(companyId: string): Promise<ClientGoLiveConfigurationDto | null> {
+    try {
+      return await request<ClientGoLiveConfigurationDto>(
+        `/integration/golive/by-company?companyId=${companyId}`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+  async create(payload: {
+    tenantId: string;
+    clientId: string;
+    companyId: string;
+    goLiveDate?: string;
+    notes?: string;
+  }): Promise<ClientGoLiveConfigurationDto> {
+    return request<ClientGoLiveConfigurationDto>("/integration/golive", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async update(
+    id: string,
+    payload: { goLiveDate?: string; status?: ClientGoLiveStatus; notes?: string },
+  ): Promise<ClientGoLiveConfigurationDto> {
+    return request<ClientGoLiveConfigurationDto>(`/integration/golive/${id}`, {
+      method: "PATCH",
+      body: payload,
+    });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Roles / Permissions catalog (Sprint 2.3) — thin read-only fetchers backing */
+/* RoleMultiSelect and PermissionPicker; the Roles CRUD screen itself still   */
+/* goes through resourceApi("/roles") like any other CrudScreen resource.    */
+/* -------------------------------------------------------------------------- */
+
+export type PermissionDto = { id: string; code: string; description?: string };
+export type RoleDto = {
+  id: string;
+  tenantId?: string;
+  systemRole: boolean;
+  name: string;
+  description?: string;
+  permissions?: PermissionDto[];
+};
+
+export const rolesApi = {
+  async list(): Promise<RoleDto[]> {
+    return request<RoleDto[]>("/roles");
+  },
+};
+
+export const permissionsApi = {
+  async list(): Promise<PermissionDto[]> {
+    return request<PermissionDto[]>("/permissions");
+  },
+};
+
+export type RoleImpactResponse = {
+  roleId: string;
+  roleName: string;
+  systemRole: boolean;
+  assignedUserCount: number;
+  companies: { companyId: string; userCount: number }[];
+  departments: { orgUnitId: string; orgUnitCode: string; userCount: number }[];
+  pendingWorkflowTaskCount: number;
+  canDelete: boolean;
+};
+
+export const roleImpactApi = {
+  async of(roleId: string): Promise<RoleImpactResponse> {
+    return request<RoleImpactResponse>(`/roles/${roleId}/impact`);
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Employee Identity link/unlink/provision (Sprint 2.4) — admin-only actions */
+/* over an employee's linked platform login (Sprint 1.3 backend).            */
+/* -------------------------------------------------------------------------- */
+
+export const employeeIdentityApi = {
+  async link(
+    employeeId: string | number,
+    payload: { userId: string; reason?: string },
+  ): Promise<ResourceRecord> {
+    return request<ResourceRecord>(`/employees/${employeeId}/link-user`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async unlink(employeeId: string | number, payload: { reason?: string }): Promise<ResourceRecord> {
+    return request<ResourceRecord>(`/employees/${employeeId}/unlink-user`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async provisionUser(
+    employeeId: string | number,
+    payload: {
+      username: string;
+      email: string;
+      password: string;
+      roleIds?: string[];
+      enabled?: boolean;
+      reason?: string;
+    },
+  ): Promise<ResourceRecord> {
+    return request<ResourceRecord>(`/employees/${employeeId}/provision-user`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+};
+
+export type EmployeeIdentityHistoryEntry = {
+  id: string;
+  action: "LINK" | "UNLINK" | "PROVISION";
+  previousUserId?: string;
+  newUserId?: string;
+  reason?: string;
+  actorId?: string;
+  occurredAt: string;
+};
+
+export const employeeIdentityHistoryApi = {
+  async of(employeeId: string | number): Promise<EmployeeIdentityHistoryEntry[]> {
+    return request<EmployeeIdentityHistoryEntry[]>(`/employees/${employeeId}/identity-history`);
+  },
+};
+
+/**
+ * Self-service "my own employee record" (Sprint 2.4, §8.4). A 404 means no
+ * employee is linked; a 409 means the caller's login is linked in more than
+ * one company and must retry with ?companyId= — the backend's message lists
+ * the candidate company IDs as a comma-separated string (not structured
+ * JSON), per EmployeeService.getMe(); parsed client-side, matching the
+ * Sprint 1.3 SDD's own "minimal, not polished" framing of this edge case.
+ */
+export const employeeSelfApi = {
+  async me(companyId?: string): Promise<ResourceRecord | { conflictCompanyIds: string[] } | null> {
+    try {
+      return await request<ResourceRecord>(
+        companyId ? `/employees/me?companyId=${companyId}` : "/employees/me",
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      if (err instanceof ApiError && err.status === 409) {
+        const ids = err.message.match(/[0-9a-f-]{36}/gi) ?? [];
+        return { conflictCompanyIds: ids };
+      }
+      throw err;
+    }
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Tenant Access Grants (Sprint 2.2) — not a CrudScreen fit: grants are       */
+/* created/revoked, never edited, and list is per-user (GET ?userId=).       */
+/* -------------------------------------------------------------------------- */
+
+export type TenantAccessGrantDto = {
+  id: string;
+  userId: string;
+  tenantId: string;
+  grantedBy?: string;
+  reason: string;
+  expiresAt: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const tenantAccessGrantApi = {
+  async listForUser(userId: string): Promise<TenantAccessGrantDto[]> {
+    return request<TenantAccessGrantDto[]>(`/tenant-access-grants?userId=${userId}`);
+  },
+  async grant(payload: {
+    userId: string;
+    tenantId: string;
+    reason: string;
+    expiresAt: string;
+  }): Promise<TenantAccessGrantDto> {
+    return request<TenantAccessGrantDto>("/tenant-access-grants", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async revoke(id: string): Promise<TenantAccessGrantDto> {
+    return request<TenantAccessGrantDto>(`/tenant-access-grants/${id}/revoke`, {
+      method: "POST",
+    });
+  },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -227,11 +830,34 @@ export type ResourceListResult<T> = {
   unavailable: boolean;
 };
 
+export type ResourceApiOptions = {
+  /** Appended as a query string to the list call, e.g. { tenantId } for search endpoints
+   *  that bind tenantId from query params rather than the X-Tenant-Id header. */
+  extraQuery?: Record<string, string>;
+  /** Merged into create/update payloads for fields the backend requires but the UI
+   *  form doesn't collect (tenantId, companyId, ...). */
+  extraBody?: Record<string, unknown>;
+  /** The backend's update verb for this resource. Confirmed per-controller —
+   *  Users uses PUT, Employees and Organization use PATCH. Default: PATCH. */
+  updateMethod?: "PUT" | "PATCH";
+};
+
+function toQueryString(params?: Record<string, string>): string {
+  if (!params || Object.keys(params).length === 0) return "";
+  return `?${new URLSearchParams(params).toString()}`;
+}
+
 /**
  * Build a CRUD client for a REST resource. Missing endpoints (404) resolve
  * to `unavailable: true` so the UI can render "Coming soon" without crashing.
  */
-export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath: string) {
+export function resourceApi<T extends ResourceRecord = ResourceRecord>(
+  basePath: string,
+  opts: ResourceApiOptions = {},
+) {
+  const { extraQuery, extraBody, updateMethod = "PATCH" } = opts;
+  const qs = toQueryString(extraQuery);
+
   const normalize = (data: unknown): { items: T[]; total: number } => {
     if (Array.isArray(data)) return { items: data as T[], total: data.length };
     if (data && typeof data === "object") {
@@ -251,7 +877,7 @@ export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath:
   return {
     async list(signal?: AbortSignal): Promise<ResourceListResult<T>> {
       try {
-        const data = await request<unknown>(basePath, { signal });
+        const data = await request<unknown>(`${basePath}${qs}`, { signal });
         const { items, total } = normalize(data);
         return { items, total, unavailable: false };
       } catch (err) {
@@ -265,10 +891,13 @@ export function resourceApi<T extends ResourceRecord = ResourceRecord>(basePath:
       return request<T>(`${basePath}/${id}`);
     },
     async create(payload: Partial<T>): Promise<T> {
-      return request<T>(basePath, { method: "POST", body: payload });
+      return request<T>(basePath, { method: "POST", body: { ...extraBody, ...payload } });
     },
     async update(id: string | number, payload: Partial<T>): Promise<T> {
-      return request<T>(`${basePath}/${id}`, { method: "PUT", body: payload });
+      return request<T>(`${basePath}/${id}`, {
+        method: updateMethod,
+        body: { ...extraBody, ...payload },
+      });
     },
     async remove(id: string | number): Promise<void> {
       await request<void>(`${basePath}/${id}`, { method: "DELETE" });
@@ -290,19 +919,25 @@ export type DashboardSummary = {
 /**
  * Fetches consolidated dashboard counts.
  *
- * Preferred endpoint (to be implemented by the backend team):
- *   GET /api/dashboard/summary
- *   { "employees": 0, "users": 0, "departments": 0, "roles": 0 }
+ * Consolidated endpoint: there is no `/api/v1/dashboard/summary` on the
+ * current backend at all (the old Sprint-8.1.1 dashboard controller was
+ * removed in the mid-2026 architecture reset and never rebuilt) — the call
+ * below always 404s today and exists so the dashboard picks it up for free
+ * if/when the backend ships it.
  *
- * Fallback: if the consolidated endpoint returns 404, try individual count
- * endpoints for each card independently. Each card that has no backend
- * endpoint stays `null` and the UI renders "—" without blocking.
+ * Fallback: per-resource counts. `/employees` and `/roles` are both real,
+ * tenant-scoped endpoints (Sprint 1.1 / 1.4) — `tenantId` is the caller's
+ * resolved tenant (see useTenant()), falling back to DEFAULT_TENANT_ID only
+ * if not yet resolved. `/departments` has no backend endpoint at all
+ * (Organization concepts aren't a standalone list resource) and will always
+ * resolve to `null` — the UI renders "—" for that card without blocking the
+ * rest.
  *
  * Never throws: the dashboard must never be blocked by unimplemented endpoints.
  */
 export const dashboardApi = {
-  async summary(): Promise<DashboardSummary> {
-    // 1) Consolidated endpoint (preferred).
+  async summary(tenantId?: string): Promise<DashboardSummary> {
+    // 1) Consolidated endpoint (preferred, currently unimplemented — see above).
     try {
       const data = await request<Partial<DashboardSummary>>("/dashboard/summary");
       return {
@@ -311,17 +946,15 @@ export const dashboardApi = {
         departments: numOrNull(data.departments),
         roles: numOrNull(data.roles),
       };
-    } catch (err) {
-      if (!(err instanceof ApiError) || err.status !== 404) {
-        // Non-404 errors (network / auth / 5xx) still fall through to
-        // per-card fetches so partial data can render.
-      }
+    } catch {
+      // Falls through to per-card fetches below regardless of error type.
     }
 
     // 2) Fallback to per-resource counts. Each call is independent; a failure
     //    on one card leaves it as null (renders "—") without affecting others.
+    const effectiveTenantId = tenantId ?? DEFAULT_TENANT_ID;
     const [employees, users, departments, roles] = await Promise.all([
-      safeCount("/employees"),
+      safeCount(`/employees?tenantId=${effectiveTenantId}`),
       safeCount("/users"),
       safeCount("/departments"),
       safeCount("/roles"),

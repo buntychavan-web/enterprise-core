@@ -1,17 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { CrudScreen, type CrudField } from "@/components/ewos/CrudScreen";
+import { EmployeeIdentityPanel } from "@/components/ewos/EmployeeIdentityPanel";
+import { useTenant } from "@/lib/tenant-context";
 
+// Field names match com.ewos.employee.api.dto.HireEmployeeRequest / EmployeeResponse
+// exactly (Sprint 13 fix — the previous field set (employeeCode/email/designation/
+// department/location/notes) didn't correspond to any backend request field).
 const FIELDS: CrudField[] = [
-  { name: "employeeCode", label: "Employee Code", required: true, placeholder: "e.g. EMP-0001" },
+  {
+    name: "employeeNumber",
+    label: "Employee Number",
+    required: true,
+    placeholder: "e.g. EMP-0001",
+  },
   { name: "firstName", label: "First name", required: true },
   { name: "lastName", label: "Last name", required: true },
-  { name: "email", label: "Email", type: "email", required: true, placeholder: "name@company.com" },
+  { name: "middleName", label: "Middle name", listColumn: false },
+  {
+    name: "workEmail",
+    label: "Work email",
+    type: "email",
+    required: true,
+    placeholder: "name@company.com",
+  },
+  { name: "personalEmail", label: "Personal email", type: "email", listColumn: false },
   { name: "phone", label: "Phone", listColumn: false },
-  { name: "designation", label: "Designation", placeholder: "Job title" },
-  { name: "department", label: "Department" },
-  { name: "location", label: "Location", listColumn: false },
-  { name: "dateOfJoining", label: "Date of joining", listColumn: false, placeholder: "YYYY-MM-DD" },
-  { name: "notes", label: "Notes", type: "textarea", listColumn: false },
+  { name: "genderCode", label: "Gender code", listColumn: false },
+  {
+    name: "hireDate",
+    label: "Hire date",
+    required: true,
+    placeholder: "YYYY-MM-DD",
+  },
 ];
 
 export const Route = createFileRoute("/_app/employees")({
@@ -22,6 +43,12 @@ export const Route = createFileRoute("/_app/employees")({
 });
 
 function EmployeesPage() {
+  const { apiOptions } = useTenant();
+  const employeesApiOptions = useMemo(
+    () => ({ ...apiOptions, updateMethod: "PATCH" as const }),
+    [apiOptions],
+  );
+
   return (
     <CrudScreen
       title="Employees"
@@ -29,6 +56,10 @@ function EmployeesPage() {
       resourcePath="/employees"
       singular="Employee"
       fields={FIELDS}
+      apiOptions={employeesApiOptions}
+      extraRowActions={(row, reload) => (
+        <EmployeeIdentityPanel key={String(row.id)} employee={row} onChanged={reload} />
+      )}
     />
   );
 }

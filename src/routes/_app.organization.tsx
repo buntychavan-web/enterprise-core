@@ -1,17 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  Building2,
-  Briefcase,
-  Users,
-  BadgeCheck,
-  TrendingUp,
-  Wallet,
-  MapPin,
-  CalendarDays,
-  CalendarClock,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { Building2, Network } from "lucide-react";
 import { CrudScreen, type CrudField } from "@/components/ewos/CrudScreen";
+import type { ResourceApiOptions } from "@/lib/api-client";
+import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/organization")({
@@ -31,126 +23,88 @@ type ModuleDef = {
   fields: CrudField[];
 };
 
-const NAME_CODE: CrudField[] = [
-  { name: "code", label: "Code", required: true, placeholder: "e.g. HR-01" },
-  { name: "name", label: "Name", required: true },
-  { name: "description", label: "Description", type: "textarea", listColumn: false },
-];
-
+// Sprint 13 fix — the previous 9 tabs (Companies, Business Units, Departments,
+// Designations, Grades, Cost Centres, Locations, Holiday Calendars, Payroll
+// Calendars) pointed at endpoints that do not exist on the backend at all: the
+// Company Configuration sprint that would have modeled them was rejected during
+// the mid-2026 architecture reset and never rebuilt. Rather than leave 7 dead
+// "Coming soon" tabs, this screen now shows only the two resources the backend
+// actually implements (com.ewos.organization): Unit Types (a per-tenant metadata
+// dictionary — Department / Business Unit / Cost Centre / etc. are *data* here,
+// not separate tables) and Units (the hierarchical tree, each unit pointing at a
+// type by ID). See SPRINT_13_COMPLETION_REPORT.md for the full mismatch report.
 const MODULES: ModuleDef[] = [
   {
-    key: "company",
-    title: "Companies",
-    singular: "Company",
-    description: "Legal entities operating under this workforce.",
+    key: "unit-type",
+    title: "Unit Types",
+    singular: "Unit Type",
+    description:
+      "Per-tenant dictionary of organizational unit kinds (Department, Business Unit, Cost Centre, ...). Create the types you need here, then reference their ID when creating Units.",
     icon: Building2,
-    resourcePath: "/companies",
+    resourcePath: "/organization/unit-types",
     fields: [
-      { name: "code", label: "Code", required: true },
-      { name: "name", label: "Legal name", required: true },
-      { name: "taxId", label: "Tax ID" },
-      { name: "country", label: "Country" },
-      { name: "description", label: "Notes", type: "textarea", listColumn: false },
-    ],
-  },
-  {
-    key: "business-unit",
-    title: "Business Units",
-    singular: "Business Unit",
-    description: "Divisions, product lines, or business verticals.",
-    icon: Briefcase,
-    resourcePath: "/business-units",
-    fields: NAME_CODE,
-  },
-  {
-    key: "department",
-    title: "Departments",
-    singular: "Department",
-    description: "Functional departments within the organization.",
-    icon: Users,
-    resourcePath: "/departments",
-    fields: NAME_CODE,
-  },
-  {
-    key: "designation",
-    title: "Designations",
-    singular: "Designation",
-    description: "Job titles and roles.",
-    icon: BadgeCheck,
-    resourcePath: "/designations",
-    fields: NAME_CODE,
-  },
-  {
-    key: "grade",
-    title: "Grades",
-    singular: "Grade",
-    description: "Compensation grades and levels.",
-    icon: TrendingUp,
-    resourcePath: "/grades",
-    fields: [
-      { name: "code", label: "Code", required: true },
+      { name: "code", label: "Code", required: true, placeholder: "e.g. DEPARTMENT" },
       { name: "name", label: "Name", required: true },
-      { name: "level", label: "Level", type: "number" },
       { name: "description", label: "Description", type: "textarea", listColumn: false },
+      { name: "sortOrder", label: "Sort order", type: "number", listColumn: false },
     ],
   },
   {
-    key: "cost-centre",
-    title: "Cost Centres",
-    singular: "Cost Centre",
-    description: "Financial cost allocation buckets.",
-    icon: Wallet,
-    resourcePath: "/cost-centres",
-    fields: NAME_CODE,
-  },
-  {
-    key: "location",
-    title: "Locations",
-    singular: "Location",
-    description: "Offices, sites, and remote hubs.",
-    icon: MapPin,
-    resourcePath: "/locations",
+    key: "unit",
+    title: "Units",
+    singular: "Unit",
+    description:
+      "The hierarchical organization tree. Each unit references a Unit Type by ID (create the type first).",
+    icon: Network,
+    resourcePath: "/organization/units",
     fields: [
-      { name: "code", label: "Code", required: true },
+      { name: "code", label: "Code", required: true, placeholder: "e.g. HR-01" },
       { name: "name", label: "Name", required: true },
-      { name: "city", label: "City" },
-      { name: "country", label: "Country" },
-      { name: "description", label: "Address", type: "textarea", listColumn: false },
-    ],
-  },
-  {
-    key: "holiday-calendar",
-    title: "Holiday Calendars",
-    singular: "Holiday Calendar",
-    description: "Regional holiday schedules.",
-    icon: CalendarDays,
-    resourcePath: "/holiday-calendars",
-    fields: [
-      { name: "code", label: "Code", required: true },
-      { name: "name", label: "Name", required: true },
-      { name: "year", label: "Year", type: "number" },
-      { name: "description", label: "Description", type: "textarea", listColumn: false },
-    ],
-  },
-  {
-    key: "payroll-calendar",
-    title: "Payroll Calendars",
-    singular: "Payroll Calendar",
-    description: "Pay periods and cycle definitions.",
-    icon: CalendarClock,
-    resourcePath: "/payroll-calendars",
-    fields: [
-      { name: "code", label: "Code", required: true },
-      { name: "name", label: "Name", required: true },
-      { name: "frequency", label: "Frequency", placeholder: "Monthly / Bi-weekly" },
+      {
+        name: "unitTypeId",
+        label: "Unit Type ID",
+        required: true,
+        placeholder: "UUID from the Unit Types tab",
+      },
+      {
+        name: "parentId",
+        label: "Parent Unit ID",
+        listColumn: false,
+        placeholder: "UUID, optional",
+      },
+      {
+        name: "effectiveFrom",
+        label: "Effective from",
+        required: true,
+        placeholder: "YYYY-MM-DD",
+      },
+      { name: "countryCode", label: "Country code", listColumn: false, placeholder: "e.g. IN" },
+      { name: "costCenterCode", label: "Cost centre code", listColumn: false },
       { name: "description", label: "Description", type: "textarea", listColumn: false },
     ],
   },
 ];
 
 function OrganizationPage() {
-  const [active, setActive] = useState(MODULES[2].key); // Departments default
+  const [active, setActive] = useState(MODULES[0].key);
   const current = MODULES.find((m) => m.key === active)!;
+  const { tenantId, apiOptions } = useTenant();
+
+  // "unit-type" is a per-tenant dictionary — no companyId. "unit" needs both
+  // tenantId (query, for the search endpoint) and companyId (body) — see the
+  // Sprint 13 note above on why these two resources differ.
+  const unitTypeApiOptions = useMemo<ResourceApiOptions>(
+    () => ({
+      extraBody: tenantId ? { tenantId } : undefined,
+      updateMethod: "PATCH",
+    }),
+    [tenantId],
+  );
+  const unitApiOptions = useMemo<ResourceApiOptions>(
+    () => ({ ...apiOptions, updateMethod: "PATCH" }),
+    [apiOptions],
+  );
+  const currentApiOptions = current.key === "unit" ? unitApiOptions : unitTypeApiOptions;
 
   return (
     <div className="space-y-6">
@@ -195,6 +149,7 @@ function OrganizationPage() {
         resourcePath={current.resourcePath}
         singular={current.singular}
         fields={current.fields}
+        apiOptions={currentApiOptions}
       />
     </div>
   );

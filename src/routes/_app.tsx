@@ -1,19 +1,28 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  Activity,
+  ArrowLeftRight,
   Bell,
   Building2,
   CalendarDays,
+  ClipboardCheck,
   Clock,
   Contact2,
   HelpCircle,
+  Landmark,
   LayoutDashboard,
   Megaphone,
   Menu,
+  Network,
   PartyPopper,
+  Rocket,
+  ScrollText,
+  ShieldCheck,
   Users as UsersIcon,
   UserSquare2,
   Wallet,
+  Workflow as WorkflowIcon,
   X,
 } from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
@@ -26,6 +35,14 @@ import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { displayName, initials } from "@/lib/api-client";
+import { TenantProvider, useTenant } from "@/lib/tenant-context";
+
+// Sprint 14.1 / 2.1 — Company Switcher backend integration. GET /api/v1/companies
+// is already Chinese-Wall filtered server-side to the companies under the
+// caller's accessible clients. Sprint 2.1 lifted the companies/activeCompanyId
+// state out of this route into TenantProvider (lib/tenant-context.tsx) so
+// sibling routes (Employees, Organization) can consume the active tenant and
+// company via useTenant() instead of hardcoding DEFAULT_TENANT_ID/DEFAULT_COMPANY_ID.
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
@@ -43,20 +60,51 @@ const NAV = [
   { to: "/announcements", label: "Announcements", icon: Megaphone },
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/organization", label: "Organization", icon: Building2 },
+  { to: "/tenant-management", label: "Tenant Management", icon: Landmark },
+  { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
+  { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
+  { to: "/data-exchange", label: "Data Exchange", icon: ArrowLeftRight },
+  { to: "/client-approvals", label: "Client Approvals", icon: ClipboardCheck },
+  { to: "/integration-configurations", label: "Integration Configurations", icon: Network },
+  { to: "/integration-monitoring", label: "Integration Monitoring", icon: Activity },
+  { to: "/operations-dashboard", label: "Operations Dashboard", icon: WorkflowIcon },
+  { to: "/client-golive", label: "Client Go-Live", icon: Rocket },
   { to: "/users", label: "Users", icon: UsersIcon },
+  { to: "/roles", label: "Roles", icon: ShieldCheck },
+  { to: "/audit-history", label: "Audit History", icon: ClipboardCheck },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;
 
 function AppShell() {
-  const { isAuthenticated, isInitializing, user, logout } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
       navigate({ to: "/login", replace: true });
     }
   }, [isAuthenticated, isInitializing, navigate]);
+
+  if (isInitializing || !isAuthenticated) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
+
+  return (
+    <TenantProvider>
+      <AppShellContent />
+    </TenantProvider>
+  );
+}
+
+function AppShellContent() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { companies, activeCompanyId, selectCompany } = useTenant();
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -66,14 +114,6 @@ function AppShell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
-
-  if (isInitializing || !isAuthenticated) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-dvh bg-muted/30 text-foreground">
@@ -148,7 +188,11 @@ function AppShell() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <CompanySwitcher />
+          <CompanySwitcher
+            companies={companies}
+            activeId={activeCompanyId}
+            onSelect={selectCompany}
+          />
           <div className="mx-2 hidden flex-1 sm:block">
             <GlobalSearch />
           </div>

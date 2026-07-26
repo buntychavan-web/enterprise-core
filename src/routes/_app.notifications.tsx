@@ -9,6 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NOTIFICATIONS, type AppNotification } from "@/lib/mock/self-service";
 
+// Sprint 13: intentionally left mocked. com.ewos.notification on the backend
+// is a package stub only — package-info.java, 0 controllers, 0 endpoints, no
+// notifications table. Several modules (Workflow, Employee, Organization,
+// Attendance, Leave, Payroll) already publish domain events to Kafka topics
+// that a real Notifications module would consume, but nothing consumes them
+// yet. Per Sprint 13 scope ("do NOT build the Notification module"), this
+// screen stays on mock data — see SPRINT_13_COMPLETION_REPORT.md.
+
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
     meta: [
@@ -48,6 +56,15 @@ function NotificationsPage() {
           </Button>
         }
       />
+
+      <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <Bell className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          Mock data — the backend has no Notifications module yet (
+          <code className="font-mono">com.ewos.notification</code> is an empty package stub). Not in
+          scope for Sprint 13; see SPRINT_13_COMPLETION_REPORT.md.
+        </span>
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">

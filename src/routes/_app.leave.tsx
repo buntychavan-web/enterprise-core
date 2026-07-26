@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { CalendarPlus, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, ClipboardList, Loader2, RefreshCw, Tag } from "lucide-react";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
+import { EmptyState } from "@/components/ewos/EmptyState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,14 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -31,235 +21,256 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LEAVE_BALANCES, LEAVE_REQUESTS, type LeaveRequest } from "@/lib/mock/self-service";
-import { toast } from "sonner";
+import { resourceApi, DEFAULT_TENANT_ID, type ResourceRecord } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_app/leave")({
   head: () => ({
     meta: [
       { title: "Leave — EWOS" },
-      { name: "description", content: "Leave balances, requests and approvals." },
+      { name: "description", content: "Leave types and requests." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: LeavePage,
 });
 
-const TONE: Record<LeaveRequest["status"], StatusTone> = {
-  Approved: "success",
-  Pending: "warning",
-  Rejected: "danger",
+// Sprint 13 fix — the previous "Apply for leave" dialog only ever wrote to
+// local React state; it never called a backend endpoint, mock or otherwise.
+// A real submission requires resolving "my employee" from the logged-in
+// user (no such link exists in the backend — see Employees/Attendance notes)
+// and driving the Workflow engine, which is new interactive business logic
+// out of scope for a stabilization sprint. This screen now shows the real,
+// tenant-wide Leave Types and Leave Requests (by status) the backend
+// provides; the apply flow is removed rather than left mocked-and-broken.
+// See SPRINT_13_COMPLETION_REPORT.md.
+
+type LeaveTypeRow = ResourceRecord & {
+  code?: string;
+  name?: string;
+  paid?: boolean;
+  accrualDaysPerYear?: number;
+  maxBalanceDays?: number;
+  carryForwardDays?: number;
+  requiresApproval?: boolean;
+  minNoticeDays?: number;
+  active?: boolean;
 };
 
+type LeaveRequestRow = ResourceRecord & {
+  employeeId?: string;
+  leaveTypeCode?: string;
+  startDate?: string;
+  endDate?: string;
+  daysRequested?: number;
+  reason?: string;
+  status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
+};
+
+const STATUSES = ["SUBMITTED", "APPROVED", "REJECTED", "CANCELLED", "DRAFT"] as const;
+const STATUS_TONE: Record<(typeof STATUSES)[number], StatusTone> = {
+  SUBMITTED: "info",
+  APPROVED: "success",
+  REJECTED: "danger",
+  CANCELLED: "neutral",
+  DRAFT: "neutral",
+};
+
+const leaveTypesApi = resourceApi<LeaveTypeRow>("/leave/types");
+
 function LeavePage() {
-  const [open, setOpen] = useState(false);
-  const [requests, setRequests] = useState<LeaveRequest[]>(LEAVE_REQUESTS);
+  const [types, setTypes] = useState<LeaveTypeRow[]>([]);
+  const [typesLoading, setTypesLoading] = useState(true);
+  const [typesUnavailable, setTypesUnavailable] = useState(false);
+
+  const [status, setStatus] = useState<(typeof STATUSES)[number]>("SUBMITTED");
+  const [requests, setRequests] = useState<LeaveRequestRow[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsUnavailable, setRequestsUnavailable] = useState(false);
+
+  const loadTypes = async () => {
+    setTypesLoading(true);
+    const res = await leaveTypesApi.list();
+    setTypes(res.items);
+    setTypesUnavailable(res.unavailable);
+    setTypesLoading(false);
+  };
+
+  const loadRequests = async (s: (typeof STATUSES)[number]) => {
+    setRequestsLoading(true);
+    const api = resourceApi<LeaveRequestRow>("/leave/requests", { extraQuery: { status: s } });
+    const res = await api.list();
+    setRequests(res.items);
+    setRequestsUnavailable(res.unavailable);
+    setRequestsLoading(false);
+  };
+
+  useEffect(() => {
+    loadTypes();
+  }, []);
+
+  useEffect(() => {
+    loadRequests(status);
+  }, [status]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Time-off"
         title="Leave"
-        description="Track balances, apply for leave and monitor approvals."
-        actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-1.5 h-4 w-4" /> Apply for leave
-              </Button>
-            </DialogTrigger>
-            <ApplyLeaveDialog
-              onSubmit={(req) => {
-                setRequests((xs) => [req, ...xs]);
-                setOpen(false);
-                toast.success("Leave request submitted", {
-                  description: `${req.days} day(s) awaiting approval.`,
-                });
-              }}
-            />
-          </Dialog>
-        }
+        description={`Live leave types and requests for tenant ${DEFAULT_TENANT_ID} (placeholder — see Sprint 13 report).`}
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {LEAVE_BALANCES.map((b) => (
-          <Card key={b.type}>
-            <CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">{b.type}</div>
-              <div className="mt-1 flex items-baseline gap-1">
-                <span className="text-2xl font-semibold tabular-nums">{b.balance}</span>
-                <span className="text-xs text-muted-foreground">/ {b.entitled} days</span>
-              </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-primary"
-                  style={{ width: `${(b.used / b.entitled) * 100}%` }}
-                />
-              </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>Used {b.used}</span>
-                <span>Pending {b.pending}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">My requests</CardTitle>
+        <CardHeader className="flex-row items-center justify-between pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Tag className="h-4 w-4" />
+            Leave types
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={loadTypes} disabled={typesLoading}>
+            <RefreshCw className={`h-4 w-4 ${typesLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="hidden md:block">
+          {typesLoading ? (
+            <div className="grid place-items-center p-10 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : typesUnavailable ? (
+            <EmptyState
+              title="Coming soon"
+              description="GET /api/v1/leave/types is not yet available on the backend."
+            />
+          ) : types.length === 0 ? (
+            <EmptyState
+              title="No leave types yet"
+              description="No leave types have been created for this tenant."
+            />
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ref</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Paid</TableHead>
+                  <TableHead className="text-right">Accrual/yr</TableHead>
+                  <TableHead className="text-right">Max balance</TableHead>
+                  <TableHead>Requires approval</TableHead>
+                  <TableHead>Active</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {types.map((t) => (
+                  <TableRow key={String(t.id)}>
+                    <TableCell className="font-medium">{t.code ?? "—"}</TableCell>
+                    <TableCell>{t.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <StatusChip tone={t.paid ? "success" : "neutral"}>
+                        {t.paid ? "Paid" : "Unpaid"}
+                      </StatusChip>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {t.accrualDaysPerYear ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {t.maxBalanceDays ?? "—"}
+                    </TableCell>
+                    <TableCell>{t.requiresApproval ? "Yes" : "No"}</TableCell>
+                    <TableCell>
+                      <StatusChip tone={t.active ? "success" : "neutral"}>
+                        {t.active ? "Active" : "Inactive"}
+                      </StatusChip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <ClipboardList className="h-4 w-4" />
+            Leave requests
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Select value={status} onValueChange={(v) => setStatus(v as (typeof STATUSES)[number])}>
+              <SelectTrigger className="h-8 w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadRequests(status)}
+              disabled={requestsLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${requestsLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {requestsLoading ? (
+            <div className="grid place-items-center p-10 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : requestsUnavailable ? (
+            <EmptyState
+              title="Coming soon"
+              description="GET /api/v1/leave/requests is not yet available on the backend."
+            />
+          ) : requests.length === 0 ? (
+            <EmptyState
+              title={`No ${status.toLowerCase()} requests`}
+              description="Try a different status filter."
+              icon={CalendarDays}
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>From</TableHead>
                   <TableHead>To</TableHead>
                   <TableHead className="text-right">Days</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Approver</TableHead>
-                  <TableHead>Applied</TableHead>
+                  <TableHead>Reason</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {requests.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.id}</TableCell>
-                    <TableCell>{r.type}</TableCell>
-                    <TableCell>{r.from}</TableCell>
-                    <TableCell>{r.to}</TableCell>
-                    <TableCell className="text-right tabular-nums">{r.days}</TableCell>
-                    <TableCell>
-                      <StatusChip tone={TONE[r.status]}>{r.status}</StatusChip>
+                  <TableRow key={String(r.id)}>
+                    <TableCell className="font-mono text-xs">{r.employeeId ?? "—"}</TableCell>
+                    <TableCell>{r.leaveTypeCode ?? "—"}</TableCell>
+                    <TableCell>{r.startDate ?? "—"}</TableCell>
+                    <TableCell>{r.endDate ?? "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {r.daysRequested ?? "—"}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{r.approver}</TableCell>
-                    <TableCell className="text-muted-foreground">{r.appliedOn}</TableCell>
+                    <TableCell>
+                      {r.status && <StatusChip tone={STATUS_TONE[r.status]}>{r.status}</StatusChip>}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.reason ?? "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </div>
-
-          <ul className="divide-y divide-border md:hidden">
-            {requests.map((r) => (
-              <li key={r.id} className="px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{r.type}</div>
-                  <StatusChip tone={TONE[r.status]}>{r.status}</StatusChip>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {r.from} → {r.to} · {r.days} day(s)
-                </div>
-                <div className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {r.id} · Applied {r.appliedOn}
-                </div>
-              </li>
-            ))}
-          </ul>
+          )}
         </CardContent>
       </Card>
     </div>
   );
-}
-
-function ApplyLeaveDialog({ onSubmit }: { onSubmit: (r: LeaveRequest) => void }) {
-  const [type, setType] = useState("Casual Leave");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [reason, setReason] = useState("");
-
-  const days = calcDays(from, to);
-
-  return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <CalendarPlus className="h-4 w-4" /> Apply for leave
-        </DialogTitle>
-      </DialogHeader>
-      <form
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!from || !to) return;
-          onSubmit({
-            id: `LR-${Math.floor(Math.random() * 9000 + 1000)}`,
-            type,
-            from,
-            to,
-            days,
-            reason: reason || "—",
-            status: "Pending",
-            approver: "Priya Nair",
-            appliedOn: new Date().toISOString().slice(0, 10),
-          });
-        }}
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>Leave type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LEAVE_BALANCES.map((b) => (
-                  <SelectItem key={b.type} value={b.type}>
-                    {b.type} · {b.balance} left
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="from">From</Label>
-            <Input
-              id="from"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="to">To</Label>
-            <Input
-              id="to"
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="reason">Reason</Label>
-            <Textarea
-              id="reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Brief reason for the leave"
-            />
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {from && to ? `${days} day(s) will be requested.` : "Select from and to dates."}
-        </div>
-        <DialogFooter>
-          <Button type="submit" disabled={!from || !to}>
-            Submit request
-          </Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  );
-}
-
-function calcDays(a: string, b: string) {
-  if (!a || !b) return 0;
-  const d = (new Date(b).getTime() - new Date(a).getTime()) / (1000 * 60 * 60 * 24);
-  return Math.max(1, Math.floor(d) + 1);
 }

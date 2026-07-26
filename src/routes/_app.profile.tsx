@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Mail, ShieldCheck, User } from "lucide-react";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatusChip } from "@/components/ewos/StatusChip";
+import { MyEmployeeCard } from "@/components/ewos/MyEmployeeCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
@@ -61,9 +62,11 @@ function ProfilePage() {
           <Field label="Username" value={user?.username ?? "—"} />
           <Field label="Full name" value={name} />
           <Field label="Email" value={user?.email ?? "—"} />
-          <Field label="User ID" value={String(user?.id ?? "—")} />
+          <Field label="User ID" value={String(user?.userId ?? user?.id ?? "—")} />
         </CardContent>
       </Card>
+
+      <MyEmployeeCard />
 
       <Card>
         <CardHeader className="pb-2">

@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
 import { useAuth, DEMO_CREDENTIALS } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
+import { isDemoLoginEnabled } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,16 @@ function LoginPage() {
             <CardDescription>Enter your credentials to access your workspace.</CardDescription>
           </CardHeader>
           <CardContent>
+            {isDemoLoginEnabled && (
+              <Alert className="mb-4 border-amber-500/50 text-amber-700 dark:text-amber-400">
+                <AlertTitle>Demo Login is enabled</AlertTitle>
+                <AlertDescription>
+                  This build accepts the demo account without contacting the backend. Never enable
+                  this in Production.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {formError && (
               <Alert variant="destructive" className="mb-4">
                 <AlertTitle>Sign in failed</AlertTitle>
@@ -145,45 +156,44 @@ function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 space-y-3">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+            {isDemoLoginEnabled && (
+              <div className="mt-6 space-y-3">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Preview</span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Preview</span>
-                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={submitting}
+                  onClick={async () => {
+                    setFormError(null);
+                    setSubmitting(true);
+                    try {
+                      await loginAsDemo(remember);
+                      navigate({ to: "/dashboard", replace: true });
+                    } catch (err) {
+                      setFormError(err instanceof Error ? err.message : "Demo sign in failed.");
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                >
+                  Continue with demo account
+                </Button>
+
+                <p className="text-center text-xs text-muted-foreground">
+                  Demo credentials: <code className="font-mono">{DEMO_CREDENTIALS.username}</code> /{" "}
+                  <code className="font-mono">{DEMO_CREDENTIALS.password}</code>
+                </p>
               </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={submitting}
-                onClick={async () => {
-                  setFormError(null);
-                  setSubmitting(true);
-                  try {
-                    await loginAsDemo(remember);
-                    navigate({ to: "/dashboard", replace: true });
-                  } catch (err) {
-                    setFormError(
-                      err instanceof Error ? err.message : "Demo sign in failed.",
-                    );
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-              >
-                Continue with demo account
-              </Button>
-
-              <p className="text-center text-xs text-muted-foreground">
-                Demo credentials:{" "}
-                <code className="font-mono">{DEMO_CREDENTIALS.username}</code> /{" "}
-                <code className="font-mono">{DEMO_CREDENTIALS.password}</code>
-              </p>
-            </div>
+            )}
           </CardContent>
         </Card>
 

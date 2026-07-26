@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Loader2, Plus, RefreshCw, Search, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,25 +33,61 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { EmptyState } from "@/components/ewos/EmptyState";
-import { ApiError, resourceApi, type ResourceRecord } from "@/lib/api-client";
+import { RoleMultiSelect } from "@/components/ewos/RoleMultiSelect";
+import { PermissionPicker } from "@/components/ewos/PermissionPicker";
+import {
+  ApiError,
+  resourceApi,
+  type ResourceApiOptions,
+  type ResourceRecord,
+} from "@/lib/api-client";
 
 export type CrudField = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "email" | "number";
+  /** "role-multiselect"/"permission-multiselect" (Sprint 2.3, §6.4/§7.4 of the
+   *  Sprint 2 SDD) are additive: they read from `row[name]` (an array of
+   *  {id,...} objects, e.g. RoleSummary[]/PermissionResponse[]) and write to
+   *  "roleIds"/"permissionIds" respectively, regardless of `name` — matching
+   *  the backend's read-vs-write field-name split (UserResponse.roles vs.
+   *  UpdateUserRequest.roleIds). */
+  type?: "text" | "textarea" | "email" | "number" | "role-multiselect" | "permission-multiselect";
   required?: boolean;
   placeholder?: string;
   /** Show in the list table. */
   listColumn?: boolean;
+  /** Only sent (and only editable) on create — e.g. a password field the
+   *  backend's update DTO doesn't accept. Rendered disabled when editing. */
+  createOnly?: boolean;
 };
 
 export type CrudScreenProps = {
   title: string;
   description?: string;
-  /** e.g. "/departments" — mounted under /api by the client. */
+  /** e.g. "/employees" — mounted under /api/v1 by the client. */
   resourcePath: string;
   singular: string;
   fields: CrudField[];
+  /** tenantId/companyId query+body injection and the correct update verb
+   *  for this resource — see ResourceApiOptions in lib/api-client.ts. */
+  apiOptions?: ResourceApiOptions;
+  /** Sprint 2.3, §7.3 — impact-analysis-gated delete (e.g. Role Usage Impact
+   *  Analysis): fetched when the delete confirmation opens; if `canDelete` is
+   *  false the confirm button is disabled with `summary` as the explanation.
+   *  A UX safeguard only — the backend's own DELETE guard is still what
+   *  actually prevents an unsafe delete. */
+  deleteImpact?: (row: Row) => Promise<{ canDelete: boolean; summary: string }>;
+  /** Extra per-row controls rendered before Edit/Delete — e.g. Sprint 2.3's
+   *  inline enable/disable toggle on Users, or Sprint 2.4's Employee Identity
+   *  panel. `reload` re-fetches the list, for actions that change server
+   *  state outside the edit dialog. */
+  extraRowActions?: (row: Row, reload: () => void) => ReactNode;
+  /** Sprint 2.3, §7.3 — hide Edit/Delete for a row (e.g. system roles) that
+   *  the backend already rejects writes/deletes for; a read-only badge is
+   *  shown instead. Defense in depth, not the authorization mechanism. */
+  rowActionsDisabled?: (row: Row) => boolean;
+  /** Label shown in place of Edit/Delete when `rowActionsDisabled` is true. */
+  rowActionsDisabledLabel?: string;
 };
 
 type Row = ResourceRecord;
@@ -62,8 +98,16 @@ export function CrudScreen({
   resourcePath,
   singular,
   fields,
+  apiOptions,
+  deleteImpact,
+  extraRowActions,
+  rowActionsDisabled,
+  rowActionsDisabledLabel = "Read-only",
 }: CrudScreenProps) {
-  const api = useMemo(() => resourceApi(resourcePath), [resourcePath]);
+  // Callers must pass a stable (memoized) `apiOptions` object — a fresh
+  // literal on every render would thrash this memo and re-fetch on every
+  // render. useTenant()'s `apiOptions` is memoized for this reason.
+  const api = useMemo(() => resourceApi(resourcePath, apiOptions), [resourcePath, apiOptions]);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
@@ -74,6 +118,11 @@ export function CrudScreen({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [removingId, setRemovingId] = useState<string | number | null>(null);
+  const [impact, setImpact] = useState<{
+    loading: boolean;
+    canDelete: boolean;
+    summary: string;
+  } | null>(null);
 
   const columns = fields.filter((f) => f.listColumn !== false);
 
@@ -96,7 +145,7 @@ export function CrudScreen({
     load(ctrl.signal);
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourcePath]);
+  }, [api]);
 
   const filtered = query
     ? rows.filter((row) =>
@@ -114,7 +163,16 @@ export function CrudScreen({
   };
   const openEdit = (row: Row) => {
     setCreating(false);
-    setEditing({ ...row });
+    const next: Row = { ...row };
+    for (const f of fields) {
+      if (
+        (f.type === "role-multiselect" || f.type === "permission-multiselect") &&
+        Array.isArray(row[f.name])
+      ) {
+        next[f.name] = (row[f.name] as { id?: string | number }[]).map((r) => r.id);
+      }
+    }
+    setEditing(next);
   };
   const closeForm = () => {
     setEditing(null);
@@ -125,10 +183,19 @@ export function CrudScreen({
     if (!editing) return;
     const payload: Record<string, unknown> = {};
     for (const f of fields) {
+      if (f.createOnly && !creating) continue;
       const raw = editing[f.name];
       if (f.required && (raw === undefined || raw === null || raw === "")) {
         toast.error(`${f.label} is required`);
         return;
+      }
+      if (f.type === "role-multiselect") {
+        payload.roleIds = Array.isArray(raw) ? raw : [];
+        continue;
+      }
+      if (f.type === "permission-multiselect") {
+        payload.permissionIds = Array.isArray(raw) ? raw : [];
+        continue;
       }
       if (raw !== undefined) {
         payload[f.name] = f.type === "number" && raw !== "" ? Number(raw) : raw;
@@ -158,6 +225,17 @@ export function CrudScreen({
     }
   };
 
+  const openDelete = (row: Row) => {
+    setDeleting(row);
+    if (deleteImpact) {
+      setImpact({ loading: true, canDelete: false, summary: "" });
+      deleteImpact(row).then(
+        (result) => setImpact({ loading: false, ...result }),
+        () => setImpact({ loading: false, canDelete: true, summary: "" }),
+      );
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleting?.id) return;
     setRemovingId(deleting.id);
@@ -165,6 +243,7 @@ export function CrudScreen({
       await api.remove(deleting.id);
       toast.success(`${singular} deleted`);
       setDeleting(null);
+      setImpact(null);
       await load();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Delete failed.");
@@ -216,7 +295,7 @@ export function CrudScreen({
         ) : unavailable ? (
           <EmptyState
             title="Coming soon"
-            description={`The ${title} endpoint (GET /api${resourcePath}) is not yet available on the backend. The screen is ready and will populate once the backend team ships it.`}
+            description={`The ${title} endpoint (GET /api/v1${resourcePath}) is not yet available on the backend. The screen is ready and will populate once the backend team ships it.`}
           />
         ) : error ? (
           <div className="p-8 text-center">
@@ -262,22 +341,31 @@ export function CrudScreen({
                       </TableCell>
                     ))}
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(row)}
-                        aria-label={`Edit ${singular}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(row)}
-                        aria-label={`Delete ${singular}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {extraRowActions?.(row, () => load())}
+                      {rowActionsDisabled?.(row) ? (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                          {rowActionsDisabledLabel}
+                        </span>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(row)}
+                            aria-label={`Edit ${singular}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openDelete(row)}
+                            aria-label={`Delete ${singular}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -305,11 +393,22 @@ export function CrudScreen({
                     {f.label}
                     {f.required && <span className="ml-0.5 text-destructive">*</span>}
                   </Label>
-                  {f.type === "textarea" ? (
+                  {f.type === "role-multiselect" ? (
+                    <RoleMultiSelect
+                      value={(editing[f.name] as string[] | undefined) ?? []}
+                      onChange={(ids) => setEditing({ ...editing, [f.name]: ids })}
+                    />
+                  ) : f.type === "permission-multiselect" ? (
+                    <PermissionPicker
+                      value={(editing[f.name] as string[] | undefined) ?? []}
+                      onChange={(ids) => setEditing({ ...editing, [f.name]: ids })}
+                    />
+                  ) : f.type === "textarea" ? (
                     <Textarea
                       id={f.name}
                       value={String(editing[f.name] ?? "")}
                       placeholder={f.placeholder}
+                      disabled={f.createOnly && !creating}
                       onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                     />
                   ) : (
@@ -318,6 +417,7 @@ export function CrudScreen({
                       type={f.type === "number" ? "number" : (f.type ?? "text")}
                       value={String(editing[f.name] ?? "")}
                       placeholder={f.placeholder}
+                      disabled={f.createOnly && !creating}
                       onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                     />
                   )}
@@ -337,7 +437,15 @@ export function CrudScreen({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleting !== null} onOpenChange={(o) => !o && setDeleting(null)}>
+      <AlertDialog
+        open={deleting !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setDeleting(null);
+            setImpact(null);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {singular.toLowerCase()}?</AlertDialogTitle>
@@ -345,6 +453,19 @@ export function CrudScreen({
               This action cannot be undone. The record will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {impact && (
+            <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+              {impact.loading ? (
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Checking usage impact…
+                </span>
+              ) : (
+                <span className={impact.canDelete ? "text-muted-foreground" : "text-destructive"}>
+                  {impact.summary}
+                </span>
+              )}
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={removingId !== null}>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -352,7 +473,9 @@ export function CrudScreen({
                 e.preventDefault();
                 void confirmDelete();
               }}
-              disabled={removingId !== null}
+              disabled={
+                removingId !== null || (impact !== null && (impact.loading || !impact.canDelete))
+              }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {removingId !== null && <Loader2 className="h-4 w-4 animate-spin" />}
