@@ -71,6 +71,7 @@ const NAV = [
   { to: "/client-golive", label: "Client Go-Live", icon: Rocket },
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/roles", label: "Roles", icon: ShieldCheck },
+  { to: "/audit-history", label: "Audit History", icon: ClipboardCheck },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;
 

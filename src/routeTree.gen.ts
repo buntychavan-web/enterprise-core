@@ -38,6 +38,7 @@ import { Route as AppDataExchangeRouteImport } from './routes/_app.data-exchange
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientGoliveRouteImport } from './routes/_app.client-golive'
 import { Route as AppClientApprovalsRouteImport } from './routes/_app.client-approvals'
+import { Route as AppAuditHistoryRouteImport } from './routes/_app.audit-history'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAboutRouteImport } from './routes/_app.about'
@@ -190,6 +191,11 @@ const AppClientApprovalsRoute = AppClientApprovalsRouteImport.update({
   path: '/client-approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAuditHistoryRoute = AppAuditHistoryRouteImport.update({
+  id: '/audit-history',
+  path: '/audit-history',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAttendanceRoute = AppAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/audit-history': typeof AppAuditHistoryRoute
   '/client-approvals': typeof AppClientApprovalsRoute
   '/client-golive': typeof AppClientGoliveRoute
   '/dashboard': typeof AppDashboardRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
+  '/audit-history': typeof AppAuditHistoryRoute
   '/client-approvals': typeof AppClientApprovalsRoute
   '/client-golive': typeof AppClientGoliveRoute
   '/dashboard': typeof AppDashboardRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/_app/about': typeof AppAboutRoute
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/attendance': typeof AppAttendanceRoute
+  '/_app/audit-history': typeof AppAuditHistoryRoute
   '/_app/client-approvals': typeof AppClientApprovalsRoute
   '/_app/client-golive': typeof AppClientGoliveRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/announcements'
     | '/attendance'
+    | '/audit-history'
     | '/client-approvals'
     | '/client-golive'
     | '/dashboard'
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/announcements'
     | '/attendance'
+    | '/audit-history'
     | '/client-approvals'
     | '/client-golive'
     | '/dashboard'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/_app/about'
     | '/_app/announcements'
     | '/_app/attendance'
+    | '/_app/audit-history'
     | '/_app/client-approvals'
     | '/_app/client-golive'
     | '/_app/dashboard'
@@ -634,6 +646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/audit-history': {
+      id: '/_app/audit-history'
+      path: '/audit-history'
+      fullPath: '/audit-history'
+      preLoaderRoute: typeof AppAuditHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/attendance': {
       id: '/_app/attendance'
       path: '/attendance'
@@ -681,6 +700,7 @@ interface AppRouteChildren {
   AppAboutRoute: typeof AppAboutRoute
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
+  AppAuditHistoryRoute: typeof AppAuditHistoryRoute
   AppClientApprovalsRoute: typeof AppClientApprovalsRoute
   AppClientGoliveRoute: typeof AppClientGoliveRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -710,6 +730,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAboutRoute: AppAboutRoute,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
+  AppAuditHistoryRoute: AppAuditHistoryRoute,
   AppClientApprovalsRoute: AppClientApprovalsRoute,
   AppClientGoliveRoute: AppClientGoliveRoute,
   AppDashboardRoute: AppDashboardRoute,

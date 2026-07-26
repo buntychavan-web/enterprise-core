@@ -12,9 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ApiError, employeeIdentityApi, type ResourceRecord } from "@/lib/api-client";
+import {
+  ApiError,
+  employeeIdentityApi,
+  employeeIdentityHistoryApi,
+  type ResourceRecord,
+} from "@/lib/api-client";
+import { HistoryTimeline, type HistoryEntry } from "@/components/ewos/HistoryTimeline";
 
-type Mode = "view" | "link" | "unlink" | "provision";
+type Mode = "view" | "link" | "unlink" | "provision" | "history";
 
 // Sprint 2.4, §8.4 — link/unlink/provision an employee's platform login.
 // Named actions with distinct payloads, not a generic CrudScreen form fit,
@@ -35,8 +41,36 @@ export function EmployeeIdentityPanel({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const linkedUserId = employee.userId as string | undefined;
+
+  const viewHistory = async () => {
+    setMode("history");
+    setHistoryLoading(true);
+    try {
+      const rows = await employeeIdentityHistoryApi.of(String(employee.id));
+      setHistory(
+        rows.map((r) => ({
+          id: r.id,
+          occurredAt: r.occurredAt,
+          actor: r.actorId,
+          action:
+            r.action === "LINK"
+              ? `Linked to user ${r.newUserId}`
+              : r.action === "UNLINK"
+                ? `Unlinked from user ${r.previousUserId}`
+                : `Provisioned and linked to new user ${r.newUserId}`,
+          notes: r.reason,
+        })),
+      );
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to load history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const reset = () => {
     setMode("view");
@@ -45,6 +79,7 @@ export function EmployeeIdentityPanel({
     setUsername("");
     setEmail("");
     setPassword("");
+    setHistory(null);
   };
 
   const runAction = async (fn: () => Promise<unknown>, successMessage: string) => {
@@ -104,6 +139,26 @@ export function EmployeeIdentityPanel({
                 </Button>
               </>
             )}
+            <Button variant="ghost" onClick={viewHistory}>
+              View history
+            </Button>
+          </div>
+        )}
+
+        {mode === "history" && (
+          <div className="space-y-3">
+            {historyLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              </div>
+            ) : (
+              <HistoryTimeline entries={history ?? []} />
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={reset}>
+                Back
+              </Button>
+            </DialogFooter>
           </div>
         )}
 
