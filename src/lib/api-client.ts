@@ -777,6 +777,157 @@ export const employeeSelfApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Employee & Manager Self-Service (Sprint 3) — reads/writes scoped to the   */
+/* caller's own linked employee record via new backend /self-service         */
+/* endpoints (com.ewos.leave/attendance/payroll), which require only         */
+/* authentication, not an admin-tier permission — mirroring GET /employees/me */
+/* (Sprint 1.3) exactly.                                                      */
+/* -------------------------------------------------------------------------- */
+
+export type LeaveTypeDto = {
+  id: string;
+  code: string;
+  name: string;
+  paid?: boolean;
+  minNoticeDays?: number;
+};
+
+export type LeaveRequestDto = {
+  id: string;
+  employeeId: string;
+  leaveTypeId: string;
+  leaveTypeCode?: string;
+  startDate: string;
+  endDate: string;
+  daysRequested: number;
+  reason?: string;
+  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
+  submittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  cancelledAt?: string;
+};
+
+export type LeaveBalanceDto = {
+  id: string;
+  leaveTypeId: string;
+  leaveTypeCode?: string;
+  year: number;
+  accruedDays: number;
+  consumedDays: number;
+  pendingDays: number;
+  adjustmentDays: number;
+  carryForwardDays: number;
+  availableDays: number;
+};
+
+export const leaveSelfServiceApi = {
+  async leaveTypes(): Promise<LeaveTypeDto[]> {
+    return request<LeaveTypeDto[]>("/leave/self-service/leave-types");
+  },
+  async myRequests(): Promise<LeaveRequestDto[]> {
+    return request<LeaveRequestDto[]>("/leave/self-service/requests");
+  },
+  async createRequest(payload: {
+    leaveTypeId: string;
+    startDate: string;
+    endDate: string;
+    reason?: string;
+  }): Promise<LeaveRequestDto> {
+    return request<LeaveRequestDto>("/leave/self-service/requests", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async cancelRequest(id: string): Promise<LeaveRequestDto> {
+    return request<LeaveRequestDto>(`/leave/self-service/requests/${id}/cancel`, {
+      method: "POST",
+    });
+  },
+  async myBalances(year?: number): Promise<LeaveBalanceDto[]> {
+    return request<LeaveBalanceDto[]>(`/leave/self-service/balances${year ? `?year=${year}` : ""}`);
+  },
+};
+
+export type TimeEntryDto = {
+  id: string;
+  eventType: "IN" | "OUT" | "BREAK_START" | "BREAK_END";
+  occurredAt: string;
+  location?: string;
+  notes?: string;
+};
+
+export type TimesheetDto = {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  workedHours?: number;
+  overtimeHours?: number;
+  breakHours?: number;
+  absenceHours?: number;
+  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
+};
+
+export const attendanceSelfServiceApi = {
+  async myRecentTimeEntries(): Promise<TimeEntryDto[]> {
+    return request<TimeEntryDto[]>("/attendance/self-service/time-entries");
+  },
+  async myTimesheets(): Promise<TimesheetDto[]> {
+    return request<TimesheetDto[]>("/attendance/self-service/timesheets");
+  },
+};
+
+export type PayslipDto = {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  payDate: string;
+  currency: string;
+  grossAmount: number;
+  deductionsAmount: number;
+  netAmount: number;
+  status: string;
+};
+
+export const payslipSelfServiceApi = {
+  async myPayslips(): Promise<PayslipDto[]> {
+    return request<PayslipDto[]>("/payroll/self-service/payslips");
+  },
+};
+
+export const employeeReportsApi = {
+  async myReports(): Promise<ResourceRecord[]> {
+    return request<ResourceRecord[]>("/employees/me/reports");
+  },
+};
+
+/**
+ * Manager Self-Service "pending approvals" (Sprint 3, FR8) reuses the existing
+ * admin approve/reject/byStatus endpoints as-is (LEAVE_READ/LEAVE_APPROVE
+ * still gate them server-side) — the My Team screen filters the results to
+ * the manager's own direct reports client-side. See the Sprint 3 SDD §8: this
+ * is a UI filter, not a new server-side manager-scoping rule.
+ */
+export const leaveApprovalsApi = {
+  async pending(): Promise<LeaveRequestDto[]> {
+    return request<LeaveRequestDto[]>("/leave/requests?status=SUBMITTED");
+  },
+  async approve(id: string, reason?: string): Promise<LeaveRequestDto> {
+    return request<LeaveRequestDto>(`/leave/requests/${id}/approve`, {
+      method: "POST",
+      body: { reason },
+    });
+  },
+  async reject(id: string, reason: string): Promise<LeaveRequestDto> {
+    return request<LeaveRequestDto>(`/leave/requests/${id}/reject`, {
+      method: "POST",
+      body: { reason },
+    });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Tenant Access Grants (Sprint 2.2) — not a CrudScreen fit: grants are       */
 /* created/revoked, never edited, and list is per-user (GET ?userId=).       */
 /* -------------------------------------------------------------------------- */

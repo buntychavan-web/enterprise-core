@@ -27,6 +27,10 @@ import { Route as AppOutsourcingRouteImport } from './routes/_app.outsourcing'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppOperationsDashboardRouteImport } from './routes/_app.operations-dashboard'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppMyTeamRouteImport } from './routes/_app.my-team'
+import { Route as AppMyPayslipsRouteImport } from './routes/_app.my-payslips'
+import { Route as AppMyLeaveRouteImport } from './routes/_app.my-leave'
+import { Route as AppMyAttendanceRouteImport } from './routes/_app.my-attendance'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppIntegrationMonitoringRouteImport } from './routes/_app.integration-monitoring'
 import { Route as AppIntegrationConfigurationsRouteImport } from './routes/_app.integration-configurations'
@@ -134,6 +138,26 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMyTeamRoute = AppMyTeamRouteImport.update({
+  id: '/my-team',
+  path: '/my-team',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyPayslipsRoute = AppMyPayslipsRouteImport.update({
+  id: '/my-payslips',
+  path: '/my-payslips',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyLeaveRoute = AppMyLeaveRouteImport.update({
+  id: '/my-leave',
+  path: '/my-leave',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
+  id: '/my-attendance',
+  path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeaveRoute = AppLeaveRouteImport.update({
   id: '/leave',
   path: '/leave',
@@ -236,6 +260,10 @@ export interface FileRoutesByFullPath {
   '/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
+  '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-leave': typeof AppMyLeaveRoute
+  '/my-payslips': typeof AppMyPayslipsRoute
+  '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
   '/operations-dashboard': typeof AppOperationsDashboardRoute
   '/organization': typeof AppOrganizationRoute
@@ -271,6 +299,10 @@ export interface FileRoutesByTo {
   '/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
+  '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-leave': typeof AppMyLeaveRoute
+  '/my-payslips': typeof AppMyPayslipsRoute
+  '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
   '/operations-dashboard': typeof AppOperationsDashboardRoute
   '/organization': typeof AppOrganizationRoute
@@ -308,6 +340,10 @@ export interface FileRoutesById {
   '/_app/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/_app/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/_app/leave': typeof AppLeaveRoute
+  '/_app/my-attendance': typeof AppMyAttendanceRoute
+  '/_app/my-leave': typeof AppMyLeaveRoute
+  '/_app/my-payslips': typeof AppMyPayslipsRoute
+  '/_app/my-team': typeof AppMyTeamRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/operations-dashboard': typeof AppOperationsDashboardRoute
   '/_app/organization': typeof AppOrganizationRoute
@@ -345,6 +381,10 @@ export interface FileRouteTypes {
     | '/integration-configurations'
     | '/integration-monitoring'
     | '/leave'
+    | '/my-attendance'
+    | '/my-leave'
+    | '/my-payslips'
+    | '/my-team'
     | '/notifications'
     | '/operations-dashboard'
     | '/organization'
@@ -380,6 +420,10 @@ export interface FileRouteTypes {
     | '/integration-configurations'
     | '/integration-monitoring'
     | '/leave'
+    | '/my-attendance'
+    | '/my-leave'
+    | '/my-payslips'
+    | '/my-team'
     | '/notifications'
     | '/operations-dashboard'
     | '/organization'
@@ -416,6 +460,10 @@ export interface FileRouteTypes {
     | '/_app/integration-configurations'
     | '/_app/integration-monitoring'
     | '/_app/leave'
+    | '/_app/my-attendance'
+    | '/_app/my-leave'
+    | '/_app/my-payslips'
+    | '/_app/my-team'
     | '/_app/notifications'
     | '/_app/operations-dashboard'
     | '/_app/organization'
@@ -569,6 +617,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/my-team': {
+      id: '/_app/my-team'
+      path: '/my-team'
+      fullPath: '/my-team'
+      preLoaderRoute: typeof AppMyTeamRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-payslips': {
+      id: '/_app/my-payslips'
+      path: '/my-payslips'
+      fullPath: '/my-payslips'
+      preLoaderRoute: typeof AppMyPayslipsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-leave': {
+      id: '/_app/my-leave'
+      path: '/my-leave'
+      fullPath: '/my-leave'
+      preLoaderRoute: typeof AppMyLeaveRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-attendance': {
+      id: '/_app/my-attendance'
+      path: '/my-attendance'
+      fullPath: '/my-attendance'
+      preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leave': {
       id: '/_app/leave'
       path: '/leave'
@@ -712,6 +788,10 @@ interface AppRouteChildren {
   AppIntegrationConfigurationsRoute: typeof AppIntegrationConfigurationsRoute
   AppIntegrationMonitoringRoute: typeof AppIntegrationMonitoringRoute
   AppLeaveRoute: typeof AppLeaveRoute
+  AppMyAttendanceRoute: typeof AppMyAttendanceRoute
+  AppMyLeaveRoute: typeof AppMyLeaveRoute
+  AppMyPayslipsRoute: typeof AppMyPayslipsRoute
+  AppMyTeamRoute: typeof AppMyTeamRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOperationsDashboardRoute: typeof AppOperationsDashboardRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
@@ -742,6 +822,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppIntegrationConfigurationsRoute: AppIntegrationConfigurationsRoute,
   AppIntegrationMonitoringRoute: AppIntegrationMonitoringRoute,
   AppLeaveRoute: AppLeaveRoute,
+  AppMyAttendanceRoute: AppMyAttendanceRoute,
+  AppMyLeaveRoute: AppMyLeaveRoute,
+  AppMyPayslipsRoute: AppMyPayslipsRoute,
+  AppMyTeamRoute: AppMyTeamRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOperationsDashboardRoute: AppOperationsDashboardRoute,
   AppOrganizationRoute: AppOrganizationRoute,
