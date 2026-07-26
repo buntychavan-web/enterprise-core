@@ -697,6 +697,86 @@ export const roleImpactApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Employee Identity link/unlink/provision (Sprint 2.4) — admin-only actions */
+/* over an employee's linked platform login (Sprint 1.3 backend).            */
+/* -------------------------------------------------------------------------- */
+
+export const employeeIdentityApi = {
+  async link(
+    employeeId: string | number,
+    payload: { userId: string; reason?: string },
+  ): Promise<ResourceRecord> {
+    return request<ResourceRecord>(`/employees/${employeeId}/link-user`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async unlink(employeeId: string | number, payload: { reason?: string }): Promise<ResourceRecord> {
+    return request<ResourceRecord>(`/employees/${employeeId}/unlink-user`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async provisionUser(
+    employeeId: string | number,
+    payload: {
+      username: string;
+      email: string;
+      password: string;
+      roleIds?: string[];
+      enabled?: boolean;
+      reason?: string;
+    },
+  ): Promise<ResourceRecord> {
+    return request<ResourceRecord>(`/employees/${employeeId}/provision-user`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+};
+
+export type EmployeeIdentityHistoryEntry = {
+  id: string;
+  action: "LINK" | "UNLINK" | "PROVISION";
+  previousUserId?: string;
+  newUserId?: string;
+  reason?: string;
+  actorId?: string;
+  occurredAt: string;
+};
+
+export const employeeIdentityHistoryApi = {
+  async of(employeeId: string | number): Promise<EmployeeIdentityHistoryEntry[]> {
+    return request<EmployeeIdentityHistoryEntry[]>(`/employees/${employeeId}/identity-history`);
+  },
+};
+
+/**
+ * Self-service "my own employee record" (Sprint 2.4, §8.4). A 404 means no
+ * employee is linked; a 409 means the caller's login is linked in more than
+ * one company and must retry with ?companyId= — the backend's message lists
+ * the candidate company IDs as a comma-separated string (not structured
+ * JSON), per EmployeeService.getMe(); parsed client-side, matching the
+ * Sprint 1.3 SDD's own "minimal, not polished" framing of this edge case.
+ */
+export const employeeSelfApi = {
+  async me(companyId?: string): Promise<ResourceRecord | { conflictCompanyIds: string[] } | null> {
+    try {
+      return await request<ResourceRecord>(
+        companyId ? `/employees/me?companyId=${companyId}` : "/employees/me",
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      if (err instanceof ApiError && err.status === 409) {
+        const ids = err.message.match(/[0-9a-f-]{36}/gi) ?? [];
+        return { conflictCompanyIds: ids };
+      }
+      throw err;
+    }
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Tenant Access Grants (Sprint 2.2) — not a CrudScreen fit: grants are       */
 /* created/revoked, never edited, and list is per-user (GET ?userId=).       */
 /* -------------------------------------------------------------------------- */
@@ -845,16 +925,18 @@ export type DashboardSummary = {
  * below always 404s today and exists so the dashboard picks it up for free
  * if/when the backend ships it.
  *
- * Fallback: per-resource counts. `/employees` requires a `tenantId` query
- * param (see DEFAULT_TENANT_ID note); `/departments` and `/roles` have no
- * backend endpoint at all (Company/Organization concepts, not implemented as
- * standalone list resources) and will always resolve to `null` — the UI
- * renders "—" for those cards without blocking the rest.
+ * Fallback: per-resource counts. `/employees` and `/roles` are both real,
+ * tenant-scoped endpoints (Sprint 1.1 / 1.4) — `tenantId` is the caller's
+ * resolved tenant (see useTenant()), falling back to DEFAULT_TENANT_ID only
+ * if not yet resolved. `/departments` has no backend endpoint at all
+ * (Organization concepts aren't a standalone list resource) and will always
+ * resolve to `null` — the UI renders "—" for that card without blocking the
+ * rest.
  *
  * Never throws: the dashboard must never be blocked by unimplemented endpoints.
  */
 export const dashboardApi = {
-  async summary(): Promise<DashboardSummary> {
+  async summary(tenantId?: string): Promise<DashboardSummary> {
     // 1) Consolidated endpoint (preferred, currently unimplemented — see above).
     try {
       const data = await request<Partial<DashboardSummary>>("/dashboard/summary");
@@ -870,8 +952,9 @@ export const dashboardApi = {
 
     // 2) Fallback to per-resource counts. Each call is independent; a failure
     //    on one card leaves it as null (renders "—") without affecting others.
+    const effectiveTenantId = tenantId ?? DEFAULT_TENANT_ID;
     const [employees, users, departments, roles] = await Promise.all([
-      safeCount(`/employees?tenantId=${DEFAULT_TENANT_ID}`),
+      safeCount(`/employees?tenantId=${effectiveTenantId}`),
       safeCount("/users"),
       safeCount("/departments"),
       safeCount("/roles"),

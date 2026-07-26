@@ -78,9 +78,10 @@ export type CrudScreenProps = {
    *  actually prevents an unsafe delete. */
   deleteImpact?: (row: Row) => Promise<{ canDelete: boolean; summary: string }>;
   /** Extra per-row controls rendered before Edit/Delete — e.g. Sprint 2.3's
-   *  inline enable/disable toggle on Users, a single-field frequent action
-   *  that bypasses the edit dialog. */
-  extraRowActions?: (row: Row) => ReactNode;
+   *  inline enable/disable toggle on Users, or Sprint 2.4's Employee Identity
+   *  panel. `reload` re-fetches the list, for actions that change server
+   *  state outside the edit dialog. */
+  extraRowActions?: (row: Row, reload: () => void) => ReactNode;
   /** Sprint 2.3, §7.3 — hide Edit/Delete for a row (e.g. system roles) that
    *  the backend already rejects writes/deletes for; a read-only badge is
    *  shown instead. Defense in depth, not the authorization mechanism. */
@@ -340,7 +341,7 @@ export function CrudScreen({
                       </TableCell>
                     ))}
                     <TableCell className="text-right">
-                      {extraRowActions?.(row)}
+                      {extraRowActions?.(row, () => load())}
                       {rowActionsDisabled?.(row) ? (
                         <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
                           {rowActionsDisabledLabel}

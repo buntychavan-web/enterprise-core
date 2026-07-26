@@ -33,6 +33,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { dashboardApi, type DashboardSummary } from "@/lib/api-client";
+import { useTenant } from "@/lib/tenant-context";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatCard } from "@/components/ewos/StatCard";
 import { StatusChip } from "@/components/ewos/StatusChip";
@@ -76,10 +77,11 @@ function DashboardPage() {
     roles: null,
   });
   const [loading, setLoading] = useState(true);
+  const { tenantId } = useTenant();
 
   useEffect(() => {
     let cancelled = false;
-    dashboardApi.summary().then((d) => {
+    dashboardApi.summary(tenantId).then((d) => {
       if (cancelled) return;
       setSummary(d);
       setLoading(false);
@@ -87,7 +89,7 @@ function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tenantId]);
 
   return (
     <div className="space-y-6">

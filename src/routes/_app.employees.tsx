@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { CrudScreen, type CrudField } from "@/components/ewos/CrudScreen";
+import { EmployeeIdentityPanel } from "@/components/ewos/EmployeeIdentityPanel";
 import { useTenant } from "@/lib/tenant-context";
 
 // Field names match com.ewos.employee.api.dto.HireEmployeeRequest / EmployeeResponse
@@ -56,6 +57,9 @@ function EmployeesPage() {
       singular="Employee"
       fields={FIELDS}
       apiOptions={employeesApiOptions}
+      extraRowActions={(row, reload) => (
+        <EmployeeIdentityPanel key={String(row.id)} employee={row} onChanged={reload} />
+      )}
     />
   );
 }
