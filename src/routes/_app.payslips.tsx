@@ -73,7 +73,7 @@ function money(n: number | undefined, currency: string | undefined) {
   }
 }
 
-function PayslipsPage() {
+export function PayslipsPage() {
   const [employeeId, setEmployeeId] = useState("");
   const [payslips, setPayslips] = useState<PayslipRow[] | null>(null);
   const [loading, setLoading] = useState(false);

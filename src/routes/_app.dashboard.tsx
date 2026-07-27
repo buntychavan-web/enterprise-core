@@ -69,7 +69,7 @@ const CHART_COLORS = [
   "var(--primary)",
 ];
 
-function DashboardPage() {
+export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary>({
     employees: null,
     users: null,

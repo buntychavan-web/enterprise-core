@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_app/employees")({
   component: EmployeesPage,
 });
 
-function EmployeesPage() {
+export function EmployeesPage() {
   const { apiOptions } = useTenant();
   const employeesApiOptions = useMemo(
     () => ({ ...apiOptions, updateMethod: "PATCH" as const }),

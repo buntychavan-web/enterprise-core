@@ -31,7 +31,17 @@ const failOnDemoLoginInProduction = {
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+    // Component tests live alongside their routes (src/routes/*.test.tsx) —
+    // keep the router's file-based scan from treating them as routes.
+    router: { routeFileIgnorePattern: "\\.test\\.tsx$" },
   },
+  // Production always deploys to Cloudflare Workers (the wrapper's own
+  // default) — `.output/server/index.mjs` there exports a `fetch` handler,
+  // not a process that listens on a port. Playwright's local e2e smoke suite
+  // needs to `node .output/server/index.mjs` and hit it over HTTP, so only
+  // that path (via NITRO_PRESET=node-server, set in playwright.config.ts)
+  // opts into Nitro's plain node-server preset instead.
+  ...(process.env.NITRO_PRESET === "node-server" ? { nitro: { preset: "node-server" } } : {}),
   vite: {
     plugins: [failOnDemoLoginInProduction],
     server: {

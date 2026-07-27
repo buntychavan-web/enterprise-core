@@ -42,7 +42,7 @@ const TYPE_LABEL: Record<NotificationDto["type"], string> = {
   GENERIC: "Notice",
 };
 
-function NotificationsPage() {
+export function NotificationsPage() {
   const [items, setItems] = useState<NotificationDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
