@@ -1,0 +1,15 @@
+node_modules
+.output
+.vinxi
+.tanstack
+.nitro
+.git
+.wrangler
+dist
+dist-ssr
+coverage
+test-results
+playwright-report
+.env
+.env.local
+*.log
