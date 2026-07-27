@@ -17,7 +17,6 @@ import { Route as DesignSystemOrganizationRouteImport } from './routes/design-sy
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTenantManagementRouteImport } from './routes/_app.tenant-management'
-import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRolesRouteImport } from './routes/_app.roles'
 import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
@@ -86,11 +85,6 @@ const AppUsersRoute = AppUsersRouteImport.update({
 const AppTenantManagementRoute = AppTenantManagementRouteImport.update({
   id: '/tenant-management',
   path: '/tenant-management',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTeamRoute = AppTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -273,7 +267,6 @@ export interface FileRoutesByFullPath {
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
-  '/team': typeof AppTeamRoute
   '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
@@ -312,7 +305,6 @@ export interface FileRoutesByTo {
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
-  '/team': typeof AppTeamRoute
   '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
@@ -353,7 +345,6 @@ export interface FileRoutesById {
   '/_app/provider-dashboard': typeof AppProviderDashboardRoute
   '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
-  '/_app/team': typeof AppTeamRoute
   '/_app/tenant-management': typeof AppTenantManagementRoute
   '/_app/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
@@ -394,7 +385,6 @@ export interface FileRouteTypes {
     | '/provider-dashboard'
     | '/roles'
     | '/settings'
-    | '/team'
     | '/tenant-management'
     | '/users'
     | '/api/$'
@@ -433,7 +423,6 @@ export interface FileRouteTypes {
     | '/provider-dashboard'
     | '/roles'
     | '/settings'
-    | '/team'
     | '/tenant-management'
     | '/users'
     | '/api/$'
@@ -473,7 +462,6 @@ export interface FileRouteTypes {
     | '/_app/provider-dashboard'
     | '/_app/roles'
     | '/_app/settings'
-    | '/_app/team'
     | '/_app/tenant-management'
     | '/_app/users'
     | '/api/$'
@@ -545,13 +533,6 @@ declare module '@tanstack/react-router' {
       path: '/tenant-management'
       fullPath: '/tenant-management'
       preLoaderRoute: typeof AppTenantManagementRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/team': {
-      id: '/_app/team'
-      path: '/team'
-      fullPath: '/team'
-      preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -801,7 +782,6 @@ interface AppRouteChildren {
   AppProviderDashboardRoute: typeof AppProviderDashboardRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppTeamRoute: typeof AppTeamRoute
   AppTenantManagementRoute: typeof AppTenantManagementRoute
   AppUsersRoute: typeof AppUsersRoute
 }
@@ -835,7 +815,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProviderDashboardRoute: AppProviderDashboardRoute,
   AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppTeamRoute: AppTeamRoute,
   AppTenantManagementRoute: AppTenantManagementRoute,
   AppUsersRoute: AppUsersRoute,
 }

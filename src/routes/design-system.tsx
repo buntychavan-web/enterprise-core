@@ -766,17 +766,6 @@ function LayoutSection() {
 
       <Example title="Notification panel">
         <NotificationPanel />
-        <NotificationPanel
-          notifications={[
-            {
-              id: "1",
-              title: "Payroll approved",
-              description: "October cycle",
-              createdAt: "5 min ago",
-            },
-            { id: "2", title: "New employee added", createdAt: "1 hr ago", read: true },
-          ]}
-        />
       </Example>
 
       <Example title="User menu">

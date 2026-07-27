@@ -18,6 +18,7 @@ import {
   ApiError,
   employeeReportsApi,
   leaveApprovalsApi,
+  leaveSelfServiceApi,
   type LeaveRequestDto,
   type ResourceRecord,
 } from "@/lib/api-client";
@@ -45,7 +46,10 @@ function MyTeamPage() {
       setReports([]);
     }
     try {
-      setPending(await leaveApprovalsApi.pending());
+      // Sprint 4 audit fix: server-side scoped to the caller's own reports and
+      // paginated, replacing the tenant-wide query + client-side reportIds filter.
+      const page = await leaveSelfServiceApi.pendingForMyReports(0, 50);
+      setPending(page.content);
       setPendingError(null);
     } catch (err) {
       // A manager may hold LEAVE_APPROVE without LEAVE_READ — degrade
@@ -77,8 +81,7 @@ function MyTeamPage() {
     }
   };
 
-  const reportIds = new Set((reports ?? []).map((r) => String(r.id)));
-  const pendingForReports = (pending ?? []).filter((p) => reportIds.has(p.employeeId));
+  const pendingForReports = pending ?? [];
 
   return (
     <div className="space-y-6">

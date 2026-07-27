@@ -63,6 +63,7 @@ function MyLeavePage() {
   const [error, setError] = useState<string | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -107,6 +108,19 @@ function MyLeavePage() {
 
   const cancellable = (status: LeaveRequestDto["status"]) =>
     status === "DRAFT" || status === "SUBMITTED";
+
+  const submit = async (id: string) => {
+    setSubmittingId(id);
+    try {
+      await leaveSelfServiceApi.submitRequest(id);
+      toast.success("Leave request submitted for approval");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to submit request.");
+    } finally {
+      setSubmittingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -175,7 +189,7 @@ function MyLeavePage() {
                         <TableHead>Dates</TableHead>
                         <TableHead>Days</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="w-20 text-right">Actions</TableHead>
+                        <TableHead className="w-36 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -190,6 +204,19 @@ function MyLeavePage() {
                             <StatusChip tone={STATUS_TONE[r.status]}>{r.status}</StatusChip>
                           </TableCell>
                           <TableCell className="text-right">
+                            {r.status === "DRAFT" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={submittingId === r.id}
+                                onClick={() => submit(r.id)}
+                              >
+                                {submittingId === r.id && (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                )}
+                                Submit
+                              </Button>
+                            )}
                             {cancellable(r.status) && (
                               <Button
                                 variant="ghost"
@@ -279,8 +306,7 @@ function ApplyDialog({
         <DialogHeader>
           <DialogTitle>Apply for leave</DialogTitle>
           <DialogDescription>
-            Creates a draft request. An administrator submits it for approval once your tenant's
-            approval workflow is configured.
+            Creates a draft request. Use "Submit" on the request once saved to send it for approval.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

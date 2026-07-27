@@ -42,7 +42,7 @@ type Nav = {
     | "/leave"
     | "/payslips"
     | "/notifications"
-    | "/team"
+    | "/my-team"
     | "/directory"
     | "/holidays"
     | "/announcements"
@@ -58,7 +58,7 @@ const NAV: Nav[] = [
   { label: "Attendance", to: "/attendance", icon: Clock, hint: "Daily punches" },
   { label: "Leave", to: "/leave", icon: CalendarDays, hint: "Balances & requests" },
   { label: "Payslips", to: "/payslips", icon: Wallet, hint: "Salary history" },
-  { label: "My Team", to: "/team", icon: UsersIcon, hint: "Manager & reports" },
+  { label: "My Team", to: "/my-team", icon: UsersIcon, hint: "Manager & reports" },
   { label: "Directory", to: "/directory", icon: Contact2, hint: "Company-wide people" },
   { label: "Holidays", to: "/holidays", icon: PartyPopper, hint: "Company calendar" },
   { label: "Announcements", to: "/announcements", icon: Megaphone, hint: "Latest news" },

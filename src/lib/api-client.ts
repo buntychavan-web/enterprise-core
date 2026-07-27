@@ -822,6 +822,15 @@ export type LeaveBalanceDto = {
   availableDays: number;
 };
 
+/** Shape of a Spring Data `Page<T>` response, used by the paginated self-service endpoints. */
+export type SpringPage<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+};
+
 export const leaveSelfServiceApi = {
   async leaveTypes(): Promise<LeaveTypeDto[]> {
     return request<LeaveTypeDto[]>("/leave/self-service/leave-types");
@@ -840,6 +849,12 @@ export const leaveSelfServiceApi = {
       body: payload,
     });
   },
+  /** Sprint 4: the tenant's active leave-approval workflow is resolved server-side. */
+  async submitRequest(id: string): Promise<LeaveRequestDto> {
+    return request<LeaveRequestDto>(`/leave/self-service/requests/${id}/submit`, {
+      method: "POST",
+    });
+  },
   async cancelRequest(id: string): Promise<LeaveRequestDto> {
     return request<LeaveRequestDto>(`/leave/self-service/requests/${id}/cancel`, {
       method: "POST",
@@ -847,6 +862,15 @@ export const leaveSelfServiceApi = {
   },
   async myBalances(year?: number): Promise<LeaveBalanceDto[]> {
     return request<LeaveBalanceDto[]>(`/leave/self-service/balances${year ? `?year=${year}` : ""}`);
+  },
+  /**
+   * Sprint 4 audit fix: replaces the tenant-wide `leaveApprovalsApi.pending()` +
+   * client-side filter with a server-side manager-scoped, paginated query.
+   */
+  async pendingForMyReports(page = 0, size = 20): Promise<SpringPage<LeaveRequestDto>> {
+    return request<SpringPage<LeaveRequestDto>>(
+      `/leave/self-service/reports/pending?page=${page}&size=${size}`,
+    );
   },
 };
 
@@ -903,16 +927,15 @@ export const employeeReportsApi = {
 };
 
 /**
- * Manager Self-Service "pending approvals" (Sprint 3, FR8) reuses the existing
- * admin approve/reject/byStatus endpoints as-is (LEAVE_READ/LEAVE_APPROVE
- * still gate them server-side) — the My Team screen filters the results to
- * the manager's own direct reports client-side. See the Sprint 3 SDD §8: this
- * is a UI filter, not a new server-side manager-scoping rule.
+ * Manager Self-Service decision actions (Sprint 3, FR8) reuse the existing admin
+ * approve/reject endpoints as-is. As of Sprint 4 these are genuinely manager-scoped
+ * server-side (`LeaveRequestService.requireManagerAuthorityUnlessAdmin` — audit fix
+ * #4): a `LEAVE_APPROVE` holder who isn't the target employee's manager (and doesn't
+ * also hold `LEAVE_ADMIN`) now gets a 403 from the backend, not just a hidden row in
+ * this UI. The pending-list query itself is `leaveSelfServiceApi.pendingForMyReports`
+ * (server-scoped + paginated, replacing the old tenant-wide + client-filtered query).
  */
 export const leaveApprovalsApi = {
-  async pending(): Promise<LeaveRequestDto[]> {
-    return request<LeaveRequestDto[]>("/leave/requests?status=SUBMITTED");
-  },
   async approve(id: string, reason?: string): Promise<LeaveRequestDto> {
     return request<LeaveRequestDto>(`/leave/requests/${id}/approve`, {
       method: "POST",
@@ -924,6 +947,42 @@ export const leaveApprovalsApi = {
       method: "POST",
       body: { reason },
     });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Notifications (Sprint 4) — com.ewos.notification was an empty package stub */
+/* through Sprint 13/3 ("do NOT build the Notification module" per the        */
+/* Sprint 13 report); Sprint 4 builds the in-app inbox and wires it here,     */
+/* replacing the mock NOTIFICATIONS data the /notifications screen used.      */
+/* -------------------------------------------------------------------------- */
+
+export type NotificationDto = {
+  id: string;
+  type:
+    | "TASK_ASSIGNED"
+    | "TASK_ESCALATED"
+    | "INSTANCE_COMPLETED"
+    | "INSTANCE_CANCELLED"
+    | "INSTANCE_ERRORED"
+    | "GENERIC";
+  title: string;
+  body?: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+};
+
+export const notificationsApi = {
+  async mine(page = 0, size = 20): Promise<SpringPage<NotificationDto>> {
+    return request<SpringPage<NotificationDto>>(`/notifications/mine?page=${page}&size=${size}`);
+  },
+  async unreadCount(): Promise<number> {
+    const data = await request<{ unreadCount: number }>("/notifications/mine/unread-count");
+    return data.unreadCount;
+  },
+  async markRead(id: string): Promise<void> {
+    await request<void>(`/notifications/${id}/read`, { method: "POST" });
   },
 };
 

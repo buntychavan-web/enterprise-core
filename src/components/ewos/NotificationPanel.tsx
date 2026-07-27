@@ -1,27 +1,58 @@
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "./EmptyState";
-
-export type NotificationItem = {
-  id: string;
-  title: string;
-  description?: string;
-  createdAt: string;
-  read?: boolean;
-};
+import { ApiError, notificationsApi, type NotificationDto } from "@/lib/api-client";
 
 /**
- * NotificationPanel — UI shell. Notifications must be sourced from a backend
- * endpoint. Renders an empty state until real data is wired in.
+ * Sprint 4 — wired to the real `com.ewos.notification` inbox (previously a stub package with no
+ * endpoints; the `/notifications` screen and this panel both ran on mock data through Sprint 13).
+ * Fetches once on mount rather than polling — an operator can add a refresh interval later without
+ * changing this component's shape.
  */
-export function NotificationPanel({ notifications }: { notifications?: NotificationItem[] }) {
-  const list = notifications ?? [];
-  const unread = list.filter((n) => !n.read).length;
+export function NotificationPanel() {
+  const [items, setItems] = useState<NotificationDto[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [open, setOpen] = useState(false);
+
+  const load = () => {
+    notificationsApi
+      .mine(0, 8)
+      .then((page) => setItems(page.content))
+      .catch(() => setItems([]));
+    notificationsApi
+      .unreadCount()
+      .then(setUnread)
+      .catch(() => setUnread(0));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const markRead = async (id: string) => {
+    try {
+      await notificationsApi.markRead(id);
+      setItems((xs) =>
+        xs.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)),
+      );
+      setUnread((n) => Math.max(0, n - 1));
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err;
+    }
+  };
 
   return (
-    <Popover>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) load();
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -44,7 +75,7 @@ export function NotificationPanel({ notifications }: { notifications?: Notificat
           {unread > 0 && <Badge variant="secondary">{unread} new</Badge>}
         </div>
         <div className="max-h-80 overflow-auto">
-          {list.length === 0 ? (
+          {items.length === 0 ? (
             <div className="p-4">
               <EmptyState
                 icon={Bell}
@@ -54,24 +85,36 @@ export function NotificationPanel({ notifications }: { notifications?: Notificat
             </div>
           ) : (
             <ul className="divide-y divide-border">
-              {list.map((n) => (
+              {items.map((n) => (
                 <li key={n.id} className="px-3 py-2 text-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-medium text-foreground">{n.title}</div>
-                    {!n.read && (
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden />
-                    )}
-                  </div>
-                  {n.description && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">{n.description}</p>
-                  )}
-                  <div className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {n.createdAt}
-                  </div>
+                  <button
+                    type="button"
+                    className="w-full text-left"
+                    onClick={() => !n.readAt && markRead(n.id)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-medium text-foreground">{n.title}</div>
+                      {!n.readAt && (
+                        <span
+                          className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary"
+                          aria-hidden
+                        />
+                      )}
+                    </div>
+                    {n.body && <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>}
+                    <div className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </div>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
+        </div>
+        <div className="border-t border-border px-3 py-2 text-right">
+          <Button variant="ghost" size="sm" asChild className="text-xs">
+            <Link to="/notifications">View all</Link>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
