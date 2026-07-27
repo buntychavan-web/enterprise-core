@@ -1,4 +1,11 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  redirect,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -27,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
+import { ErrorBoundary } from "@/components/ewos/ErrorBoundary";
 import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
 import { UserMenu } from "@/components/ewos/UserMenu";
@@ -35,7 +43,7 @@ import { GlobalSearch } from "@/components/ewos/GlobalSearch";
 import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
-import { displayName, initials } from "@/lib/api-client";
+import { displayName, initials, tokenStore } from "@/lib/api-client";
 import { TenantProvider, useTenant } from "@/lib/tenant-context";
 
 // Sprint 14.1 / 2.1 — Company Switcher backend integration. GET /api/v1/companies
@@ -46,6 +54,15 @@ import { TenantProvider, useTenant } from "@/lib/tenant-context";
 // company via useTenant() instead of hardcoding DEFAULT_TENANT_ID/DEFAULT_COMPANY_ID.
 
 export const Route = createFileRoute("/_app")({
+  // Route-level guard: redirects before the protected shell ever renders,
+  // instead of the previous mount-then-useEffect-then-navigate flash. Checks
+  // tokenStore directly (a synchronous storage read) rather than useAuth(),
+  // since beforeLoad runs outside React and can't read context.
+  beforeLoad: () => {
+    if (!tokenStore.get()) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: AppShell,
 });
 
@@ -109,6 +126,7 @@ function AppShellContent() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { companies, activeCompanyId, selectCompany } = useTenant();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -219,7 +237,9 @@ function AppShellContent() {
 
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <Outlet />
+            <ErrorBoundary key={pathname} section="This page">
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
 

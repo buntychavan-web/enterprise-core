@@ -1,3 +1,5 @@
+import { isFeatureEnabled } from "./feature-flags";
+
 /**
  * Demo Login gating (Sprint 2.1, Product Owner Decision 1):
  * enabled only when VITE_ENABLE_DEMO_LOGIN=true is set at build time, so it
@@ -6,7 +8,7 @@
  * a `mode: production` build outright if this flag is set, so a Production
  * deploy cannot ship with demo mode on even by accident.
  */
-export const isDemoLoginEnabled = import.meta.env.VITE_ENABLE_DEMO_LOGIN === "true";
+export const isDemoLoginEnabled = isFeatureEnabled("demoLogin");
 
 if (isDemoLoginEnabled && typeof console !== "undefined") {
   console.warn(

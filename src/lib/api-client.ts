@@ -90,7 +90,7 @@ export class ApiError extends Error {
 export const tokenStore = {
   get(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
   },
   set(token: string, refresh?: string, remember = true) {
     const store = remember ? localStorage : sessionStorage;
@@ -122,6 +122,11 @@ export const userStore = {
   set(user: UserDto, remember = true) {
     const store = remember ? localStorage : sessionStorage;
     store.setItem(USER_KEY, JSON.stringify(user));
+  },
+  clear() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
   },
 };
 
@@ -197,10 +202,27 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
 
   if (!response.ok) {
     const message = extractErrorMessage(data, response.status);
+    if (response.status === 401 && auth) {
+      // The access token expired or was revoked mid-session — every other
+      // authenticated request would fail the same way, so clear it and send
+      // the user back to login instead of leaving a stuck, half-working UI.
+      // A hard redirect (not router navigation) guarantees all React state
+      // resets, since this module has no access to the router instance.
+      handleSessionExpired();
+    }
     throw new ApiError(message, response.status, data);
   }
 
   return data as T;
+}
+
+function handleSessionExpired() {
+  tokenStore.clear();
+  tenantStore.clear();
+  userStore.clear();
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.assign("/login");
+  }
 }
 
 function extractErrorMessage(data: unknown, status: number): string {
