@@ -58,52 +58,94 @@ export const Route = createFileRoute("/_app")({
   // instead of the previous mount-then-useEffect-then-navigate flash. Checks
   // tokenStore directly (a synchronous storage read) rather than useAuth(),
   // since beforeLoad runs outside React and can't read context.
-  beforeLoad: () => {
+  beforeLoad: ({ location }) => {
     if (!tokenStore.get()) {
-      throw redirect({ to: "/login" });
+      throw redirect({
+        to: "/login",
+        search: { redirect: location.href },
+      });
     }
   },
   component: AppShell,
 });
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/employees", label: "Employees", icon: UserSquare2 },
-  { to: "/attendance", label: "Attendance", icon: Clock },
-  { to: "/leave", label: "Leave", icon: CalendarDays },
-  { to: "/payslips", label: "Payslips", icon: Wallet },
-  { to: "/my-leave", label: "My Leave", icon: CalendarDays },
-  { to: "/my-attendance", label: "My Attendance", icon: Clock },
-  { to: "/my-payslips", label: "My Payslips", icon: Wallet },
-  { to: "/my-team", label: "My Team", icon: Users2 },
-  { to: "/directory", label: "Directory", icon: Contact2 },
-  { to: "/holidays", label: "Holidays", icon: PartyPopper },
-  { to: "/announcements", label: "Announcements", icon: Megaphone },
-  { to: "/notifications", label: "Notifications", icon: Bell },
-  { to: "/organization", label: "Organization", icon: Building2 },
-  { to: "/tenant-management", label: "Tenant Management", icon: Landmark },
-  { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
-  { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
-  { to: "/data-exchange", label: "Data Exchange", icon: ArrowLeftRight },
-  { to: "/client-approvals", label: "Client Approvals", icon: ClipboardCheck },
-  { to: "/integration-configurations", label: "Integration Configurations", icon: Network },
-  { to: "/integration-monitoring", label: "Integration Monitoring", icon: Activity },
-  { to: "/operations-dashboard", label: "Operations Dashboard", icon: WorkflowIcon },
-  { to: "/client-golive", label: "Client Go-Live", icon: Rocket },
-  { to: "/users", label: "Users", icon: UsersIcon },
-  { to: "/roles", label: "Roles", icon: ShieldCheck },
-  { to: "/audit-history", label: "Audit History", icon: ClipboardCheck },
-  { to: "/help", label: "Help", icon: HelpCircle },
+// Grouped for sidebar scannability — 27 destinations in one flat list was
+// hard to scan. Grouping is presentational only: no route, label, or icon
+// changed, so every existing link/permission/test keeps working unchanged.
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    label: "Workforce",
+    items: [
+      { to: "/employees", label: "Employees", icon: UserSquare2 },
+      { to: "/attendance", label: "Attendance", icon: Clock },
+      { to: "/leave", label: "Leave", icon: CalendarDays },
+      { to: "/payslips", label: "Payslips", icon: Wallet },
+      { to: "/organization", label: "Organization", icon: Building2 },
+    ],
+  },
+  {
+    label: "My Workspace",
+    items: [
+      { to: "/my-leave", label: "My Leave", icon: CalendarDays },
+      { to: "/my-attendance", label: "My Attendance", icon: Clock },
+      { to: "/my-payslips", label: "My Payslips", icon: Wallet },
+      { to: "/my-team", label: "My Team", icon: Users2 },
+      { to: "/directory", label: "Directory", icon: Contact2 },
+      { to: "/holidays", label: "Holidays", icon: PartyPopper },
+      { to: "/announcements", label: "Announcements", icon: Megaphone },
+      { to: "/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    label: "Tenant & Partners",
+    items: [
+      { to: "/tenant-management", label: "Tenant Management", icon: Landmark },
+      { to: "/outsourcing", label: "Outsourcing", icon: Landmark },
+      { to: "/provider-dashboard", label: "Provider Dashboard", icon: ScrollText },
+    ],
+  },
+  {
+    label: "Integrations & Operations",
+    items: [
+      { to: "/data-exchange", label: "Data Exchange", icon: ArrowLeftRight },
+      { to: "/client-approvals", label: "Client Approvals", icon: ClipboardCheck },
+      { to: "/integration-configurations", label: "Integration Configurations", icon: Network },
+      { to: "/integration-monitoring", label: "Integration Monitoring", icon: Activity },
+      { to: "/operations-dashboard", label: "Operations Dashboard", icon: WorkflowIcon },
+      { to: "/client-golive", label: "Client Go-Live", icon: Rocket },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { to: "/users", label: "Users", icon: UsersIcon },
+      { to: "/roles", label: "Roles", icon: ShieldCheck },
+      { to: "/audit-history", label: "Audit History", icon: ClipboardCheck },
+      { to: "/help", label: "Help", icon: HelpCircle },
+    ],
+  },
 ] as const;
 
 function AppShell() {
   const { isAuthenticated, isInitializing } = useAuth();
   const navigate = useNavigate();
+  const location = useRouterState({ select: (s) => s.location });
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
-      navigate({ to: "/login", replace: true });
+      navigate({
+        to: "/login",
+        search: { redirect: location.href },
+        replace: true,
+      });
     }
+    // location is intentionally omitted — this effect should only re-run when
+    // auth state settles, not on every route change while already logged out.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isInitializing, navigate]);
 
   if (isInitializing || !isAuthenticated) {
@@ -173,19 +215,28 @@ function AppShellContent() {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <nav aria-label="Primary" className="flex-1 space-y-0.5 p-3">
-          {NAV.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileOpen(false)}
-              className="flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
-              activeOptions={{ exact: false }}
-              activeProps={{ "aria-current": "page" }}
-            >
-              <item.icon className="h-4 w-4" aria-hidden />
-              {item.label}
-            </Link>
+        <nav aria-label="Primary" className="flex-1 space-y-3 overflow-y-auto p-3">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+                {group.label}
+              </div>
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
+                    activeOptions={{ exact: false }}
+                    activeProps={{ "aria-current": "page" }}
+                  >
+                    <item.icon className="h-4 w-4" aria-hidden />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

@@ -150,7 +150,7 @@ export function DashboardPage() {
 
         <TabsContent value="executive" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
+            <Card className="min-w-0 lg:col-span-2">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Headcount trend</CardTitle>
               </CardHeader>
@@ -178,7 +178,7 @@ export function DashboardPage() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="min-w-0">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Department split</CardTitle>
               </CardHeader>
@@ -229,7 +229,7 @@ export function DashboardPage() {
               value={28}
             />
           </div>
-          <Card>
+          <Card className="min-w-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Attendance this week</CardTitle>
             </CardHeader>
@@ -272,7 +272,7 @@ export function DashboardPage() {
               value="Aug 28"
             />
           </div>
-          <Card>
+          <Card className="min-w-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">
                 Payroll — gross vs net (₹ crores)

@@ -5,9 +5,10 @@ import userEvent from "@testing-library/user-event";
 const navigateMock = vi.fn();
 const loginMock = vi.fn();
 const loginAsDemoMock = vi.fn();
+const useSearchMock = vi.fn();
 
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => () => ({}),
+  createFileRoute: () => () => ({ useSearch: (...args: unknown[]) => useSearchMock(...args) }),
   useNavigate: () => navigateMock,
 }));
 
@@ -31,6 +32,7 @@ describe("Login page", () => {
   beforeEach(() => {
     navigateMock.mockClear();
     loginMock.mockClear();
+    useSearchMock.mockReturnValue({});
   });
 
   it("renders the sign-in form", () => {
@@ -80,5 +82,33 @@ describe("Login page", () => {
 
     expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalledWith({ to: "/dashboard", replace: true });
+  });
+
+  it("returns to the originally requested deep link after signing in, instead of always going to the dashboard", async () => {
+    useSearchMock.mockReturnValue({ redirect: "/employees" });
+    loginMock.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.type(screen.getByLabelText(/username/i), "jane.doe");
+    await user.type(screen.getByLabelText(/password/i), "s3cret!");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => expect(loginMock).toHaveBeenCalled());
+    expect(navigateMock).toHaveBeenCalledWith({ to: "/employees", replace: true });
+  });
+
+  it("ignores a redirect target that isn't a same-origin absolute path (open-redirect guard)", async () => {
+    useSearchMock.mockReturnValue({ redirect: "//evil.example" });
+    loginMock.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    await user.type(screen.getByLabelText(/username/i), "jane.doe");
+    await user.type(screen.getByLabelText(/password/i), "s3cret!");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => expect(loginMock).toHaveBeenCalled());
+    expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard", replace: true });
   });
 });

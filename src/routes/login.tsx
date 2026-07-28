@@ -12,7 +12,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Only a same-origin, absolute-path redirect is honored — this blocks the
+// classic open-redirect trick of passing a `redirect` value like
+// "//evil.example" or "https://evil.example" that browsers would otherwise
+// treat as protocol-relative/absolute and follow off-site after login.
+function safeRedirectTarget(raw: string | undefined): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+}
+
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — EWOS" },
@@ -25,6 +37,8 @@ export const Route = createFileRoute("/login")({
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { redirect: redirectParam } = Route.useSearch();
+  const redirectTarget = safeRedirectTarget(redirectParam);
   const { login, loginAsDemo, isAuthenticated, isInitializing } = useAuth();
 
   const [username, setUsername] = useState("");
@@ -36,8 +50,11 @@ export function LoginPage() {
 
   useEffect(() => {
     if (!isInitializing && isAuthenticated) {
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: redirectTarget, replace: true });
     }
+    // redirectTarget is intentionally omitted — re-running this on every
+    // search-param change would re-fire the redirect unnecessarily.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isInitializing, navigate]);
 
   const validate = () => {
@@ -55,7 +72,7 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(username.trim(), password, remember);
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: redirectTarget, replace: true });
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -177,7 +194,7 @@ export function LoginPage() {
                     setSubmitting(true);
                     try {
                       await loginAsDemo(remember);
-                      navigate({ to: "/dashboard", replace: true });
+                      navigate({ to: redirectTarget, replace: true });
                     } catch (err) {
                       setFormError(err instanceof Error ? err.message : "Demo sign in failed.");
                     } finally {
