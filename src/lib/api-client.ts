@@ -861,6 +861,39 @@ export const payrollApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Dashboard KPI counts                                                       */
+/* -------------------------------------------------------------------------- */
+
+export type DashboardSummary = {
+  employees: number | null;
+  users: number | null;
+  departments: number | null;
+  roles: number | null;
+};
+
+/** Reads `totalElements` from each collection; null when the call fails. */
+async function countOf(path: string, params: QueryParams = {}): Promise<number | null> {
+  try {
+    const data = await request<unknown>(path, { params: { page: 0, size: 1, ...params } });
+    return toPage<unknown>(data).totalElements;
+  } catch {
+    return null;
+  }
+}
+
+export const dashboardApi = {
+  async summary(): Promise<DashboardSummary> {
+    const [employees, users, departments, roles] = await Promise.all([
+      countOf("/employees"),
+      countOf("/users"),
+      countOf("/organization/units", { unitTypeCode: "DEPARTMENT" }),
+      countOf("/roles"),
+    ]);
+    return { employees, users, departments, roles };
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Display helpers                                                            */
 /* -------------------------------------------------------------------------- */
 
