@@ -33,25 +33,42 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { EmptyState } from "@/components/ewos/EmptyState";
-import { ApiError, resourceApi, type ResourceRecord } from "@/lib/api-client";
+import {
+  ApiError,
+  resourceApi,
+  type QueryParams,
+  type ResourceRecord,
+} from "@/lib/api-client";
 
 export type CrudField = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "email" | "number";
+  type?: "text" | "textarea" | "email" | "number" | "date" | "select";
   required?: boolean;
   placeholder?: string;
+  /** Options for `type: "select"`. */
+  options?: Array<{ value: string; label: string }>;
   /** Show in the list table. */
   listColumn?: boolean;
+  /** Rendered read-only in the form (server-managed values). */
+  readOnly?: boolean;
 };
 
 export type CrudScreenProps = {
   title: string;
   description?: string;
-  /** e.g. "/departments" — mounted under /api by the client. */
+  /** Path under /api/v1 — e.g. "/organization/units". */
   resourcePath: string;
   singular: string;
   fields: CrudField[];
+  /** Extra query params applied to every list request (server-side filtering). */
+  listParams?: QueryParams;
+  /** Values merged into every newly created record. */
+  createDefaults?: Record<string, unknown>;
+  /** RBAC gates — hide write affordances the user is not entitled to. */
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 type Row = ResourceRecord;
@@ -62,33 +79,45 @@ export function CrudScreen({
   resourcePath,
   singular,
   fields,
+  listParams,
+  createDefaults,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }: CrudScreenProps) {
   const api = useMemo(() => resourceApi(resourcePath), [resourcePath]);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Row | null>(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [removingId, setRemovingId] = useState<string | number | null>(null);
 
   const columns = fields.filter((f) => f.listColumn !== false);
+  const paramsKey = JSON.stringify(listParams ?? {});
 
   const load = async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.list({ page: 0, size: 200 }, signal);
+      const result = await api.list({ page: 0, size: 200, ...listParams }, signal);
       setRows(result.content);
       setUnavailable(false);
+      setForbidden(false);
     } catch (err) {
       if (signal?.aborted) return;
       if (err instanceof ApiError && err.isNotFound) {
         setRows([]);
         setUnavailable(true);
+      } else if (err instanceof ApiError && err.isForbidden) {
+        setRows([]);
+        setForbidden(true);
       } else {
         setError(err instanceof Error ? err.message : "Failed to load data.");
       }
@@ -97,13 +126,13 @@ export function CrudScreen({
     }
   };
 
-
   useEffect(() => {
     const ctrl = new AbortController();
     load(ctrl.signal);
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourcePath]);
+  }, [resourcePath, paramsKey]);
+
 
   const filtered = query
     ? rows.filter((row) =>
@@ -117,31 +146,54 @@ export function CrudScreen({
 
   const openCreate = () => {
     setCreating(true);
-    setEditing({});
+    setFieldErrors({});
+    setEditing({ ...(createDefaults ?? {}) });
   };
   const openEdit = (row: Row) => {
     setCreating(false);
+    setFieldErrors({});
     setEditing({ ...row });
   };
   const closeForm = () => {
     setEditing(null);
     setCreating(false);
+    setFieldErrors({});
   };
 
   const submit = async () => {
     if (!editing) return;
-    const payload: Record<string, unknown> = {};
+    const payload: Record<string, unknown> = { ...(creating ? (createDefaults ?? {}) : {}) };
+    const errors: Record<string, string> = {};
+
     for (const f of fields) {
+      if (f.readOnly) continue;
       const raw = editing[f.name];
-      if (f.required && (raw === undefined || raw === null || raw === "")) {
-        toast.error(`${f.label} is required`);
-        return;
+      const isBlank = raw === undefined || raw === null || raw === "";
+      if (f.required && isBlank) {
+        errors[f.name] = `${f.label} is required.`;
+        continue;
+      }
+      if (!isBlank && f.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(raw))) {
+        errors[f.name] = "Enter a valid email address.";
+        continue;
+      }
+      if (!isBlank && f.type === "number" && Number.isNaN(Number(raw))) {
+        errors[f.name] = "Enter a valid number.";
+        continue;
       }
       if (raw !== undefined) {
-        payload[f.name] = f.type === "number" && raw !== "" ? Number(raw) : raw;
+        payload[f.name] = f.type === "number" && !isBlank ? Number(raw) : raw;
       }
     }
+
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      toast.error("Please correct the highlighted fields.");
+      return;
+    }
+
     setSaving(true);
+    setFieldErrors({});
     try {
       if (creating) {
         await api.create(payload);
@@ -153,17 +205,21 @@ export function CrudScreen({
       closeForm();
       await load();
     } catch (err) {
-      const msg =
-        err instanceof ApiError
-          ? err.status === 404
-            ? "This endpoint is not yet available on the backend."
-            : err.message
-          : "Save failed.";
-      toast.error(msg);
+      if (err instanceof ApiError) {
+        if (err.fieldErrors.length) {
+          setFieldErrors(Object.fromEntries(err.fieldErrors.map((e) => [e.field, e.message])));
+        }
+        toast.error(
+          err.isNotFound ? "This endpoint is not available on the backend." : err.message,
+        );
+      } else {
+        toast.error("Save failed.");
+      }
     } finally {
       setSaving(false);
     }
   };
+
 
   const confirmDelete = async () => {
     if (!deleting?.id) return;
@@ -191,13 +247,17 @@ export function CrudScreen({
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button size="sm" onClick={openCreate} disabled={unavailable}>
-              <Plus className="h-4 w-4" />
-              New {singular}
-            </Button>
+            {canCreate && (
+              <Button size="sm" onClick={openCreate} disabled={unavailable || forbidden}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New {singular}</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            )}
           </div>
         }
       />
+
 
       <div className="rounded-lg border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border p-3">
@@ -217,16 +277,26 @@ export function CrudScreen({
         </div>
 
         {loading ? (
-          <div className="grid place-items-center p-16 text-sm text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
+          <div
+            className="grid place-items-center p-16 text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+            <span className="sr-only">Loading {title.toLowerCase()}…</span>
           </div>
+        ) : forbidden ? (
+          <EmptyState
+            title="Access restricted"
+            description={`Your role does not include permission to view ${title.toLowerCase()}. Contact your administrator if you need access.`}
+          />
         ) : unavailable ? (
           <EmptyState
-            title="Coming soon"
-            description={`The ${title} endpoint (GET /api${resourcePath}) is not yet available on the backend. The screen is ready and will populate once the backend team ships it.`}
+            title="Not available"
+            description={`GET /api/v1${resourcePath} returned 404. The screen is wired and will populate as soon as the endpoint is reachable.`}
           />
         ) : error ? (
-          <div className="p-8 text-center">
+          <div className="p-8 text-center" role="alert">
             <p className="text-sm text-destructive">{error}</p>
             <Button variant="outline" size="sm" className="mt-3" onClick={() => load()}>
               Try again
@@ -241,7 +311,7 @@ export function CrudScreen({
                 : "Try a different search term."
             }
             action={
-              rows.length === 0 ? (
+              rows.length === 0 && canCreate ? (
                 <Button onClick={openCreate} size="sm">
                   <Plus className="h-4 w-4" />
                   New {singular}
@@ -250,49 +320,112 @@ export function CrudScreen({
             }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {columns.map((c) => (
-                    <TableHead key={c.name}>{c.label}</TableHead>
-                  ))}
-                  <TableHead className="w-24 text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((row, i) => (
-                  <TableRow key={String(row.id ?? i)}>
+          <>
+            {/* Mobile: stacked cards */}
+            <ul className="divide-y divide-border md:hidden">
+              {filtered.map((row, i) => (
+                <li key={String(row.id ?? i)} className="p-4">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <dl className="min-w-0 space-y-1">
+                      {columns.map((c, idx) => (
+                        <div key={c.name} className="min-w-0">
+                          <dt className="sr-only">{c.label}</dt>
+                          <dd
+                            className={
+                              idx === 0
+                                ? "truncate text-sm font-semibold text-foreground"
+                                : "truncate text-xs text-muted-foreground"
+                            }
+                          >
+                            {idx === 0 ? "" : `${c.label}: `}
+                            {String(row[c.name] ?? "—")}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="flex shrink-0 gap-1">
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="min-h-11 min-w-11"
+                          onClick={() => openEdit(row)}
+                          aria-label={`Edit ${singular}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="min-h-11 min-w-11"
+                          onClick={() => setDeleting(row)}
+                          aria-label={`Delete ${singular}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: table */}
+            <div className="hidden overflow-x-auto md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
                     {columns.map((c) => (
-                      <TableCell key={c.name} className="text-sm">
-                        {String(row[c.name] ?? "—")}
-                      </TableCell>
+                      <TableHead key={c.name}>{c.label}</TableHead>
                     ))}
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(row)}
-                        aria-label={`Edit ${singular}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(row)}
-                        aria-label={`Delete ${singular}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+                    {(canEdit || canDelete) && (
+                      <TableHead className="w-24 text-right">Actions</TableHead>
+                    )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((row, i) => (
+                    <TableRow key={String(row.id ?? i)}>
+                      {columns.map((c) => (
+                        <TableCell key={c.name} className="text-sm">
+                          {String(row[c.name] ?? "—")}
+                        </TableCell>
+                      ))}
+                      {(canEdit || canDelete) && (
+                        <TableCell className="text-right">
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(row)}
+                              aria-label={`Edit ${singular}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(row)}
+                              aria-label={`Delete ${singular}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </div>
+
 
       <Dialog open={editing !== null} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-lg">
@@ -305,33 +438,66 @@ export function CrudScreen({
             </DialogDescription>
           </DialogHeader>
           {editing && (
-            <div className="space-y-4">
-              {fields.map((f) => (
-                <div key={f.name} className="space-y-1.5">
-                  <Label htmlFor={f.name}>
-                    {f.label}
-                    {f.required && <span className="ml-0.5 text-destructive">*</span>}
-                  </Label>
-                  {f.type === "textarea" ? (
-                    <Textarea
-                      id={f.name}
-                      value={String(editing[f.name] ?? "")}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
-                    />
-                  ) : (
-                    <Input
-                      id={f.name}
-                      type={f.type === "number" ? "number" : (f.type ?? "text")}
-                      value={String(editing[f.name] ?? "")}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="max-h-[60vh] space-y-4 overflow-y-auto px-0.5">
+              {fields.map((f) => {
+                const err = fieldErrors[f.name];
+                const describedBy = err ? `${f.name}-error` : undefined;
+                const common = {
+                  id: f.name,
+                  value: String(editing[f.name] ?? ""),
+                  placeholder: f.placeholder,
+                  disabled: saving || f.readOnly,
+                  "aria-invalid": !!err,
+                  "aria-describedby": describedBy,
+                };
+                return (
+                  <div key={f.name} className="space-y-1.5">
+                    <Label htmlFor={f.name}>
+                      {f.label}
+                      {f.required && (
+                        <span className="ml-0.5 text-destructive" aria-hidden>
+                          *
+                        </span>
+                      )}
+                    </Label>
+                    {f.type === "textarea" ? (
+                      <Textarea
+                        {...common}
+                        onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
+                      />
+                    ) : f.type === "select" ? (
+                      <select
+                        {...common}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
+                        onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
+                      >
+                        <option value="">Select {f.label.toLowerCase()}…</option>
+                        {(f.options ?? []).map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        {...common}
+                        type={
+                          f.type === "number" ? "number" : f.type === "date" ? "date" : (f.type ?? "text")
+                        }
+                        onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
+                      />
+                    )}
+                    {err && (
+                      <p id={`${f.name}-error`} className="text-xs text-destructive">
+                        {err}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
+
           <DialogFooter>
             <Button variant="outline" onClick={closeForm} disabled={saving}>
               Cancel

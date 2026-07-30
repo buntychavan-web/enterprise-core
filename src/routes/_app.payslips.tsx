@@ -1,10 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, FileText, Wallet } from "lucide-react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Download, Receipt, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatCard } from "@/components/ewos/StatCard";
-import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusChip } from "@/components/ewos/StatusChip";
+import { EmptyState } from "@/components/ewos/EmptyState";
+import { QueryState } from "@/components/ewos/QueryState";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -13,131 +23,256 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PAYSLIPS, type Payslip } from "@/lib/mock/self-service";
-import { toast } from "sonner";
+import { payrollApi } from "@/lib/api-client";
+import { formatDate, formatMoney, humanizeEnum, requestStatusTone } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/payslips")({
   head: () => ({
     meta: [
       { title: "Payslips — EWOS" },
-      { name: "description", content: "Monthly payslips, YTD earnings and downloads." },
+      { name: "description", content: "Your payslip history and earnings breakdown." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: PayslipsPage,
 });
 
-const TONE: Record<Payslip["status"], StatusTone> = {
-  Paid: "success",
-  Processed: "info",
-  Pending: "warning",
-};
-
-const inr = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
-
 function PayslipsPage() {
-  const ytdGross = PAYSLIPS.reduce((s, p) => s + p.gross, 0);
-  const ytdNet = PAYSLIPS.reduce((s, p) => s + p.net, 0);
-  const ytdTax = PAYSLIPS.reduce((s, p) => s + p.deductions, 0);
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  const download = (p: Payslip) =>
-    toast.info("Download queued", { description: `${p.period} payslip will be emailed to you.` });
+  const payslips = useQuery({
+    queryKey: ["payroll", "my-payslips"],
+    queryFn: ({ signal }) => payrollApi.myPayslips({ page: 0, size: 24 }, signal),
+  });
+
+  const detail = useQuery({
+    queryKey: ["payroll", "payslip", openId],
+    queryFn: ({ signal }) => payrollApi.payslip(openId!, signal),
+    enabled: !!openId,
+  });
+
+  const rows = payslips.data?.content ?? [];
+  const latest = rows[0];
+  const currency = latest?.currency;
+  const ytdNet = rows.reduce((sum, p) => sum + (p.netAmount ?? 0), 0);
+  const ytdGross = rows.reduce((sum, p) => sum + (p.grossAmount ?? 0), 0);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Compensation"
+        eyebrow="Self service"
         title="Payslips"
-        description="Download monthly payslips and view year-to-date earnings."
+        description="Your published payslips and earnings history."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="YTD gross" icon={<Wallet className="h-5 w-5" />} value={inr(ytdGross)} />
-        <StatCard label="YTD net" icon={<Wallet className="h-5 w-5" />} value={inr(ytdNet)} />
-        <StatCard
-          label="YTD tax & deductions"
-          icon={<FileText className="h-5 w-5" />}
-          value={inr(ytdTax)}
-        />
-      </div>
+      <section aria-labelledby="payslip-stats-heading">
+        <h2 id="payslip-stats-heading" className="sr-only">
+          Earnings summary
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatCard
+            label="Latest net pay"
+            value={latest ? formatMoney(latest.netAmount, currency) : null}
+            loading={payslips.isLoading}
+            unavailable={!!payslips.error}
+            icon={<Wallet className="h-4 w-4" />}
+            hint={latest ? `Paid ${formatDate(latest.payDate)}` : "No payslips published"}
+          />
+          <StatCard
+            label="Gross to date"
+            value={rows.length ? formatMoney(ytdGross, currency) : null}
+            loading={payslips.isLoading}
+            unavailable={!!payslips.error}
+            icon={<Receipt className="h-4 w-4" />}
+            hint={`${rows.length} published payslip${rows.length === 1 ? "" : "s"}`}
+          />
+          <StatCard
+            label="Net to date"
+            value={rows.length ? formatMoney(ytdNet, currency) : null}
+            loading={payslips.isLoading}
+            unavailable={!!payslips.error}
+            icon={<Wallet className="h-4 w-4" />}
+            hint="Sum of published payslips"
+          />
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Payslip history</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ref</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead className="text-right">Gross</TableHead>
-                  <TableHead className="text-right">Deductions</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Paid on</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {PAYSLIPS.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.id}</TableCell>
-                    <TableCell>{p.period}</TableCell>
-                    <TableCell className="text-right tabular-nums">{inr(p.gross)}</TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
-                      −{inr(p.deductions)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium tabular-nums">
-                      {inr(p.net)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip tone={TONE[p.status]}>{p.status}</StatusChip>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{p.paidOn ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => download(p)}>
-                        <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+      <section
+        aria-labelledby="payslip-history-heading"
+        className="rounded-lg border border-border bg-card"
+      >
+        <h2
+          id="payslip-history-heading"
+          className="border-b border-border px-4 py-3 text-sm font-semibold"
+        >
+          Payslip history
+        </h2>
+        <QueryState
+          isLoading={payslips.isLoading}
+          error={payslips.error}
+          onRetry={() => void payslips.refetch()}
+          label="payslips"
+        >
+          {rows.length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              title="No payslips published"
+              description="Payslips appear here once a payroll run for your pay group is finalized."
+            />
+          ) : (
+            <>
+              <ul className="divide-y divide-border md:hidden">
+                {rows.map((p) => (
+                  <li key={p.id} className="p-4">
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(p.id)}
+                      className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold">
+                          {formatDate(p.periodStart)} – {formatDate(p.periodEnd)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Paid {formatDate(p.payDate)}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-semibold">
+                          {formatMoney(p.netAmount, p.currency)}
+                        </div>
+                        <StatusChip tone={requestStatusTone(p.status)}>
+                          {humanizeEnum(p.status)}
+                        </StatusChip>
+                      </div>
+                    </button>
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
+              </ul>
 
-          <ul className="divide-y divide-border md:hidden">
-            {PAYSLIPS.map((p) => (
-              <li key={p.id} className="px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">{p.period}</div>
-                  <StatusChip tone={TONE[p.status]}>{p.status}</StatusChip>
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Pay date</TableHead>
+                      <TableHead className="text-right">Gross</TableHead>
+                      <TableHead className="text-right">Deductions</TableHead>
+                      <TableHead className="text-right">Net</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell className="text-sm font-medium">
+                          {formatDate(p.periodStart)} – {formatDate(p.periodEnd)}
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDate(p.payDate)}</TableCell>
+                        <TableCell className="text-right text-sm">
+                          {formatMoney(p.grossAmount, p.currency)}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {formatMoney(p.deductionsAmount, p.currency)}
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-semibold">
+                          {formatMoney(p.netAmount, p.currency)}
+                        </TableCell>
+                        <TableCell>
+                          <StatusChip tone={requestStatusTone(p.status)}>
+                            {humanizeEnum(p.status)}
+                          </StatusChip>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="outline" onClick={() => setOpenId(p.id)}>
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </QueryState>
+      </section>
+
+      <Dialog open={openId !== null} onOpenChange={(o) => !o && setOpenId(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Payslip breakdown</DialogTitle>
+            <DialogDescription>
+              {detail.data
+                ? `${formatDate(detail.data.periodStart)} – ${formatDate(detail.data.periodEnd)}`
+                : "Loading payslip details…"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <QueryState
+            isLoading={detail.isLoading}
+            error={detail.error}
+            onRetry={() => void detail.refetch()}
+            label="payslip"
+          >
+            {detail.data && (
+              <div className="space-y-4">
+                <dl className="max-h-[45vh] divide-y divide-border overflow-y-auto">
+                  {(detail.data.lines ?? []).map((line, i) => (
+                    <div
+                      key={line.id ?? `${line.componentCode}-${i}`}
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-2"
+                    >
+                      <dt className="min-w-0 truncate text-sm">
+                        {line.componentName ?? line.componentCode}
+                      </dt>
+                      <dd className="shrink-0 text-sm font-medium">
+                        {formatMoney(line.amount, detail.data!.currency)}
+                      </dd>
+                    </div>
+                  ))}
+                  {(detail.data.lines ?? []).length === 0 && (
+                    <p className="py-2 text-sm text-muted-foreground">
+                      No component breakdown was returned for this payslip.
+                    </p>
+                  )}
+                </dl>
+
+                <div className="space-y-1 border-t border-border pt-3 text-sm">
+                  <Row
+                    label="Gross"
+                    value={formatMoney(detail.data.grossAmount, detail.data.currency)}
+                  />
+                  <Row
+                    label="Deductions"
+                    value={formatMoney(detail.data.deductionsAmount, detail.data.currency)}
+                  />
+                  <Row
+                    label="Net pay"
+                    value={formatMoney(detail.data.netAmount, detail.data.currency)}
+                    emphasis
+                  />
                 </div>
-                <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Net {inr(p.net)}</span>
-                  <span>{p.paidOn ?? "—"}</span>
-                </div>
-                <div className="mt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => download(p)}
-                    className="w-full"
-                  >
-                    <Download className="mr-1.5 h-3.5 w-3.5" /> Download PDF
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+
+                <Button variant="outline" size="sm" className="w-full" disabled>
+                  <Download className="h-4 w-4" />
+                  PDF download (backend dependency)
+                </Button>
+              </div>
+            )}
+          </QueryState>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+      <span className={emphasis ? "font-semibold" : "text-muted-foreground"}>{label}</span>
+      <span className={emphasis ? "font-semibold" : ""}>{value}</span>
     </div>
   );
 }
