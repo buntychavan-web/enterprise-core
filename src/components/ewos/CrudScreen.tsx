@@ -438,33 +438,66 @@ export function CrudScreen({
             </DialogDescription>
           </DialogHeader>
           {editing && (
-            <div className="space-y-4">
-              {fields.map((f) => (
-                <div key={f.name} className="space-y-1.5">
-                  <Label htmlFor={f.name}>
-                    {f.label}
-                    {f.required && <span className="ml-0.5 text-destructive">*</span>}
-                  </Label>
-                  {f.type === "textarea" ? (
-                    <Textarea
-                      id={f.name}
-                      value={String(editing[f.name] ?? "")}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
-                    />
-                  ) : (
-                    <Input
-                      id={f.name}
-                      type={f.type === "number" ? "number" : (f.type ?? "text")}
-                      value={String(editing[f.name] ?? "")}
-                      placeholder={f.placeholder}
-                      onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="max-h-[60vh] space-y-4 overflow-y-auto px-0.5">
+              {fields.map((f) => {
+                const err = fieldErrors[f.name];
+                const describedBy = err ? `${f.name}-error` : undefined;
+                const common = {
+                  id: f.name,
+                  value: String(editing[f.name] ?? ""),
+                  placeholder: f.placeholder,
+                  disabled: saving || f.readOnly,
+                  "aria-invalid": !!err,
+                  "aria-describedby": describedBy,
+                };
+                return (
+                  <div key={f.name} className="space-y-1.5">
+                    <Label htmlFor={f.name}>
+                      {f.label}
+                      {f.required && (
+                        <span className="ml-0.5 text-destructive" aria-hidden>
+                          *
+                        </span>
+                      )}
+                    </Label>
+                    {f.type === "textarea" ? (
+                      <Textarea
+                        {...common}
+                        onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
+                      />
+                    ) : f.type === "select" ? (
+                      <select
+                        {...common}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50"
+                        onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
+                      >
+                        <option value="">Select {f.label.toLowerCase()}…</option>
+                        {(f.options ?? []).map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        {...common}
+                        type={
+                          f.type === "number" ? "number" : f.type === "date" ? "date" : (f.type ?? "text")
+                        }
+                        onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
+                      />
+                    )}
+                    {err && (
+                      <p id={`${f.name}-error`} className="text-xs text-destructive">
+                        {err}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
+
           <DialogFooter>
             <Button variant="outline" onClick={closeForm} disabled={saving}>
               Cancel
