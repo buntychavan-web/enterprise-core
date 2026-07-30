@@ -19,11 +19,55 @@ type AuthContextValue = {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   login: (username: string, password: string, remember: boolean) => Promise<void>;
+  /** Preview-only: signs in with a local demo session, no backend call. */
+  loginAsDemo: () => Promise<void>;
+  /** True when the active session is the local preview demo session. */
+  isDemo: boolean;
   refreshMe: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+/**
+ * Preview-only demo bypass. Lets reviewers click through the UI when the
+ * Spring Boot backend is not reachable from the browser. No API call is made;
+ * a local session is written to storage and revalidation is skipped.
+ */
+export const DEMO_CREDENTIALS = { username: "demo", password: "demo1234" } as const;
+const DEMO_TOKEN = "demo.preview.token";
+
+const DEMO_USER: MeResponse = {
+  userId: "demo-user",
+  username: DEMO_CREDENTIALS.username,
+  email: "demo@ewos.local",
+  tenantId: "demo-tenant",
+  employeeId: "demo-employee",
+  roles: [
+    {
+      id: "demo-role",
+      name: "ADMIN",
+      permissions: [
+        "EMPLOYEE_READ",
+        "EMPLOYEE_WRITE",
+        "ORG_READ",
+        "ORG_WRITE",
+        "USER_READ",
+        "USER_WRITE",
+        "PAYROLL_READ",
+        "PAYROLL_WRITE",
+        "LEAVE_READ",
+        "LEAVE_APPROVE",
+        "ATTENDANCE_READ",
+        "ATTENDANCE_APPROVE",
+      ],
+    },
+  ],
+};
+
+function isDemoSession() {
+  return tokenStore.get() === DEMO_TOKEN;
+}
 
 function roleNames(me: MeResponse | null): string[] {
   if (!me?.roles) return [];
@@ -65,6 +109,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cached = sessionStore.get();
     if (cached) setUser(cached);
 
+    // Demo sessions are local-only: never revalidate against the backend.
+    if (token === DEMO_TOKEN) {
+      setUser(cached ?? DEMO_USER);
+      setIsInitializing(false);
+      return;
+    }
+
     authApi
       .me()
       .then((me) => {
@@ -85,6 +136,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession]);
 
   const login = useCallback(async (username: string, password: string, remember: boolean) => {
+    if (
+      username.trim().toLowerCase() === DEMO_CREDENTIALS.username &&
+      password === DEMO_CREDENTIALS.password
+    ) {
+      tokenStore.set(DEMO_TOKEN, undefined, remember);
+      sessionStore.set(DEMO_USER, remember);
+      setUser(DEMO_USER);
+      return;
+    }
+
     const res = await authApi.login({ username, password });
     if (!res?.accessToken) {
       throw new Error("Login succeeded but no access token was returned by the server.");
@@ -96,14 +157,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me);
   }, []);
 
+  const loginAsDemo = useCallback(async () => {
+    tokenStore.set(DEMO_TOKEN, undefined, true);
+    sessionStore.set(DEMO_USER, true);
+    setUser(DEMO_USER);
+  }, []);
+
   const refreshMe = useCallback(async () => {
+    if (isDemoSession()) return;
     const me = await authApi.me();
     sessionStore.set(me);
     setUser(me);
   }, []);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
+    if (!isDemoSession()) {
+      await authApi.logout();
+    }
     clearSession();
   }, [clearSession]);
 
@@ -120,10 +190,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasPermission: (permission) => permissions.includes(permission),
       hasAnyPermission: (list) => list.some((p) => permissions.includes(p)),
       login,
+      loginAsDemo,
+      isDemo: !!user && user.userId === DEMO_USER.userId,
       refreshMe,
       logout,
     };
-  }, [user, isInitializing, login, refreshMe, logout]);
+  }, [user, isInitializing, login, loginAsDemo, refreshMe, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
