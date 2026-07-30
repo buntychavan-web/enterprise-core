@@ -145,9 +145,36 @@ function LoginPage() {
               </Button>
             </form>
 
+            <div className="mt-6 space-y-3 rounded-md border border-dashed border-border p-3">
+              <p className="text-xs text-muted-foreground">
+                Backend not reachable from this preview? Use the demo session (
+                <span className="font-mono">{DEMO_CREDENTIALS.username}</span> /{" "}
+                <span className="font-mono">{DEMO_CREDENTIALS.password}</span>).
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={submitting}
+                onClick={async () => {
+                  setFormError(null);
+                  setSubmitting(true);
+                  try {
+                    await loginAsDemo();
+                    navigate({ to: "/dashboard", replace: true });
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+              >
+                Continue with demo account
+              </Button>
+            </div>
+
             <p className="mt-6 text-center text-xs text-muted-foreground">
               Trouble signing in? Contact your EWOS administrator.
             </p>
+
           </CardContent>
         </Card>
 
