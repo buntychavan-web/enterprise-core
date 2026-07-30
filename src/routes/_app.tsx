@@ -4,6 +4,7 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  CheckSquare,
   Clock,
   Contact2,
   HelpCircle,
@@ -11,11 +12,13 @@ import {
   Megaphone,
   Menu,
   PartyPopper,
+  Receipt,
   Users as UsersIcon,
   UserSquare2,
   Wallet,
   X,
 } from "lucide-react";
+
 import { EwosLogo } from "@/components/ewos/Logo";
 import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
