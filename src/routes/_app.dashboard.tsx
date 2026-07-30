@@ -134,8 +134,7 @@ function DashboardPage() {
   /* Payroll — finalized runs power the gross/net trend. */
   const runs = useQuery({
     queryKey: ["payroll", "runs", "dashboard"],
-    queryFn: ({ signal }) =>
-      payrollApi.runs({ page: 0, size: 12, sort: "startedAt,desc" }, signal),
+    queryFn: ({ signal }) => payrollApi.runs({ page: 0, size: 12, sort: "startedAt,desc" }, signal),
   });
   const periods = useQuery({
     queryKey: ["payroll", "periods", "dashboard"],
@@ -439,7 +438,9 @@ function DashboardPage() {
             <StatCard
               label="Leave available"
               icon={<CalendarClock className="h-5 w-5" />}
-              value={totalLeaveAvailable === null ? null : formatNumber(totalLeaveAvailable, " days")}
+              value={
+                totalLeaveAvailable === null ? null : formatNumber(totalLeaveAvailable, " days")
+              }
               loading={balances.isLoading}
               unavailable={!!balances.error || totalLeaveAvailable === null}
             />
