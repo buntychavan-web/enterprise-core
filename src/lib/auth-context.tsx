@@ -105,6 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cached = sessionStore.get();
     if (cached) setUser(cached);
 
+    // Demo sessions are local-only: never revalidate against the backend.
+    if (token === DEMO_TOKEN) {
+      setUser(cached ?? DEMO_USER);
+      setIsInitializing(false);
+      return;
+    }
+
     authApi
       .me()
       .then((me) => {
@@ -125,6 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession]);
 
   const login = useCallback(async (username: string, password: string, remember: boolean) => {
+    if (
+      username.trim().toLowerCase() === DEMO_CREDENTIALS.username &&
+      password === DEMO_CREDENTIALS.password
+    ) {
+      tokenStore.set(DEMO_TOKEN, undefined, remember);
+      sessionStore.set(DEMO_USER, remember);
+      setUser(DEMO_USER);
+      return;
+    }
+
     const res = await authApi.login({ username, password });
     if (!res?.accessToken) {
       throw new Error("Login succeeded but no access token was returned by the server.");
@@ -136,14 +153,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me);
   }, []);
 
+  const loginAsDemo = useCallback(async () => {
+    tokenStore.set(DEMO_TOKEN, undefined, true);
+    sessionStore.set(DEMO_USER, true);
+    setUser(DEMO_USER);
+  }, []);
+
   const refreshMe = useCallback(async () => {
+    if (isDemoSession()) return;
     const me = await authApi.me();
     sessionStore.set(me);
     setUser(me);
   }, []);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
+    if (!isDemoSession()) {
+      await authApi.logout();
+    }
     clearSession();
   }, [clearSession]);
 
