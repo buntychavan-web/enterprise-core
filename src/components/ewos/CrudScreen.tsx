@@ -277,16 +277,26 @@ export function CrudScreen({
         </div>
 
         {loading ? (
-          <div className="grid place-items-center p-16 text-sm text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
+          <div
+            className="grid place-items-center p-16 text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+            <span className="sr-only">Loading {title.toLowerCase()}…</span>
           </div>
+        ) : forbidden ? (
+          <EmptyState
+            title="Access restricted"
+            description={`Your role does not include permission to view ${title.toLowerCase()}. Contact your administrator if you need access.`}
+          />
         ) : unavailable ? (
           <EmptyState
-            title="Coming soon"
-            description={`The ${title} endpoint (GET /api${resourcePath}) is not yet available on the backend. The screen is ready and will populate once the backend team ships it.`}
+            title="Not available"
+            description={`GET /api/v1${resourcePath} returned 404. The screen is wired and will populate as soon as the endpoint is reachable.`}
           />
         ) : error ? (
-          <div className="p-8 text-center">
+          <div className="p-8 text-center" role="alert">
             <p className="text-sm text-destructive">{error}</p>
             <Button variant="outline" size="sm" className="mt-3" onClick={() => load()}>
               Try again
@@ -301,7 +311,7 @@ export function CrudScreen({
                 : "Try a different search term."
             }
             action={
-              rows.length === 0 ? (
+              rows.length === 0 && canCreate ? (
                 <Button onClick={openCreate} size="sm">
                   <Plus className="h-4 w-4" />
                   New {singular}
@@ -310,49 +320,112 @@ export function CrudScreen({
             }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {columns.map((c) => (
-                    <TableHead key={c.name}>{c.label}</TableHead>
-                  ))}
-                  <TableHead className="w-24 text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((row, i) => (
-                  <TableRow key={String(row.id ?? i)}>
+          <>
+            {/* Mobile: stacked cards */}
+            <ul className="divide-y divide-border md:hidden">
+              {filtered.map((row, i) => (
+                <li key={String(row.id ?? i)} className="p-4">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <dl className="min-w-0 space-y-1">
+                      {columns.map((c, idx) => (
+                        <div key={c.name} className="min-w-0">
+                          <dt className="sr-only">{c.label}</dt>
+                          <dd
+                            className={
+                              idx === 0
+                                ? "truncate text-sm font-semibold text-foreground"
+                                : "truncate text-xs text-muted-foreground"
+                            }
+                          >
+                            {idx === 0 ? "" : `${c.label}: `}
+                            {String(row[c.name] ?? "—")}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="flex shrink-0 gap-1">
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="min-h-11 min-w-11"
+                          onClick={() => openEdit(row)}
+                          aria-label={`Edit ${singular}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="min-h-11 min-w-11"
+                          onClick={() => setDeleting(row)}
+                          aria-label={`Delete ${singular}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Desktop: table */}
+            <div className="hidden overflow-x-auto md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
                     {columns.map((c) => (
-                      <TableCell key={c.name} className="text-sm">
-                        {String(row[c.name] ?? "—")}
-                      </TableCell>
+                      <TableHead key={c.name}>{c.label}</TableHead>
                     ))}
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(row)}
-                        aria-label={`Edit ${singular}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(row)}
-                        aria-label={`Delete ${singular}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+                    {(canEdit || canDelete) && (
+                      <TableHead className="w-24 text-right">Actions</TableHead>
+                    )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((row, i) => (
+                    <TableRow key={String(row.id ?? i)}>
+                      {columns.map((c) => (
+                        <TableCell key={c.name} className="text-sm">
+                          {String(row[c.name] ?? "—")}
+                        </TableCell>
+                      ))}
+                      {(canEdit || canDelete) && (
+                        <TableCell className="text-right">
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(row)}
+                              aria-label={`Edit ${singular}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(row)}
+                              aria-label={`Delete ${singular}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </div>
+
 
       <Dialog open={editing !== null} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-lg">
