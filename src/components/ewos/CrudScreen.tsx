@@ -247,13 +247,17 @@ export function CrudScreen({
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button size="sm" onClick={openCreate} disabled={unavailable}>
-              <Plus className="h-4 w-4" />
-              New {singular}
-            </Button>
+            {canCreate && (
+              <Button size="sm" onClick={openCreate} disabled={unavailable || forbidden}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New {singular}</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            )}
           </div>
         }
       />
+
 
       <div className="rounded-lg border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border p-3">
