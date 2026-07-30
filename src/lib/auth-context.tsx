@@ -186,10 +186,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasPermission: (permission) => permissions.includes(permission),
       hasAnyPermission: (list) => list.some((p) => permissions.includes(p)),
       login,
+      loginAsDemo,
+      isDemo: !!user && user.userId === DEMO_USER.userId,
       refreshMe,
       logout,
     };
-  }, [user, isInitializing, login, refreshMe, logout]);
+  }, [user, isInitializing, login, loginAsDemo, refreshMe, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
