@@ -81,15 +81,22 @@ export function CrudScreen({
     setLoading(true);
     setError(null);
     try {
-      const result = await api.list(signal);
-      setRows(result.items);
-      setUnavailable(result.unavailable);
+      const result = await api.list({ page: 0, size: 200 }, signal);
+      setRows(result.content);
+      setUnavailable(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data.");
+      if (signal?.aborted) return;
+      if (err instanceof ApiError && err.isNotFound) {
+        setRows([]);
+        setUnavailable(true);
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to load data.");
+      }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
+
 
   useEffect(() => {
     const ctrl = new AbortController();
