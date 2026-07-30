@@ -154,7 +154,9 @@ function NotificationsPage() {
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-medium text-foreground">{n.title}</span>
                               {n.type && (
-                                <StatusChip tone={toneFor(n.type)}>{humanizeEnum(n.type)}</StatusChip>
+                                <StatusChip tone={toneFor(n.type)}>
+                                  {humanizeEnum(n.type)}
+                                </StatusChip>
                               )}
                             </div>
                             {n.body && (
