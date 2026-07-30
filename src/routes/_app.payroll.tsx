@@ -109,7 +109,10 @@ function PayrollAdminPage() {
   const periods = useQuery({
     queryKey: ["payroll", "periods", periodPage],
     queryFn: ({ signal }) =>
-      payrollApi.periods({ page: periodPage - 1, size: PAGE_SIZE, sort: "periodStart,desc" }, signal),
+      payrollApi.periods(
+        { page: periodPage - 1, size: PAGE_SIZE, sort: "periodStart,desc" },
+        signal,
+      ),
     placeholderData: keepPreviousData,
   });
 
@@ -148,8 +151,8 @@ function PayrollAdminPage() {
     mutate(payrollApi.finalizeRun, "Run finalized — payslips are now visible to employees"),
   );
 
-  const periodRows = periods.data?.content ?? [];
-  const runRows = runs.data?.content ?? [];
+  const periodRows = useMemo(() => periods.data?.content ?? [], [periods.data]);
+  const runRows = useMemo(() => runs.data?.content ?? [], [runs.data]);
 
   const periodById = useMemo(() => {
     const map = new Map<string, PayrollPeriodResponse>();
@@ -204,7 +207,12 @@ function PayrollAdminPage() {
         description="Periods, runs and statutory outputs for the active company."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportRuns} disabled={runRows.length === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportRuns}
+              disabled={runRows.length === 0}
+            >
               <Download className="h-4 w-4" />
               Export runs
             </Button>
@@ -498,7 +506,7 @@ function RunRow({
   return (
     <TableRow>
       <TableCell className="text-sm font-medium">
-        {period?.code ?? period?.periodStart ? (
+        {(period?.code ?? period?.periodStart) ? (
           <>
             {period?.code ?? formatDate(period?.periodStart)}
             <div className="text-xs font-normal text-muted-foreground">
@@ -530,7 +538,9 @@ function RunRow({
               <BadgeCheck className="h-3.5 w-3.5" /> Finalize
             </Button>
           )}
-          {status === "FINALIZED" && <span className="text-xs text-muted-foreground">Complete</span>}
+          {status === "FINALIZED" && (
+            <span className="text-xs text-muted-foreground">Complete</span>
+          )}
         </div>
       </TableCell>
     </TableRow>

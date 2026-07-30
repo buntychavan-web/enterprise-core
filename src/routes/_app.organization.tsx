@@ -7,11 +7,7 @@ import { EmptyState } from "@/components/ewos/EmptyState";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import {
-  ApiError,
-  organizationApi,
-  type OrganizationUnitTypeResponse,
-} from "@/lib/api-client";
+import { ApiError, organizationApi, type OrganizationUnitTypeResponse } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_app/organization")({
   head: () => ({
@@ -110,10 +106,7 @@ function OrganizationPage() {
           <span className="sr-only">Loading unit types…</span>
         </div>
       ) : error ? (
-        <div
-          className="rounded-lg border border-border bg-card p-8 text-center"
-          role="alert"
-        >
+        <div className="rounded-lg border border-border bg-card p-8 text-center" role="alert">
           <AlertTriangle className="mx-auto h-6 w-6 text-destructive" aria-hidden />
           <p className="mt-3 text-sm text-destructive">{error}</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={() => void loadTypes()}>
@@ -130,7 +123,10 @@ function OrganizationPage() {
         </div>
       ) : (
         <>
-          <nav aria-label="Organization unit types" className="-mx-1 flex gap-1 overflow-x-auto pb-1">
+          <nav
+            aria-label="Organization unit types"
+            className="-mx-1 flex gap-1 overflow-x-auto pb-1"
+          >
             {types.map((t) => {
               const isActive = t.id === activeId;
               return (

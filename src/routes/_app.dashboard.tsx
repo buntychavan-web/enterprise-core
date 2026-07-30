@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -18,35 +17,33 @@ import {
 } from "recharts";
 import {
   ArrowUpRight,
+  Bell,
   Building2,
   CalendarClock,
   ClipboardList,
-  Clock,
-  DollarSign,
   FileText,
   ShieldCheck,
-  Sparkles,
-  TrendingUp,
   UserPlus,
   UserSquare2,
   Users as UsersIcon,
   Wallet,
 } from "lucide-react";
-import { dashboardApi, type DashboardSummary } from "@/lib/api-client";
+import {
+  dashboardApi,
+  employeesApi,
+  leaveApi,
+  notificationsApi,
+  organizationApi,
+  payrollApi,
+  type EmployeeStatus,
+} from "@/lib/api-client";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatCard } from "@/components/ewos/StatCard";
-import { StatusChip } from "@/components/ewos/StatusChip";
+import { EmptyState } from "@/components/ewos/EmptyState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import {
-  ANNOUNCEMENTS,
-  ATTENDANCE_WEEK,
-  DEPARTMENT_SPLIT,
-  HEADCOUNT_TREND,
-  PAYROLL_MONTHLY,
-  RECENT_ACTIVITY,
-} from "@/lib/mock/dashboard";
+import { formatDate, formatMoney, formatNumber, humanizeEnum } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -68,38 +65,144 @@ const CHART_COLORS = [
   "var(--primary)",
 ];
 
-function DashboardPage() {
-  const [summary, setSummary] = useState<DashboardSummary>({
-    employees: null,
-    users: null,
-    departments: null,
-    roles: null,
-  });
-  const [loading, setLoading] = useState(true);
+const EMPLOYEE_STATUSES: EmployeeStatus[] = [
+  "ACTIVE",
+  "ON_LEAVE",
+  "SUSPENDED",
+  "PRE_HIRE",
+  "TERMINATED",
+];
 
-  useEffect(() => {
-    let cancelled = false;
-    dashboardApi.summary().then((d) => {
-      if (cancelled) return;
-      setSummary(d);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+const tooltipStyle: React.CSSProperties = {
+  background: "var(--popover)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 12,
+  color: "var(--popover-foreground)",
+};
+
+function DashboardPage() {
+  const summary = useQuery({
+    queryKey: ["dashboard", "summary"],
+    queryFn: () => dashboardApi.summary(),
+  });
+
+  /* HR — headcount by employment status, counted server-side. */
+  const statusCounts = useQueries({
+    queries: EMPLOYEE_STATUSES.map((status) => ({
+      queryKey: ["dashboard", "headcount", status],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        employeesApi.search({ page: 0, size: 1, status }, signal),
+    })),
+  });
+
+  const statusData = useMemo(
+    () =>
+      EMPLOYEE_STATUSES.map((status, i) => ({
+        status: humanizeEnum(status),
+        count: statusCounts[i]?.data?.totalElements ?? 0,
+      })),
+    [statusCounts],
+  );
+  const statusLoading = statusCounts.some((q) => q.isLoading);
+  const statusFailed = statusCounts.every((q) => !!q.error);
+
+  /* Executive — headcount split across the first organization units. */
+  const units = useQuery({
+    queryKey: ["organization", "units", "dashboard"],
+    queryFn: ({ signal }) => organizationApi.units.list({ page: 0, size: 6 }, signal),
+  });
+  const unitList = useMemo(() => units.data?.content ?? [], [units.data]);
+
+  const unitCounts = useQueries({
+    queries: unitList.map((u) => ({
+      queryKey: ["dashboard", "unit-headcount", u.id],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        employeesApi.search({ page: 0, size: 1, orgUnitId: u.id }, signal),
+    })),
+  });
+
+  const unitData = useMemo(
+    () =>
+      unitList
+        .map((u, i) => ({ name: u.name, value: unitCounts[i]?.data?.totalElements ?? 0 }))
+        .filter((d) => d.value > 0),
+    [unitList, unitCounts],
+  );
+  const unitLoading = units.isLoading || unitCounts.some((q) => q.isLoading);
+
+  /* Payroll — finalized runs power the gross/net trend. */
+  const runs = useQuery({
+    queryKey: ["payroll", "runs", "dashboard"],
+    queryFn: ({ signal }) => payrollApi.runs({ page: 0, size: 12, sort: "startedAt,desc" }, signal),
+  });
+  const periods = useQuery({
+    queryKey: ["payroll", "periods", "dashboard"],
+    queryFn: ({ signal }) =>
+      payrollApi.periods({ page: 0, size: 12, sort: "periodStart,desc" }, signal),
+  });
+
+  const periodLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of periods.data?.content ?? []) {
+      map.set(p.id, p.code ?? formatDate(p.periodStart));
+    }
+    return map;
+  }, [periods.data]);
+
+  const payrollTrend = useMemo(
+    () =>
+      (runs.data?.content ?? [])
+        .filter((r) => (r.status ?? "").toUpperCase() === "FINALIZED")
+        .slice()
+        .reverse()
+        .map((r) => ({
+          period: periodLabel.get(r.payrollPeriodId ?? "") ?? "—",
+          gross: r.grossAmount ?? 0,
+          net: r.netAmount ?? 0,
+        })),
+    [runs.data, periodLabel],
+  );
+
+  const latestRun = payrollTrend.at(-1);
+  const nextPeriod = useMemo(
+    () =>
+      (periods.data?.content ?? [])
+        .filter((p) => (p.status ?? "").toUpperCase() === "OPEN")
+        .sort((a, b) => (a.payDate ?? "").localeCompare(b.payDate ?? ""))[0],
+    [periods.data],
+  );
+
+  /* Employee self-service. */
+  const balances = useQuery({
+    queryKey: ["leave", "balances", "me"],
+    queryFn: ({ signal }) => leaveApi.myBalances(signal),
+  });
+  const myPayslips = useQuery({
+    queryKey: ["payroll", "payslips", "me", "dashboard"],
+    queryFn: ({ signal }) => payrollApi.myPayslips({ page: 0, size: 1 }, signal),
+  });
+  const pendingLeave = useQuery({
+    queryKey: ["leave", "approvals", "dashboard"],
+    queryFn: ({ signal }) => leaveApi.pendingApprovals(signal),
+  });
+  const unread = useQuery({
+    queryKey: ["notifications", "unread", "dashboard"],
+    queryFn: ({ signal }) => notificationsApi.unreadCount(signal),
+  });
+
+  const totalLeaveAvailable = useMemo(() => {
+    const rows = balances.data ?? [];
+    if (rows.length === 0) return null;
+    return rows.reduce((sum, b) => sum + (b.availableDays ?? 0), 0);
+  }, [balances.data]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Overview"
         title="Dashboard"
-        description="Live workforce metrics with executive, HR, payroll and employee views."
-        actions={
-          <StatusChip tone="info" icon={<Sparkles className="h-3 w-3" />}>
-            Sample analytics
-          </StatusChip>
-        }
+        description="Live workforce metrics across executive, HR, payroll and employee views."
       />
 
       <section aria-labelledby="metrics-heading">
@@ -110,30 +213,30 @@ function DashboardPage() {
           <StatCard
             label="Employees"
             icon={<UserSquare2 className="h-5 w-5" />}
-            value={summary.employees}
-            loading={loading}
-            unavailable={!loading && summary.employees === null}
+            value={summary.data?.employees ?? null}
+            loading={summary.isLoading}
+            unavailable={!summary.isLoading && (summary.data?.employees ?? null) === null}
           />
           <StatCard
             label="Active users"
             icon={<UsersIcon className="h-5 w-5" />}
-            value={summary.users}
-            loading={loading}
-            unavailable={!loading && summary.users === null}
+            value={summary.data?.users ?? null}
+            loading={summary.isLoading}
+            unavailable={!summary.isLoading && (summary.data?.users ?? null) === null}
           />
           <StatCard
             label="Departments"
             icon={<Building2 className="h-5 w-5" />}
-            value={summary.departments}
-            loading={loading}
-            unavailable={!loading && summary.departments === null}
+            value={summary.data?.departments ?? null}
+            loading={summary.isLoading}
+            unavailable={!summary.isLoading && (summary.data?.departments ?? null) === null}
           />
           <StatCard
             label="Roles"
             icon={<ShieldCheck className="h-5 w-5" />}
-            value={summary.roles}
-            loading={loading}
-            unavailable={!loading && summary.roles === null}
+            value={summary.data?.roles ?? null}
+            loading={summary.isLoading}
+            unavailable={!summary.isLoading && (summary.data?.roles ?? null) === null}
           />
         </div>
       </section>
@@ -150,99 +253,105 @@ function DashboardPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Headcount trend</CardTitle>
+                <CardTitle className="text-sm font-semibold">Headcount by status</CardTitle>
               </CardHeader>
               <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={HEADCOUNT_TREND}>
-                    <defs>
-                      <linearGradient id="hc" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
-                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Area
-                      type="monotone"
-                      dataKey="headcount"
-                      stroke="var(--primary)"
-                      fill="url(#hc)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <ChartFrame
+                  loading={statusLoading}
+                  empty={statusFailed || statusData.every((d) => d.count === 0)}
+                  emptyLabel="No employee records are available yet."
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={statusData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="status" stroke="var(--muted-foreground)" fontSize={12} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={12} allowDecimals={false} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                        {statusData.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartFrame>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Department split</CardTitle>
+                <CardTitle className="text-sm font-semibold">Headcount by unit</CardTitle>
               </CardHeader>
               <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={DEPARTMENT_SPLIT}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={55}
-                      outerRadius={90}
-                      paddingAngle={2}
-                    >
-                      {DEPARTMENT_SPLIT.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ChartFrame
+                  loading={unitLoading}
+                  empty={unitData.length === 0}
+                  emptyLabel="No organization units with employees."
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={unitData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={55}
+                        outerRadius={90}
+                        paddingAngle={2}
+                      >
+                        {unitData.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartFrame>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <QuickActions />
-            <RecentActivity />
-          </div>
+          <QuickActions />
         </TabsContent>
 
         <TabsContent value="hr" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="New joiners (MTD)"
-              icon={<UserPlus className="h-5 w-5" />}
-              value={42}
-            />
-            <StatCard label="Exits (MTD)" icon={<TrendingUp className="h-5 w-5" />} value={10} />
-            <StatCard
-              label="Attrition (12m)"
-              icon={<TrendingUp className="h-5 w-5" />}
-              value="6.2%"
-            />
-            <StatCard
-              label="Open positions"
-              icon={<ClipboardList className="h-5 w-5" />}
-              value={28}
-            />
+            {EMPLOYEE_STATUSES.slice(0, 4).map((status, i) => (
+              <StatCard
+                key={status}
+                label={humanizeEnum(status)}
+                icon={<UserSquare2 className="h-5 w-5" />}
+                value={statusCounts[i]?.data?.totalElements ?? null}
+                loading={statusCounts[i]?.isLoading}
+                unavailable={!!statusCounts[i]?.error}
+                hint="Employees in this status"
+              />
+            ))}
           </div>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Attendance this week</CardTitle>
+              <CardTitle className="text-sm font-semibold">Workforce distribution</CardTitle>
             </CardHeader>
             <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ATTENDANCE_WEEK}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="present" stackId="a" fill="var(--chart-2)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="late" stackId="a" fill="var(--chart-4)" />
-                  <Bar dataKey="absent" stackId="a" fill="var(--chart-5)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <ChartFrame
+                loading={statusLoading}
+                empty={statusFailed || statusData.every((d) => d.count === 0)}
+                emptyLabel="No employee records are available yet."
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={statusData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis type="number" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis
+                      type="category"
+                      dataKey="status"
+                      width={96}
+                      stroke="var(--muted-foreground)"
+                      fontSize={12}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="count" fill="var(--chart-2)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartFrame>
             </CardContent>
           </Card>
         </TabsContent>
@@ -250,62 +359,76 @@ function DashboardPage() {
         <TabsContent value="payroll" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label="Gross this month"
+              label="Latest gross"
               icon={<Wallet className="h-5 w-5" />}
-              value="₹4.47 Cr"
+              value={latestRun ? formatMoney(latestRun.gross) : null}
+              loading={runs.isLoading}
+              unavailable={!runs.isLoading && !latestRun}
+              hint="Most recent finalized run"
             />
             <StatCard
-              label="Net this month"
-              icon={<DollarSign className="h-5 w-5" />}
-              value="₹3.41 Cr"
+              label="Latest net"
+              icon={<Wallet className="h-5 w-5" />}
+              value={latestRun ? formatMoney(latestRun.net) : null}
+              loading={runs.isLoading}
+              unavailable={!runs.isLoading && !latestRun}
+              hint="Most recent finalized run"
             />
             <StatCard
-              label="Tax withheld"
-              icon={<FileText className="h-5 w-5" />}
-              value="₹0.85 Cr"
+              label="Runs in flight"
+              icon={<ClipboardList className="h-5 w-5" />}
+              value={
+                (runs.data?.content ?? []).filter(
+                  (r) => !["FINALIZED", "CANCELLED"].includes((r.status ?? "").toUpperCase()),
+                ).length
+              }
+              loading={runs.isLoading}
+              unavailable={!!runs.error}
             />
             <StatCard
-              label="Next run"
+              label="Next pay date"
               icon={<CalendarClock className="h-5 w-5" />}
-              value="Aug 28"
+              value={nextPeriod ? formatDate(nextPeriod.payDate) : null}
+              loading={periods.isLoading}
+              unavailable={!periods.isLoading && !nextPeriod}
+              hint="Next open payroll period"
             />
           </div>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">
-                Payroll — gross vs net (₹ crores)
+                Finalized payroll — gross vs net
               </CardTitle>
             </CardHeader>
             <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={PAYROLL_MONTHLY}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Line
-                    type="monotone"
-                    dataKey="gross"
-                    stroke="var(--chart-1)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="net"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="tax"
-                    stroke="var(--chart-4)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <ChartFrame
+                loading={runs.isLoading || periods.isLoading}
+                empty={payrollTrend.length === 0}
+                emptyLabel="No finalized payroll runs yet."
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={payrollTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="period" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey="gross"
+                      stroke="var(--chart-1)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="net"
+                      stroke="var(--primary)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartFrame>
             </CardContent>
           </Card>
         </TabsContent>
@@ -313,34 +436,71 @@ function DashboardPage() {
         <TabsContent value="employee" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label="Leave balance"
+              label="Leave available"
               icon={<CalendarClock className="h-5 w-5" />}
-              value="14 days"
+              value={
+                totalLeaveAvailable === null ? null : formatNumber(totalLeaveAvailable, " days")
+              }
+              loading={balances.isLoading}
+              unavailable={!!balances.error || totalLeaveAvailable === null}
             />
             <StatCard
-              label="Pending approvals"
+              label="Awaiting your approval"
               icon={<ClipboardList className="h-5 w-5" />}
-              value={3}
+              value={pendingLeave.data?.length ?? null}
+              loading={pendingLeave.isLoading}
+              unavailable={!!pendingLeave.error}
             />
             <StatCard
               label="Payslips available"
               icon={<FileText className="h-5 w-5" />}
-              value={12}
+              value={myPayslips.data?.totalElements ?? null}
+              loading={myPayslips.isLoading}
+              unavailable={!!myPayslips.error}
             />
-            <StatCard label="Next holiday" icon={<Clock className="h-5 w-5" />} value="Aug 15" />
+            <StatCard
+              label="Unread notifications"
+              icon={<Bell className="h-5 w-5" />}
+              value={unread.data ?? null}
+              loading={unread.isLoading}
+              unavailable={!!unread.error}
+            />
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Announcements</CardTitle>
+                <CardTitle className="text-sm font-semibold">Your leave balances</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {ANNOUNCEMENTS.map((a) => (
-                  <div key={a.id} className="rounded-md border border-border p-3">
-                    <div className="text-sm font-medium text-foreground">{a.title}</div>
-                    <p className="mt-1 text-xs text-muted-foreground">{a.body}</p>
+              <CardContent>
+                {balances.isLoading ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
                   </div>
-                ))}
+                ) : (balances.data ?? []).length === 0 ? (
+                  <EmptyState
+                    icon={CalendarClock}
+                    title="No leave balances"
+                    description="No entitlements are configured against your record."
+                  />
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(balances.data ?? []).map((b, i) => (
+                      <div
+                        key={b.leaveTypeCode ?? i}
+                        className="rounded-lg border border-border p-4"
+                      >
+                        <div className="text-sm font-medium">{humanizeEnum(b.leaveTypeCode)}</div>
+                        <div className="mt-1 text-2xl font-semibold">
+                          {formatNumber(b.availableDays)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatNumber(b.usedDays)} used · {formatNumber(b.entitledDays)} entitled
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
             <QuickActions />
@@ -351,44 +511,58 @@ function DashboardPage() {
   );
 }
 
-const tooltipStyle: React.CSSProperties = {
-  background: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  fontSize: 12,
-  color: "var(--popover-foreground)",
-};
+function ChartFrame({
+  loading,
+  empty,
+  emptyLabel,
+  children,
+}: {
+  loading?: boolean;
+  empty?: boolean;
+  emptyLabel: string;
+  children: React.ReactNode;
+}) {
+  if (loading) return <Skeleton className="h-full w-full" />;
+  if (empty) {
+    return (
+      <div className="grid h-full place-items-center text-sm text-muted-foreground">
+        {emptyLabel}
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 function QuickActions() {
   const actions: Array<{
-    to: "/users" | "/employees" | "/organization" | "/settings";
+    to: "/users" | "/employees" | "/organization" | "/approvals" | "/payroll" | "/settings";
     title: string;
     description: string;
     icon: typeof UsersIcon;
   }> = [
     {
       to: "/employees",
-      title: "Add employee",
-      description: "Onboard a new team member.",
+      title: "Employees",
+      description: "Onboard and maintain records.",
       icon: UserPlus,
     },
     {
-      to: "/organization",
-      title: "Organization setup",
-      description: "Departments, grades, calendars.",
-      icon: Building2,
-    },
-    {
-      to: "/users",
-      title: "Manage users",
-      description: "Accounts and access controls.",
-      icon: ShieldCheck,
-    },
-    {
-      to: "/settings",
-      title: "Settings",
-      description: "Theme and preferences.",
+      to: "/approvals",
+      title: "Approvals",
+      description: "Leave and timesheet decisions.",
       icon: ClipboardList,
+    },
+    {
+      to: "/payroll",
+      title: "Payroll",
+      description: "Periods, runs and payslips.",
+      icon: Wallet,
+    },
+    {
+      to: "/organization",
+      title: "Organization",
+      description: "Units, grades and calendars.",
+      icon: Building2,
     },
   ];
   return (
@@ -415,42 +589,6 @@ function QuickActions() {
             </span>
           </Link>
         ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function RecentActivity() {
-  const toneMap = {
-    info: "info",
-    success: "success",
-    warning: "warning",
-    neutral: "neutral",
-  } as const;
-  return (
-    <Card className="lg:col-span-2">
-      <CardHeader className="flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-semibold">Recent activity</CardTitle>
-        <Button variant="ghost" size="sm" className="text-xs">
-          View all
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-border">
-          {RECENT_ACTIVITY.map((a) => (
-            <li key={a.id} className="flex items-start gap-3 px-5 py-3">
-              <StatusChip tone={toneMap[a.tone]} className="mt-0.5 shrink-0">
-                {a.tone}
-              </StatusChip>
-              <div className="min-w-0 flex-1 text-sm">
-                <span className="font-medium text-foreground">{a.actor}</span>{" "}
-                <span className="text-muted-foreground">{a.action}</span>{" "}
-                <span className="font-medium text-foreground">{a.target}</span>
-                <div className="mt-0.5 text-xs text-muted-foreground">{a.at}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
       </CardContent>
     </Card>
   );

@@ -126,12 +126,7 @@ export type NotificationResponse = {
   createdAt?: string;
 };
 
-export type LeaveRequestStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "CANCELLED";
+export type LeaveRequestStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
 
 export type LeaveRequestResponse = {
   id: string;
@@ -177,12 +172,7 @@ export type TimeEntryResponse = {
   notes?: string;
 };
 
-export type TimesheetStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "CANCELLED";
+export type TimesheetStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
 
 export type TimesheetResponse = {
   id: string;
@@ -440,9 +430,7 @@ function extractErrorMessage(data: unknown, status: number): string {
     }
     if (Array.isArray(d.errors) && d.errors.length) {
       return d.errors
-        .map((e) =>
-          typeof e === "string" ? e : ((e as FieldError).message ?? JSON.stringify(e)),
-        )
+        .map((e) => (typeof e === "string" ? e : ((e as FieldError).message ?? JSON.stringify(e))))
         .join(", ");
     }
   }
@@ -506,7 +494,7 @@ export function toPage<T>(data: unknown, fallbackSize = 20): Page<T> {
   return { content: [], totalElements: 0, totalPages: 0, number: 0, size: fallbackSize };
 }
 
-export const emptyPage = <T,>(): Page<T> => ({
+export const emptyPage = <T>(): Page<T> => ({
   content: [] as T[],
   totalElements: 0,
   totalPages: 0,
@@ -594,8 +582,8 @@ export const employeesApi = {
     return request<EmployeeResponse[]>("/employees/me/reports", { signal });
   },
   employmentTypes(signal?: AbortSignal) {
-    return request<unknown>("/employees/employment-types", { signal }).then((d) =>
-      toPage<ResourceRecord>(d).content,
+    return request<unknown>("/employees/employment-types", { signal }).then(
+      (d) => toPage<ResourceRecord>(d).content,
     );
   },
   identityHistory(id: string, signal?: AbortSignal) {
@@ -614,9 +602,7 @@ export const employeesApi = {
 
 export const organizationApi = {
   units: resourceApi<OrganizationUnitResponse & ResourceRecord>("/organization/units"),
-  unitTypes: resourceApi<OrganizationUnitTypeResponse & ResourceRecord>(
-    "/organization/unit-types",
-  ),
+  unitTypes: resourceApi<OrganizationUnitTypeResponse & ResourceRecord>("/organization/unit-types"),
   tree(signal?: AbortSignal) {
     return request<OrganizationUnitResponse[]>("/organization/units/tree", { signal });
   },
@@ -712,8 +698,8 @@ export const leaveApi = {
   },
   /** MSS — requests awaiting the signed-in approver. */
   pendingApprovals(signal?: AbortSignal) {
-    return request<unknown>("/leave/self-service/reports/pending", { signal }).then((d) =>
-      toPage<LeaveRequestResponse>(d).content,
+    return request<unknown>("/leave/self-service/reports/pending", { signal }).then(
+      (d) => toPage<LeaveRequestResponse>(d).content,
     );
   },
   approve(id: string, body?: { comment?: string }) {
@@ -787,16 +773,16 @@ export const attendanceApi = {
 
 export const payrollApi = {
   myPayslips(query: PageQuery = {}, signal?: AbortSignal) {
-    return request<unknown>("/payroll/self-service/payslips", { params: query, signal }).then(
-      (d) => toPage<PayslipResponse>(d, query.size ?? 20),
+    return request<unknown>("/payroll/self-service/payslips", { params: query, signal }).then((d) =>
+      toPage<PayslipResponse>(d, query.size ?? 20),
     );
   },
   payslip(id: string, signal?: AbortSignal) {
     return request<PayslipResponse>(`/payroll/payslips/${id}`, { signal });
   },
   payslipsForRun(runId: string, query: PageQuery = {}, signal?: AbortSignal) {
-    return request<unknown>(`/payroll/payslips/run/${runId}`, { params: query, signal }).then(
-      (d) => toPage<PayslipResponse>(d, query.size ?? 20),
+    return request<unknown>(`/payroll/payslips/run/${runId}`, { params: query, signal }).then((d) =>
+      toPage<PayslipResponse>(d, query.size ?? 20),
     );
   },
   periods(query: PageQuery & QueryParams = {}, signal?: AbortSignal) {

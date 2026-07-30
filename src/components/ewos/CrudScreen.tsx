@@ -33,12 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { EmptyState } from "@/components/ewos/EmptyState";
-import {
-  ApiError,
-  resourceApi,
-  type QueryParams,
-  type ResourceRecord,
-} from "@/lib/api-client";
+import { ApiError, resourceApi, type QueryParams, type ResourceRecord } from "@/lib/api-client";
 
 export type CrudField = {
   name: string;
@@ -133,7 +128,6 @@ export function CrudScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourcePath, paramsKey]);
 
-
   const filtered = query
     ? rows.filter((row) =>
         Object.values(row).some((v) =>
@@ -220,7 +214,6 @@ export function CrudScreen({
     }
   };
 
-
   const confirmDelete = async () => {
     if (!deleting?.id) return;
     setRemovingId(deleting.id);
@@ -257,7 +250,6 @@ export function CrudScreen({
           </div>
         }
       />
-
 
       <div className="rounded-lg border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border p-3">
@@ -426,7 +418,6 @@ export function CrudScreen({
         )}
       </div>
 
-
       <Dialog open={editing !== null} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -482,7 +473,11 @@ export function CrudScreen({
                       <Input
                         {...common}
                         type={
-                          f.type === "number" ? "number" : f.type === "date" ? "date" : (f.type ?? "text")
+                          f.type === "number"
+                            ? "number"
+                            : f.type === "date"
+                              ? "date"
+                              : (f.type ?? "text")
                         }
                         onChange={(e) => setEditing({ ...editing, [f.name]: e.target.value })}
                       />
