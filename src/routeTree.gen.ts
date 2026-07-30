@@ -20,6 +20,7 @@ import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppPayrollRouteImport } from './routes/_app.payroll'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
@@ -29,6 +30,7 @@ import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
+import { Route as AppApprovalsRouteImport } from './routes/_app.approvals'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAboutRouteImport } from './routes/_app.about'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
@@ -88,6 +90,11 @@ const AppPayslipsRoute = AppPayslipsRouteImport.update({
   path: '/payslips',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPayrollRoute = AppPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrganizationRoute = AppOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
@@ -133,6 +140,11 @@ const AppAttendanceRoute = AppAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AppRoute,
 } as any)
+const AppApprovalsRoute = AppApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
@@ -155,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
+  '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
   '/directory': typeof AppDirectoryRoute
@@ -164,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
+  '/payroll': typeof AppPayrollRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -179,6 +193,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/about': typeof AppAboutRoute
   '/announcements': typeof AppAnnouncementsRoute
+  '/approvals': typeof AppApprovalsRoute
   '/attendance': typeof AppAttendanceRoute
   '/dashboard': typeof AppDashboardRoute
   '/directory': typeof AppDirectoryRoute
@@ -188,6 +203,7 @@ export interface FileRoutesByTo {
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
+  '/payroll': typeof AppPayrollRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -205,6 +221,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/about': typeof AppAboutRoute
   '/_app/announcements': typeof AppAnnouncementsRoute
+  '/_app/approvals': typeof AppApprovalsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/directory': typeof AppDirectoryRoute
@@ -214,6 +231,7 @@ export interface FileRoutesById {
   '/_app/leave': typeof AppLeaveRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/organization': typeof AppOrganizationRoute
+  '/_app/payroll': typeof AppPayrollRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -231,6 +249,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/about'
     | '/announcements'
+    | '/approvals'
     | '/attendance'
     | '/dashboard'
     | '/directory'
@@ -240,6 +259,7 @@ export interface FileRouteTypes {
     | '/leave'
     | '/notifications'
     | '/organization'
+    | '/payroll'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -255,6 +275,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/about'
     | '/announcements'
+    | '/approvals'
     | '/attendance'
     | '/dashboard'
     | '/directory'
@@ -264,6 +285,7 @@ export interface FileRouteTypes {
     | '/leave'
     | '/notifications'
     | '/organization'
+    | '/payroll'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -280,6 +302,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/about'
     | '/_app/announcements'
+    | '/_app/approvals'
     | '/_app/attendance'
     | '/_app/dashboard'
     | '/_app/directory'
@@ -289,6 +312,7 @@ export interface FileRouteTypes {
     | '/_app/leave'
     | '/_app/notifications'
     | '/_app/organization'
+    | '/_app/payroll'
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
@@ -386,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPayslipsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/payroll': {
+      id: '/_app/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AppPayrollRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/organization': {
       id: '/_app/organization'
       path: '/organization'
@@ -449,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/approvals': {
+      id: '/_app/approvals'
+      path: '/approvals'
+      fullPath: '/approvals'
+      preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/announcements': {
       id: '/_app/announcements'
       path: '/announcements'
@@ -488,6 +526,7 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 interface AppRouteChildren {
   AppAboutRoute: typeof AppAboutRoute
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
+  AppApprovalsRoute: typeof AppApprovalsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDirectoryRoute: typeof AppDirectoryRoute
@@ -497,6 +536,7 @@ interface AppRouteChildren {
   AppLeaveRoute: typeof AppLeaveRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
+  AppPayrollRoute: typeof AppPayrollRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -507,6 +547,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAboutRoute: AppAboutRoute,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
+  AppApprovalsRoute: AppApprovalsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDirectoryRoute: AppDirectoryRoute,
@@ -516,6 +557,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeaveRoute: AppLeaveRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrganizationRoute: AppOrganizationRoute,
+  AppPayrollRoute: AppPayrollRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,

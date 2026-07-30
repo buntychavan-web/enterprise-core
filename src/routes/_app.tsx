@@ -4,6 +4,7 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  CheckSquare,
   Clock,
   Contact2,
   HelpCircle,
@@ -11,11 +12,13 @@ import {
   Megaphone,
   Menu,
   PartyPopper,
+  Receipt,
   Users as UsersIcon,
   UserSquare2,
   Wallet,
   X,
 } from "lucide-react";
+
 import { EwosLogo } from "@/components/ewos/Logo";
 import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
@@ -37,12 +40,16 @@ const NAV = [
   { to: "/attendance", label: "Attendance", icon: Clock },
   { to: "/leave", label: "Leave", icon: CalendarDays },
   { to: "/payslips", label: "Payslips", icon: Wallet },
+  { to: "/approvals", label: "Approvals", icon: CheckSquare },
   { to: "/team", label: "My Team", icon: UsersIcon },
+
   { to: "/directory", label: "Directory", icon: Contact2 },
   { to: "/holidays", label: "Holidays", icon: PartyPopper },
   { to: "/announcements", label: "Announcements", icon: Megaphone },
   { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/organization", label: "Organization", icon: Building2 },
+  { to: "/payroll", label: "Payroll", icon: Receipt },
+
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/help", label: "Help", icon: HelpCircle },
 ] as const;

@@ -136,6 +136,9 @@ export type LeaveRequestStatus =
 export type LeaveRequestResponse = {
   id: string;
   employeeId?: string;
+  /** Present on approver-facing payloads so queues can show a name. */
+  employeeName?: string;
+
   leaveTypeId?: string;
   leaveTypeCode?: string;
   startDate: string;
