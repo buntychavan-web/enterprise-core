@@ -146,31 +146,54 @@ export function CrudScreen({
 
   const openCreate = () => {
     setCreating(true);
-    setEditing({});
+    setFieldErrors({});
+    setEditing({ ...(createDefaults ?? {}) });
   };
   const openEdit = (row: Row) => {
     setCreating(false);
+    setFieldErrors({});
     setEditing({ ...row });
   };
   const closeForm = () => {
     setEditing(null);
     setCreating(false);
+    setFieldErrors({});
   };
 
   const submit = async () => {
     if (!editing) return;
-    const payload: Record<string, unknown> = {};
+    const payload: Record<string, unknown> = { ...(creating ? (createDefaults ?? {}) : {}) };
+    const errors: Record<string, string> = {};
+
     for (const f of fields) {
+      if (f.readOnly) continue;
       const raw = editing[f.name];
-      if (f.required && (raw === undefined || raw === null || raw === "")) {
-        toast.error(`${f.label} is required`);
-        return;
+      const isBlank = raw === undefined || raw === null || raw === "";
+      if (f.required && isBlank) {
+        errors[f.name] = `${f.label} is required.`;
+        continue;
+      }
+      if (!isBlank && f.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(raw))) {
+        errors[f.name] = "Enter a valid email address.";
+        continue;
+      }
+      if (!isBlank && f.type === "number" && Number.isNaN(Number(raw))) {
+        errors[f.name] = "Enter a valid number.";
+        continue;
       }
       if (raw !== undefined) {
-        payload[f.name] = f.type === "number" && raw !== "" ? Number(raw) : raw;
+        payload[f.name] = f.type === "number" && !isBlank ? Number(raw) : raw;
       }
     }
+
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      toast.error("Please correct the highlighted fields.");
+      return;
+    }
+
     setSaving(true);
+    setFieldErrors({});
     try {
       if (creating) {
         await api.create(payload);
@@ -182,17 +205,21 @@ export function CrudScreen({
       closeForm();
       await load();
     } catch (err) {
-      const msg =
-        err instanceof ApiError
-          ? err.status === 404
-            ? "This endpoint is not yet available on the backend."
-            : err.message
-          : "Save failed.";
-      toast.error(msg);
+      if (err instanceof ApiError) {
+        if (err.fieldErrors.length) {
+          setFieldErrors(Object.fromEntries(err.fieldErrors.map((e) => [e.field, e.message])));
+        }
+        toast.error(
+          err.isNotFound ? "This endpoint is not available on the backend." : err.message,
+        );
+      } else {
+        toast.error("Save failed.");
+      }
     } finally {
       setSaving(false);
     }
   };
+
 
   const confirmDelete = async () => {
     if (!deleting?.id) return;
