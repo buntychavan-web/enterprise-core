@@ -79,7 +79,11 @@ function LeavePage() {
   });
 
   const rows = requests.data?.content ?? [];
-  const totals = (balances.data ?? []).reduce(
+  const totals = (balances.data ?? []).reduce<{
+    available: number;
+    used: number;
+    pending: number;
+  }>(
     (acc, b) => ({
       available: acc.available + (b.availableDays ?? 0),
       used: acc.used + (b.usedDays ?? 0),
@@ -87,6 +91,7 @@ function LeavePage() {
     }),
     { available: 0, used: 0, pending: 0 },
   );
+
   const hasBalances = (balances.data?.length ?? 0) > 0;
 
   return (
