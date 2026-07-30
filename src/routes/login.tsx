@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { EwosLogo } from "@/components/ewos/Logo";
-import { useAuth } from "@/lib/auth-context";
+import { DEMO_CREDENTIALS, useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isInitializing } = useAuth();
+  const { login, loginAsDemo, isAuthenticated, isInitializing } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
