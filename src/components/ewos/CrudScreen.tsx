@@ -102,19 +102,22 @@ export function CrudScreen({
   const columns = fields.filter((f) => f.listColumn !== false);
   const paramsKey = JSON.stringify(listParams ?? {});
 
-
   const load = async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.list({ page: 0, size: 200 }, signal);
+      const result = await api.list({ page: 0, size: 200, ...listParams }, signal);
       setRows(result.content);
       setUnavailable(false);
+      setForbidden(false);
     } catch (err) {
       if (signal?.aborted) return;
       if (err instanceof ApiError && err.isNotFound) {
         setRows([]);
         setUnavailable(true);
+      } else if (err instanceof ApiError && err.isForbidden) {
+        setRows([]);
+        setForbidden(true);
       } else {
         setError(err instanceof Error ? err.message : "Failed to load data.");
       }
@@ -123,13 +126,13 @@ export function CrudScreen({
     }
   };
 
-
   useEffect(() => {
     const ctrl = new AbortController();
     load(ctrl.signal);
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourcePath]);
+  }, [resourcePath, paramsKey]);
+
 
   const filtered = query
     ? rows.filter((row) =>
