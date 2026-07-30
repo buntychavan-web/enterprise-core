@@ -17,7 +17,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { attendanceApi } from "@/lib/api-client";
-import { formatDate, formatDateTime, formatNumber, humanizeEnum, requestStatusTone } from "@/lib/format";
+import {
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  humanizeEnum,
+  requestStatusTone,
+} from "@/lib/format";
 
 export const Route = createFileRoute("/_app/attendance")({
   head: () => ({
@@ -178,7 +184,9 @@ function AttendancePage() {
                         onClick={() => submitTimesheet.mutate(t.id)}
                         disabled={submitTimesheet.isPending}
                       >
-                        {submitTimesheet.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        {submitTimesheet.isPending && (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        )}
                         Submit
                       </Button>
                     )}
@@ -242,7 +250,10 @@ function AttendancePage() {
         </QueryState>
       </section>
 
-      <section aria-labelledby="entries-heading" className="rounded-lg border border-border bg-card">
+      <section
+        aria-labelledby="entries-heading"
+        className="rounded-lg border border-border bg-card"
+      >
         <h2 id="entries-heading" className="border-b border-border px-4 py-3 text-sm font-semibold">
           Recent punches
         </h2>
@@ -266,9 +277,7 @@ function AttendancePage() {
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">
-                      {humanizeEnum(e.eventType)}
-                    </div>
+                    <div className="truncate text-sm font-medium">{humanizeEnum(e.eventType)}</div>
                     <div className="text-xs text-muted-foreground">
                       {formatDateTime(e.occurredAt)}
                       {e.location ? ` · ${e.location}` : ""}

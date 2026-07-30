@@ -240,7 +240,10 @@ function PayslipsPage() {
                 </dl>
 
                 <div className="space-y-1 border-t border-border pt-3 text-sm">
-                  <Row label="Gross" value={formatMoney(detail.data.grossAmount, detail.data.currency)} />
+                  <Row
+                    label="Gross"
+                    value={formatMoney(detail.data.grossAmount, detail.data.currency)}
+                  />
                   <Row
                     label="Deductions"
                     value={formatMoney(detail.data.deductionsAmount, detail.data.currency)}
@@ -265,15 +268,7 @@ function PayslipsPage() {
   );
 }
 
-function Row({
-  label,
-  value,
-  emphasis,
-}: {
-  label: string;
-  value: string;
-  emphasis?: boolean;
-}) {
+function Row({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
       <span className={emphasis ? "font-semibold" : "text-muted-foreground"}>{label}</span>
