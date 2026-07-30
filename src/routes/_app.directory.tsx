@@ -232,9 +232,7 @@ function PersonCard({ person }: { person: EmployeeResponse }) {
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar className="h-11 w-11 shrink-0">
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {initials(name)}
-            </AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary">{initials(name)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">

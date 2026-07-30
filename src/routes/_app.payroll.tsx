@@ -154,7 +154,6 @@ function PayrollAdminPage() {
   const periodRows = useMemo(() => periods.data?.content ?? [], [periods.data]);
   const runRows = useMemo(() => runs.data?.content ?? [], [runs.data]);
 
-
   const periodById = useMemo(() => {
     const map = new Map<string, PayrollPeriodResponse>();
     for (const p of periodRows) map.set(p.id, p);

@@ -148,7 +148,6 @@ function LoginPage() {
             <p className="mt-6 text-center text-xs text-muted-foreground">
               Trouble signing in? Contact your EWOS administrator.
             </p>
-
           </CardContent>
         </Card>
 

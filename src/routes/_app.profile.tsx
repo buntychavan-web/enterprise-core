@@ -18,7 +18,6 @@ function ProfilePage() {
   const { user, roles } = useAuth();
   const name = displayName(user) || "You";
 
-
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Account" title="My profile" description="Your EWOS account details." />

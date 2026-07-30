@@ -8,12 +8,7 @@ import { QueryState } from "@/components/ewos/QueryState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  employeeName,
-  employeesApi,
-  initials,
-  type EmployeeResponse,
-} from "@/lib/api-client";
+import { employeeName, employeesApi, initials, type EmployeeResponse } from "@/lib/api-client";
 import { formatDate, humanizeEnum } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/team")({
