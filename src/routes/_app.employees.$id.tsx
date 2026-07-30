@@ -415,7 +415,8 @@ function EmployeeProfilePage() {
                         columns={[
                           {
                             header: "Effective from",
-                            render: (r) => formatDate(String(pick(r, "effectiveFrom", "startDate") ?? "")),
+                            render: (r) =>
+                              formatDate(String(pick(r, "effectiveFrom", "startDate") ?? "")),
                           },
                           {
                             header: "Component",
@@ -431,7 +432,10 @@ function EmployeeProfilePage() {
                                 : text(amount);
                             },
                           },
-                          { header: "Status", render: (r) => humanizeEnum(String(pick(r, "status") ?? "")) },
+                          {
+                            header: "Status",
+                            render: (r) => humanizeEnum(String(pick(r, "status") ?? "")),
+                          },
                         ]}
                       />
                     </QueryState>
@@ -519,8 +523,14 @@ function EmployeeProfilePage() {
                             header: "Account",
                             render: (r) => text(pick(r, "accountNumberMasked", "accountNumber")),
                           },
-                          { header: "IFSC / SWIFT", render: (r) => text(pick(r, "ifscCode", "swiftCode")) },
-                          { header: "Primary", render: (r) => text(pick(r, "primary", "isPrimary")) },
+                          {
+                            header: "IFSC / SWIFT",
+                            render: (r) => text(pick(r, "ifscCode", "swiftCode")),
+                          },
+                          {
+                            header: "Primary",
+                            render: (r) => text(pick(r, "primary", "isPrimary")),
+                          },
                         ]}
                       />
                     </QueryState>
@@ -549,10 +559,19 @@ function EmployeeProfilePage() {
                           {
                             header: "Changed at",
                             render: (r) =>
-                              formatDateTime(String(pick(r, "changedAt", "createdAt", "effectiveFrom") ?? "")),
+                              formatDateTime(
+                                String(pick(r, "changedAt", "createdAt", "effectiveFrom") ?? ""),
+                              ),
                           },
-                          { header: "Field", render: (r) => humanizeEnum(String(pick(r, "field", "attribute") ?? "")) },
-                          { header: "From", render: (r) => text(pick(r, "oldValue", "previousValue")) },
+                          {
+                            header: "Field",
+                            render: (r) =>
+                              humanizeEnum(String(pick(r, "field", "attribute") ?? "")),
+                          },
+                          {
+                            header: "From",
+                            render: (r) => text(pick(r, "oldValue", "previousValue")),
+                          },
                           { header: "To", render: (r) => text(pick(r, "newValue", "value")) },
                         ]}
                       />
