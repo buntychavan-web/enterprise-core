@@ -33,25 +33,42 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { EmptyState } from "@/components/ewos/EmptyState";
-import { ApiError, resourceApi, type ResourceRecord } from "@/lib/api-client";
+import {
+  ApiError,
+  resourceApi,
+  type QueryParams,
+  type ResourceRecord,
+} from "@/lib/api-client";
 
 export type CrudField = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "email" | "number";
+  type?: "text" | "textarea" | "email" | "number" | "date" | "select";
   required?: boolean;
   placeholder?: string;
+  /** Options for `type: "select"`. */
+  options?: Array<{ value: string; label: string }>;
   /** Show in the list table. */
   listColumn?: boolean;
+  /** Rendered read-only in the form (server-managed values). */
+  readOnly?: boolean;
 };
 
 export type CrudScreenProps = {
   title: string;
   description?: string;
-  /** e.g. "/departments" — mounted under /api by the client. */
+  /** Path under /api/v1 — e.g. "/organization/units". */
   resourcePath: string;
   singular: string;
   fields: CrudField[];
+  /** Extra query params applied to every list request (server-side filtering). */
+  listParams?: QueryParams;
+  /** Values merged into every newly created record. */
+  createDefaults?: Record<string, unknown>;
+  /** RBAC gates — hide write affordances the user is not entitled to. */
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 type Row = ResourceRecord;
@@ -62,20 +79,29 @@ export function CrudScreen({
   resourcePath,
   singular,
   fields,
+  listParams,
+  createDefaults,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }: CrudScreenProps) {
   const api = useMemo(() => resourceApi(resourcePath), [resourcePath]);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Row | null>(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [removingId, setRemovingId] = useState<string | number | null>(null);
 
   const columns = fields.filter((f) => f.listColumn !== false);
+  const paramsKey = JSON.stringify(listParams ?? {});
+
 
   const load = async (signal?: AbortSignal) => {
     setLoading(true);
