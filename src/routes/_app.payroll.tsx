@@ -151,8 +151,9 @@ function PayrollAdminPage() {
     mutate(payrollApi.finalizeRun, "Run finalized — payslips are now visible to employees"),
   );
 
-  const periodRows = periods.data?.content ?? [];
-  const runRows = runs.data?.content ?? [];
+  const periodRows = useMemo(() => periods.data?.content ?? [], [periods.data]);
+  const runRows = useMemo(() => runs.data?.content ?? [], [runs.data]);
+
 
   const periodById = useMemo(() => {
     const map = new Map<string, PayrollPeriodResponse>();
