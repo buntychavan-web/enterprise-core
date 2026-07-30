@@ -25,6 +25,46 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+/**
+ * Preview-only demo bypass. Lets reviewers click through the UI when the
+ * Spring Boot backend is not reachable from the browser. No API call is made;
+ * a local session is written to storage and revalidation is skipped.
+ */
+export const DEMO_CREDENTIALS = { username: "demo", password: "demo1234" } as const;
+const DEMO_TOKEN = "demo.preview.token";
+
+const DEMO_USER: MeResponse = {
+  userId: "demo-user",
+  username: DEMO_CREDENTIALS.username,
+  email: "demo@ewos.local",
+  tenantId: "demo-tenant",
+  employeeId: "demo-employee",
+  roles: [
+    {
+      id: "demo-role",
+      name: "ADMIN",
+      permissions: [
+        "EMPLOYEE_READ",
+        "EMPLOYEE_WRITE",
+        "ORG_READ",
+        "ORG_WRITE",
+        "USER_READ",
+        "USER_WRITE",
+        "PAYROLL_READ",
+        "PAYROLL_WRITE",
+        "LEAVE_READ",
+        "LEAVE_APPROVE",
+        "ATTENDANCE_READ",
+        "ATTENDANCE_APPROVE",
+      ],
+    },
+  ],
+};
+
+function isDemoSession() {
+  return tokenStore.get() === DEMO_TOKEN;
+}
+
 function roleNames(me: MeResponse | null): string[] {
   if (!me?.roles) return [];
   return me.roles.map((r) => (typeof r === "string" ? r : r.name)).filter(Boolean);
