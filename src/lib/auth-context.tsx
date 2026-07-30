@@ -19,6 +19,10 @@ type AuthContextValue = {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   login: (username: string, password: string, remember: boolean) => Promise<void>;
+  /** Preview-only: signs in with a local demo session, no backend call. */
+  loginAsDemo: () => Promise<void>;
+  /** True when the active session is the local preview demo session. */
+  isDemo: boolean;
   refreshMe: () => Promise<void>;
   logout: () => Promise<void>;
 };
