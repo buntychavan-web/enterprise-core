@@ -20,6 +20,7 @@ import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
+import { Route as AppPayrollRouteImport } from './routes/_app.payroll'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
@@ -87,6 +88,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
 const AppPayslipsRoute = AppPayslipsRouteImport.update({
   id: '/payslips',
   path: '/payslips',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPayrollRoute = AppPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOrganizationRoute = AppOrganizationRouteImport.update({
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
+  '/payroll': typeof AppPayrollRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/leave': typeof AppLeaveRoute
   '/notifications': typeof AppNotificationsRoute
   '/organization': typeof AppOrganizationRoute
+  '/payroll': typeof AppPayrollRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/_app/leave': typeof AppLeaveRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/organization': typeof AppOrganizationRoute
+  '/_app/payroll': typeof AppPayrollRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/leave'
     | '/notifications'
     | '/organization'
+    | '/payroll'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/leave'
     | '/notifications'
     | '/organization'
+    | '/payroll'
     | '/payslips'
     | '/profile'
     | '/settings'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/_app/leave'
     | '/_app/notifications'
     | '/_app/organization'
+    | '/_app/payroll'
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/settings'
@@ -396,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/payslips'
       fullPath: '/payslips'
       preLoaderRoute: typeof AppPayslipsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/payroll': {
+      id: '/_app/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AppPayrollRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/organization': {
@@ -517,6 +536,7 @@ interface AppRouteChildren {
   AppLeaveRoute: typeof AppLeaveRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
+  AppPayrollRoute: typeof AppPayrollRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -537,6 +557,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeaveRoute: AppLeaveRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrganizationRoute: AppOrganizationRoute,
+  AppPayrollRoute: AppPayrollRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
