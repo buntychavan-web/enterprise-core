@@ -15,11 +15,9 @@ export const Route = createFileRoute("/_app/profile")({
 });
 
 function ProfilePage() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const name = displayName(user) || "You";
-  const roles = Array.isArray(user?.roles)
-    ? user!.roles.map((r) => (typeof r === "string" ? r : r.name))
-    : [];
+
 
   return (
     <div className="space-y-6">
@@ -61,7 +59,7 @@ function ProfilePage() {
           <Field label="Username" value={user?.username ?? "—"} />
           <Field label="Full name" value={name} />
           <Field label="Email" value={user?.email ?? "—"} />
-          <Field label="User ID" value={String(user?.id ?? "—")} />
+          <Field label="User ID" value={user?.userId ?? "—"} />
         </CardContent>
       </Card>
 
