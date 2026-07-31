@@ -290,3 +290,28 @@ export const requisitionActions = {
 };
 
 export type RecruitmentRecord = ResourceRecord;
+
+/* -------------------------------------------------------------------------- */
+/* Workflow definitions (submit-for-approval target)                          */
+/* -------------------------------------------------------------------------- */
+
+export type WorkflowDefinitionSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  subjectType?: string;
+  active?: boolean;
+  definitionVersion?: number;
+};
+
+export const REQUISITION_SUBJECT_TYPE = "recruitment.requisition";
+
+export const recruitmentWorkflowApi = {
+  /** Active definitions bound to the requisition subject type. */
+  async definitions(signal?: AbortSignal) {
+    const all = await request<WorkflowDefinitionSummary[]>("/workflow/definitions", { signal });
+    return (Array.isArray(all) ? all : []).filter(
+      (d) => d.active !== false && d.subjectType === REQUISITION_SUBJECT_TYPE,
+    );
+  },
+};
