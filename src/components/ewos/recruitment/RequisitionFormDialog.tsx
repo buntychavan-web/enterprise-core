@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApiError, employeesApi, organizationApi, displayName } from "@/lib/api-client";
+import { ApiError, employeesApi, organizationApi, type EmployeeResponse } from "@/lib/api-client";
 import { humanizeEnum } from "@/lib/format";
 import {
   EMPLOYMENT_TYPES,
@@ -93,6 +93,13 @@ const EMPTY: FormValues = {
 };
 
 const clean = (v?: string) => (!v || v === NONE ? undefined : v);
+
+const employeeLabel = (e: EmployeeResponse) =>
+  e.displayName ||
+  [e.firstName, e.lastName].filter(Boolean).join(" ") ||
+  e.workEmail ||
+  e.employeeNumber ||
+  e.id;
 
 export function RequisitionFormDialog({
   open,
@@ -405,7 +412,7 @@ export function RequisitionFormDialog({
                       <SelectItem value={NONE}>Unassigned</SelectItem>
                       {peopleOptions.map((e) => (
                         <SelectItem key={e.id} value={e.id}>
-                          {displayName(e)}
+                          {employeeLabel(e)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -430,7 +437,7 @@ export function RequisitionFormDialog({
                       <SelectItem value={NONE}>Unassigned</SelectItem>
                       {peopleOptions.map((e) => (
                         <SelectItem key={e.id} value={e.id}>
-                          {displayName(e)}
+                          {employeeLabel(e)}
                         </SelectItem>
                       ))}
                     </SelectContent>
