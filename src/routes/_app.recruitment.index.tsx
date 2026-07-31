@@ -116,7 +116,7 @@ function RecruitmentDashboard() {
   if (!companyLoading && !companyId) {
     return (
       <EmptyState
-        icon={<Briefcase className="h-5 w-5" />}
+        icon={Briefcase}
         title="No company available"
         description="Recruitment data is scoped to a company. None were returned for your tenant."
       />
