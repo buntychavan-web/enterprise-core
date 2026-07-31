@@ -116,7 +116,7 @@ function RecruitmentDashboard() {
   if (!companyLoading && !companyId) {
     return (
       <EmptyState
-        icon={Briefcase}
+        icon={<Briefcase className="h-5 w-5" />}
         title="No company available"
         description="Recruitment data is scoped to a company. None were returned for your tenant."
       />
@@ -143,25 +143,25 @@ function RecruitmentDashboard() {
           <StatCard
             label="Open requisitions"
             value={metrics.open}
-            icon={ClipboardList}
+            icon={<ClipboardList className="h-5 w-5" />}
             hint="Actively hiring"
           />
           <StatCard
             label="Awaiting approval"
             value={metrics.pending}
-            icon={Timer}
+            icon={<Timer className="h-5 w-5" />}
             hint="Pending a decision"
           />
           <StatCard
             label="Vacancies to fill"
             value={metrics.openHeadcount}
-            icon={UserCheck}
+            icon={<UserCheck className="h-5 w-5" />}
             hint="Headcount minus fills"
           />
           <StatCard
             label="Positions in catalogue"
             value={positions.data?.length ?? 0}
-            icon={Briefcase}
+            icon={<Briefcase className="h-5 w-5" />}
             hint="Active and inactive seats"
           />
         </div>
