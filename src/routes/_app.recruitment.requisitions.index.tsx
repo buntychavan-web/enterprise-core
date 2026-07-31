@@ -94,21 +94,18 @@ function RequisitionsPage() {
   }, [query.data, debounced, status]);
 
   function exportCsv() {
-    downloadCsv(
-      timestampedName("requisitions"),
-      rows.map((r) => ({
-        Number: r.requisitionNumber,
-        Title: r.title,
-        Status: humanizeEnum(r.status),
-        Priority: humanizeEnum(r.priority),
-        Type: humanizeEnum(r.employmentType),
-        Headcount: r.headcount,
-        Filled: r.filledCount,
-        Location: r.location ?? "",
-        TargetStart: r.targetStartDate ?? "",
-        Budget: r.budgetAmount ?? "",
-      })),
-    );
+    downloadCsv(timestampedName("requisitions"), rows, [
+      { key: "number", header: "Number", value: (r) => r.requisitionNumber },
+      { key: "title", header: "Title", value: (r) => r.title },
+      { key: "status", header: "Status", value: (r) => humanizeEnum(r.status) },
+      { key: "priority", header: "Priority", value: (r) => humanizeEnum(r.priority ?? "MEDIUM") },
+      { key: "type", header: "Type", value: (r) => humanizeEnum(r.employmentType) },
+      { key: "headcount", header: "Headcount", value: (r) => r.headcount },
+      { key: "filled", header: "Filled", value: (r) => r.filledCount ?? 0 },
+      { key: "location", header: "Location", value: (r) => r.location ?? "" },
+      { key: "targetStart", header: "Target start", value: (r) => r.targetStartDate ?? "" },
+      { key: "budget", header: "Budget", value: (r) => r.budgetAmount ?? "" },
+    ]);
   }
 
   if (!companyLoading && !companyId) {
