@@ -19,6 +19,14 @@ import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTenantManagementRouteImport } from './routes/_app.tenant-management'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRolesRouteImport } from './routes/_app.roles'
+import { Route as AppRecruitmentRequisitionsRouteImport } from './routes/_app.recruitment-requisitions'
+import { Route as AppRecruitmentPreboardingRouteImport } from './routes/_app.recruitment-preboarding'
+import { Route as AppRecruitmentPositionsRouteImport } from './routes/_app.recruitment-positions'
+import { Route as AppRecruitmentPipelineRouteImport } from './routes/_app.recruitment-pipeline'
+import { Route as AppRecruitmentOffersRouteImport } from './routes/_app.recruitment-offers'
+import { Route as AppRecruitmentInterviewsRouteImport } from './routes/_app.recruitment-interviews'
+import { Route as AppRecruitmentCandidatesRouteImport } from './routes/_app.recruitment-candidates'
+import { Route as AppRecruitmentRouteImport } from './routes/_app.recruitment'
 import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
@@ -45,6 +53,7 @@ import { Route as AppAuditHistoryRouteImport } from './routes/_app.audit-history
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAboutRouteImport } from './routes/_app.about'
+import { Route as AppRecruitmentCandidatesIdRouteImport } from './routes/_app.recruitment-candidates.$id'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -95,6 +104,50 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppRolesRoute = AppRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecruitmentRequisitionsRoute =
+  AppRecruitmentRequisitionsRouteImport.update({
+    id: '/recruitment-requisitions',
+    path: '/recruitment-requisitions',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppRecruitmentPreboardingRoute =
+  AppRecruitmentPreboardingRouteImport.update({
+    id: '/recruitment-preboarding',
+    path: '/recruitment-preboarding',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppRecruitmentPositionsRoute = AppRecruitmentPositionsRouteImport.update({
+  id: '/recruitment-positions',
+  path: '/recruitment-positions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecruitmentPipelineRoute = AppRecruitmentPipelineRouteImport.update({
+  id: '/recruitment-pipeline',
+  path: '/recruitment-pipeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecruitmentOffersRoute = AppRecruitmentOffersRouteImport.update({
+  id: '/recruitment-offers',
+  path: '/recruitment-offers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecruitmentInterviewsRoute =
+  AppRecruitmentInterviewsRouteImport.update({
+    id: '/recruitment-interviews',
+    path: '/recruitment-interviews',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppRecruitmentCandidatesRoute =
+  AppRecruitmentCandidatesRouteImport.update({
+    id: '/recruitment-candidates',
+    path: '/recruitment-candidates',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppRecruitmentRoute = AppRecruitmentRouteImport.update({
+  id: '/recruitment',
+  path: '/recruitment',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProviderDashboardRoute = AppProviderDashboardRouteImport.update({
@@ -229,6 +282,12 @@ const AppAboutRoute = AppAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRecruitmentCandidatesIdRoute =
+  AppRecruitmentCandidatesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AppRecruitmentCandidatesRoute,
+  } as any)
 const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -265,6 +324,14 @@ export interface FileRoutesByFullPath {
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
+  '/recruitment': typeof AppRecruitmentRoute
+  '/recruitment-candidates': typeof AppRecruitmentCandidatesRouteWithChildren
+  '/recruitment-interviews': typeof AppRecruitmentInterviewsRoute
+  '/recruitment-offers': typeof AppRecruitmentOffersRoute
+  '/recruitment-pipeline': typeof AppRecruitmentPipelineRoute
+  '/recruitment-positions': typeof AppRecruitmentPositionsRoute
+  '/recruitment-preboarding': typeof AppRecruitmentPreboardingRoute
+  '/recruitment-requisitions': typeof AppRecruitmentRequisitionsRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
   '/tenant-management': typeof AppTenantManagementRoute
@@ -272,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
+  '/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -303,6 +371,14 @@ export interface FileRoutesByTo {
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
+  '/recruitment': typeof AppRecruitmentRoute
+  '/recruitment-candidates': typeof AppRecruitmentCandidatesRouteWithChildren
+  '/recruitment-interviews': typeof AppRecruitmentInterviewsRoute
+  '/recruitment-offers': typeof AppRecruitmentOffersRoute
+  '/recruitment-pipeline': typeof AppRecruitmentPipelineRoute
+  '/recruitment-positions': typeof AppRecruitmentPositionsRoute
+  '/recruitment-preboarding': typeof AppRecruitmentPreboardingRoute
+  '/recruitment-requisitions': typeof AppRecruitmentRequisitionsRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
   '/tenant-management': typeof AppTenantManagementRoute
@@ -310,6 +386,7 @@ export interface FileRoutesByTo {
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
+  '/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -343,6 +420,14 @@ export interface FileRoutesById {
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/provider-dashboard': typeof AppProviderDashboardRoute
+  '/_app/recruitment': typeof AppRecruitmentRoute
+  '/_app/recruitment-candidates': typeof AppRecruitmentCandidatesRouteWithChildren
+  '/_app/recruitment-interviews': typeof AppRecruitmentInterviewsRoute
+  '/_app/recruitment-offers': typeof AppRecruitmentOffersRoute
+  '/_app/recruitment-pipeline': typeof AppRecruitmentPipelineRoute
+  '/_app/recruitment-positions': typeof AppRecruitmentPositionsRoute
+  '/_app/recruitment-preboarding': typeof AppRecruitmentPreboardingRoute
+  '/_app/recruitment-requisitions': typeof AppRecruitmentRequisitionsRoute
   '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tenant-management': typeof AppTenantManagementRoute
@@ -350,6 +435,7 @@ export interface FileRoutesById {
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
+  '/_app/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -383,6 +469,14 @@ export interface FileRouteTypes {
     | '/payslips'
     | '/profile'
     | '/provider-dashboard'
+    | '/recruitment'
+    | '/recruitment-candidates'
+    | '/recruitment-interviews'
+    | '/recruitment-offers'
+    | '/recruitment-pipeline'
+    | '/recruitment-positions'
+    | '/recruitment-preboarding'
+    | '/recruitment-requisitions'
     | '/roles'
     | '/settings'
     | '/tenant-management'
@@ -390,6 +484,7 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
+    | '/recruitment-candidates/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -421,6 +516,14 @@ export interface FileRouteTypes {
     | '/payslips'
     | '/profile'
     | '/provider-dashboard'
+    | '/recruitment'
+    | '/recruitment-candidates'
+    | '/recruitment-interviews'
+    | '/recruitment-offers'
+    | '/recruitment-pipeline'
+    | '/recruitment-positions'
+    | '/recruitment-preboarding'
+    | '/recruitment-requisitions'
     | '/roles'
     | '/settings'
     | '/tenant-management'
@@ -428,6 +531,7 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
+    | '/recruitment-candidates/$id'
   id:
     | '__root__'
     | '/'
@@ -460,6 +564,14 @@ export interface FileRouteTypes {
     | '/_app/payslips'
     | '/_app/profile'
     | '/_app/provider-dashboard'
+    | '/_app/recruitment'
+    | '/_app/recruitment-candidates'
+    | '/_app/recruitment-interviews'
+    | '/_app/recruitment-offers'
+    | '/_app/recruitment-pipeline'
+    | '/_app/recruitment-positions'
+    | '/_app/recruitment-preboarding'
+    | '/_app/recruitment-requisitions'
     | '/_app/roles'
     | '/_app/settings'
     | '/_app/tenant-management'
@@ -467,6 +579,7 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/design-system/organization'
     | '/_app/employees/$id'
+    | '/_app/recruitment-candidates/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -547,6 +660,62 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/roles'
       preLoaderRoute: typeof AppRolesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-requisitions': {
+      id: '/_app/recruitment-requisitions'
+      path: '/recruitment-requisitions'
+      fullPath: '/recruitment-requisitions'
+      preLoaderRoute: typeof AppRecruitmentRequisitionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-preboarding': {
+      id: '/_app/recruitment-preboarding'
+      path: '/recruitment-preboarding'
+      fullPath: '/recruitment-preboarding'
+      preLoaderRoute: typeof AppRecruitmentPreboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-positions': {
+      id: '/_app/recruitment-positions'
+      path: '/recruitment-positions'
+      fullPath: '/recruitment-positions'
+      preLoaderRoute: typeof AppRecruitmentPositionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-pipeline': {
+      id: '/_app/recruitment-pipeline'
+      path: '/recruitment-pipeline'
+      fullPath: '/recruitment-pipeline'
+      preLoaderRoute: typeof AppRecruitmentPipelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-offers': {
+      id: '/_app/recruitment-offers'
+      path: '/recruitment-offers'
+      fullPath: '/recruitment-offers'
+      preLoaderRoute: typeof AppRecruitmentOffersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-interviews': {
+      id: '/_app/recruitment-interviews'
+      path: '/recruitment-interviews'
+      fullPath: '/recruitment-interviews'
+      preLoaderRoute: typeof AppRecruitmentInterviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment-candidates': {
+      id: '/_app/recruitment-candidates'
+      path: '/recruitment-candidates'
+      fullPath: '/recruitment-candidates'
+      preLoaderRoute: typeof AppRecruitmentCandidatesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment': {
+      id: '/_app/recruitment'
+      path: '/recruitment'
+      fullPath: '/recruitment'
+      preLoaderRoute: typeof AppRecruitmentRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/provider-dashboard': {
@@ -731,6 +900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAboutRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recruitment-candidates/$id': {
+      id: '/_app/recruitment-candidates/$id'
+      path: '/$id'
+      fullPath: '/recruitment-candidates/$id'
+      preLoaderRoute: typeof AppRecruitmentCandidatesIdRouteImport
+      parentRoute: typeof AppRecruitmentCandidatesRoute
+    }
     '/_app/employees/$id': {
       id: '/_app/employees/$id'
       path: '/$id'
@@ -752,6 +928,20 @@ const AppEmployeesRouteChildren: AppEmployeesRouteChildren = {
 const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
   AppEmployeesRouteChildren,
 )
+
+interface AppRecruitmentCandidatesRouteChildren {
+  AppRecruitmentCandidatesIdRoute: typeof AppRecruitmentCandidatesIdRoute
+}
+
+const AppRecruitmentCandidatesRouteChildren: AppRecruitmentCandidatesRouteChildren =
+  {
+    AppRecruitmentCandidatesIdRoute: AppRecruitmentCandidatesIdRoute,
+  }
+
+const AppRecruitmentCandidatesRouteWithChildren =
+  AppRecruitmentCandidatesRoute._addFileChildren(
+    AppRecruitmentCandidatesRouteChildren,
+  )
 
 interface AppRouteChildren {
   AppAboutRoute: typeof AppAboutRoute
@@ -780,6 +970,14 @@ interface AppRouteChildren {
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppProviderDashboardRoute: typeof AppProviderDashboardRoute
+  AppRecruitmentRoute: typeof AppRecruitmentRoute
+  AppRecruitmentCandidatesRoute: typeof AppRecruitmentCandidatesRouteWithChildren
+  AppRecruitmentInterviewsRoute: typeof AppRecruitmentInterviewsRoute
+  AppRecruitmentOffersRoute: typeof AppRecruitmentOffersRoute
+  AppRecruitmentPipelineRoute: typeof AppRecruitmentPipelineRoute
+  AppRecruitmentPositionsRoute: typeof AppRecruitmentPositionsRoute
+  AppRecruitmentPreboardingRoute: typeof AppRecruitmentPreboardingRoute
+  AppRecruitmentRequisitionsRoute: typeof AppRecruitmentRequisitionsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTenantManagementRoute: typeof AppTenantManagementRoute
@@ -813,6 +1011,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
   AppProviderDashboardRoute: AppProviderDashboardRoute,
+  AppRecruitmentRoute: AppRecruitmentRoute,
+  AppRecruitmentCandidatesRoute: AppRecruitmentCandidatesRouteWithChildren,
+  AppRecruitmentInterviewsRoute: AppRecruitmentInterviewsRoute,
+  AppRecruitmentOffersRoute: AppRecruitmentOffersRoute,
+  AppRecruitmentPipelineRoute: AppRecruitmentPipelineRoute,
+  AppRecruitmentPositionsRoute: AppRecruitmentPositionsRoute,
+  AppRecruitmentPreboardingRoute: AppRecruitmentPreboardingRoute,
+  AppRecruitmentRequisitionsRoute: AppRecruitmentRequisitionsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTenantManagementRoute: AppTenantManagementRoute,

@@ -444,6 +444,25 @@ export type WorkflowTaskDto = {
   dueAt?: string;
 };
 
+export type WorkflowDefinitionDto = {
+  id: string;
+  tenantId: string;
+  code: string;
+  name: string;
+  description?: string;
+  subjectType: string;
+  definitionVersion: number;
+  active: boolean;
+};
+
+export const workflowDefinitionApi = {
+  /** Sprint 22B — used to resolve the active RECRUITMENT_REQUISITION_APPROVAL /
+   *  OFFER_APPROVAL definition id these submit-for-approval actions require. */
+  async list(): Promise<WorkflowDefinitionDto[]> {
+    return request<WorkflowDefinitionDto[]>("/workflow/definitions");
+  },
+};
+
 export const workflowApi = {
   async getInstance(id: string): Promise<WorkflowInstanceDto> {
     return request<WorkflowInstanceDto>(`/workflow/instances/${id}`);
@@ -1235,3 +1254,1728 @@ export function initials(user: UserDto | null | undefined): string {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Recruitment — Sprint 22B                                                   */
+/* com.ewos.recruitment / com.ewos.ats / com.ewos.interview / com.ewos.offer  */
+/*                                                                            */
+/* Hand-written (not resourceApi) throughout: every list endpoint here takes  */
+/* a required companyId/status query param resourceApi's fixed extraQuery    */
+/* can't vary per call, several actions are bespoke lifecycle transitions     */
+/* with no CRUD shape, and two Preboarding endpoints bind the entire request  */
+/* body to a bare string rather than a JSON object. Each `xxxApi` mirrors the */
+/* matching backend controller 1:1 — see EWOS SPRINT_22A_COMPLETION and the   */
+/* controllers under com.ewos.{recruitment,ats,interview,offer}.api for the   */
+/* source of truth this was transcribed from.                                */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+// ---- Shared enums -----------------------------------------------------------
+
+/** Identical value set on both com.ewos.recruitment.domain.EmploymentType and
+ *  com.ewos.offer.domain.EmploymentType (distinct Java enums, same strings). */
+export type RecruitmentEmploymentType =
+  | "FULL_TIME"
+  | "PART_TIME"
+  | "CONTRACT"
+  | "TEMPORARY"
+  | "INTERN"
+  | "CONSULTANT";
+
+export const EMPLOYMENT_TYPES: RecruitmentEmploymentType[] = [
+  "FULL_TIME",
+  "PART_TIME",
+  "CONTRACT",
+  "TEMPORARY",
+  "INTERN",
+  "CONSULTANT",
+];
+
+// ---- Job Positions ------------------------------------------------------------
+
+export type JobPositionDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  title: string;
+  description?: string;
+  departmentOrgUnitId?: string;
+  location?: string;
+  employmentType: RecruitmentEmploymentType;
+  grade?: string;
+  salaryCurrency?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  active: boolean;
+  versionNo: number;
+};
+
+export type JobPositionPayload = {
+  tenantId?: string;
+  companyId?: string;
+  code?: string;
+  title: string;
+  description?: string;
+  departmentOrgUnitId?: string;
+  location?: string;
+  employmentType: RecruitmentEmploymentType;
+  grade?: string;
+  salaryCurrency?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  active?: boolean;
+};
+
+export const jobPositionApi = {
+  async listForCompany(companyId: string): Promise<JobPositionDto[]> {
+    return request<JobPositionDto[]>(`/recruitment/positions?companyId=${companyId}`);
+  },
+  async getById(id: string): Promise<JobPositionDto> {
+    return request<JobPositionDto>(`/recruitment/positions/${id}`);
+  },
+  async create(payload: JobPositionPayload): Promise<JobPositionDto> {
+    return request<JobPositionDto>("/recruitment/positions", { method: "POST", body: payload });
+  },
+  async update(id: string, payload: JobPositionPayload): Promise<JobPositionDto> {
+    return request<JobPositionDto>(`/recruitment/positions/${id}`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/recruitment/positions/${id}`, { method: "DELETE" });
+  },
+};
+
+// ---- Job Requisitions -----------------------------------------------------
+
+export type RequisitionPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export const REQUISITION_PRIORITIES: RequisitionPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+
+export type RequisitionStatus =
+  | "DRAFT"
+  | "PENDING_APPROVAL"
+  | "APPROVED"
+  | "REJECTED"
+  | "OPEN"
+  | "ON_HOLD"
+  | "FILLED"
+  | "CLOSED"
+  | "CANCELLED";
+
+export const REQUISITION_STATUSES: RequisitionStatus[] = [
+  "DRAFT",
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "REJECTED",
+  "OPEN",
+  "ON_HOLD",
+  "FILLED",
+  "CLOSED",
+  "CANCELLED",
+];
+
+export type JobRequisitionDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  requisitionNumber: string;
+  jobPositionId: string;
+  title: string;
+  departmentOrgUnitId?: string;
+  location?: string;
+  employmentType: RecruitmentEmploymentType;
+  headcount: number;
+  filledCount: number;
+  priority: RequisitionPriority;
+  justification?: string;
+  hiringManagerId?: string;
+  recruiterId?: string;
+  targetStartDate?: string;
+  budgetCurrency?: string;
+  budgetAmount?: number;
+  status: RequisitionStatus;
+  workflowInstanceId?: string;
+  submittedAt?: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  decisionNotes?: string;
+  openedAt?: string;
+  closedAt?: string;
+  closedReason?: string;
+  versionNo: number;
+};
+
+export type CreateJobRequisitionPayload = {
+  tenantId: string;
+  companyId: string;
+  requisitionNumber: string;
+  jobPositionId: string;
+  title: string;
+  departmentOrgUnitId?: string;
+  location?: string;
+  employmentType: RecruitmentEmploymentType;
+  headcount: number;
+  priority?: RequisitionPriority;
+  justification?: string;
+  hiringManagerId?: string;
+  recruiterId?: string;
+  targetStartDate?: string;
+  budgetCurrency?: string;
+  budgetAmount?: number;
+};
+
+export type UpdateJobRequisitionPayload = Omit<
+  CreateJobRequisitionPayload,
+  "tenantId" | "companyId" | "requisitionNumber" | "jobPositionId"
+>;
+
+export const jobRequisitionApi = {
+  async create(payload: CreateJobRequisitionPayload): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>("/recruitment/requisitions", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async update(id: string, payload: UpdateJobRequisitionPayload): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async submit(id: string, workflowDefinitionId: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/submit`, {
+      method: "POST",
+      body: { workflowDefinitionId },
+    });
+  },
+  async approve(id: string, notes?: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/approve`, {
+      method: "POST",
+      body: notes ? { notes } : undefined,
+    });
+  },
+  async reject(id: string, notes?: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/reject`, {
+      method: "POST",
+      body: notes ? { notes } : undefined,
+    });
+  },
+  async open(id: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/open`, {
+      method: "POST",
+    });
+  },
+  async hold(id: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/hold`, {
+      method: "POST",
+    });
+  },
+  async resume(id: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/resume`, {
+      method: "POST",
+    });
+  },
+  async recordFill(id: string, fills = 1): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/fill`, {
+      method: "POST",
+      body: { fills },
+    });
+  },
+  async close(id: string, reason: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/close`, {
+      method: "POST",
+      body: { reason },
+    });
+  },
+  async cancel(id: string, reason: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}/cancel`, {
+      method: "POST",
+      body: { reason },
+    });
+  },
+  async getById(id: string): Promise<JobRequisitionDto> {
+    return request<JobRequisitionDto>(`/recruitment/requisitions/${id}`);
+  },
+  async byStatus(companyId: string, status: RequisitionStatus): Promise<JobRequisitionDto[]> {
+    return request<JobRequisitionDto[]>(
+      `/recruitment/requisitions?companyId=${companyId}&status=${status}`,
+    );
+  },
+};
+
+// ---- Candidates (ATS) -------------------------------------------------------
+
+export type CandidateSource =
+  | "REFERRAL"
+  | "JOB_BOARD"
+  | "AGENCY"
+  | "CAMPUS"
+  | "DIRECT"
+  | "INTERNAL"
+  | "WEBSITE"
+  | "LINKEDIN"
+  | "SOCIAL_MEDIA"
+  | "EVENT"
+  | "WALK_IN"
+  | "OTHER";
+
+export const CANDIDATE_SOURCES: CandidateSource[] = [
+  "REFERRAL",
+  "JOB_BOARD",
+  "AGENCY",
+  "CAMPUS",
+  "DIRECT",
+  "INTERNAL",
+  "WEBSITE",
+  "LINKEDIN",
+  "SOCIAL_MEDIA",
+  "EVENT",
+  "WALK_IN",
+  "OTHER",
+];
+
+export type CandidateGender = "MALE" | "FEMALE" | "NON_BINARY" | "PREFER_NOT_TO_SAY" | "OTHER";
+export const CANDIDATE_GENDERS: CandidateGender[] = [
+  "MALE",
+  "FEMALE",
+  "NON_BINARY",
+  "PREFER_NOT_TO_SAY",
+  "OTHER",
+];
+
+export type CandidateStatus = "NEW" | "ACTIVE" | "ENGAGED" | "HIRED" | "ARCHIVED" | "BLACKLISTED";
+export const CANDIDATE_STATUSES: CandidateStatus[] = [
+  "NEW",
+  "ACTIVE",
+  "ENGAGED",
+  "HIRED",
+  "ARCHIVED",
+  "BLACKLISTED",
+];
+
+export type CandidateConsentSource =
+  | "APPLICATION_FORM"
+  | "MANUAL_ENTRY"
+  | "REFERRAL"
+  | "AGENCY"
+  | "IMPORTED"
+  | "OTHER";
+export const CANDIDATE_CONSENT_SOURCES: CandidateConsentSource[] = [
+  "APPLICATION_FORM",
+  "MANUAL_ENTRY",
+  "REFERRAL",
+  "AGENCY",
+  "IMPORTED",
+  "OTHER",
+];
+
+export type DuplicateMatchType = "EMAIL_EXACT" | "PHONE_EXACT";
+
+export type DuplicateCandidateMatchDto = {
+  candidateId: string;
+  candidateNumber: string;
+  fullName: string;
+  matchType: DuplicateMatchType;
+};
+
+export type CandidateDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  candidateNumber: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: CandidateGender;
+  nationality?: string;
+  currentLocation?: string;
+  country?: string;
+  currentEmployer?: string;
+  currentDesignation?: string;
+  totalExperienceMonths?: number;
+  currentCtcCurrency?: string;
+  currentCtcAmount?: number;
+  expectedCtcCurrency?: string;
+  expectedCtcAmount?: number;
+  noticePeriodDays?: number;
+  source: CandidateSource;
+  sourceDetails?: string;
+  referrerEmployeeId?: string;
+  internal: boolean;
+  internalEmployeeId?: string;
+  status: CandidateStatus;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
+  summary?: string;
+  consentGiven: boolean;
+  consentGivenAt?: string;
+  consentWithdrawnAt?: string;
+  consentSource?: CandidateConsentSource;
+  retentionPolicyCode?: string;
+  retentionExpiresAt?: string;
+  versionNo: number;
+};
+
+export type CandidatePayload = {
+  tenantId?: string;
+  companyId?: string;
+  candidateNumber?: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: CandidateGender;
+  nationality?: string;
+  currentLocation?: string;
+  country?: string;
+  currentEmployer?: string;
+  currentDesignation?: string;
+  totalExperienceMonths?: number;
+  currentCtcCurrency?: string;
+  currentCtcAmount?: number;
+  expectedCtcCurrency?: string;
+  expectedCtcAmount?: number;
+  noticePeriodDays?: number;
+  source: CandidateSource;
+  sourceDetails?: string;
+  referrerEmployeeId?: string;
+  internal?: boolean;
+  internalEmployeeId?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
+  summary?: string;
+};
+
+export type CreateCandidateResult = {
+  candidate: CandidateDto;
+  potentialDuplicates: DuplicateCandidateMatchDto[];
+};
+
+export const candidateApi = {
+  async create(payload: CandidatePayload): Promise<CreateCandidateResult> {
+    return request<CreateCandidateResult>("/ats/candidates", { method: "POST", body: payload });
+  },
+  async update(id: string, payload: CandidatePayload): Promise<CandidateDto> {
+    return request<CandidateDto>(`/ats/candidates/${id}`, { method: "PUT", body: payload });
+  },
+  async changeStatus(id: string, status: CandidateStatus, reason?: string): Promise<CandidateDto> {
+    return request<CandidateDto>(`/ats/candidates/${id}/status`, {
+      method: "POST",
+      body: { status, reason },
+    });
+  },
+  async recordConsent(
+    id: string,
+    payload: {
+      consentGiven: boolean;
+      consentSource?: CandidateConsentSource;
+      retentionPolicyCode?: string;
+      retentionExpiresAt?: string;
+    },
+  ): Promise<CandidateDto> {
+    return request<CandidateDto>(`/ats/candidates/${id}/consent`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async getById(id: string): Promise<CandidateDto> {
+    return request<CandidateDto>(`/ats/candidates/${id}`);
+  },
+  async list(
+    companyId: string,
+    status?: CandidateStatus,
+    page = 0,
+    size = 20,
+  ): Promise<SpringPage<CandidateDto>> {
+    const statusQs = status ? `&status=${status}` : "";
+    return request<SpringPage<CandidateDto>>(
+      `/ats/candidates?companyId=${companyId}${statusQs}&page=${page}&size=${size}`,
+    );
+  },
+  async checkDuplicates(email?: string, phone?: string): Promise<DuplicateCandidateMatchDto[]> {
+    const params = new URLSearchParams();
+    if (email) params.set("email", email);
+    if (phone) params.set("phone", phone);
+    return request<DuplicateCandidateMatchDto[]>(`/ats/candidates/duplicates?${params}`);
+  },
+};
+
+// ---- Candidate sub-resources: resumes, documents, notes, tags, comms, timeline
+
+export type CandidateResumeDto = {
+  id: string;
+  candidateId: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageUri: string;
+  primary: boolean;
+  parsed: boolean;
+  parsedAt?: string;
+  parserVersion?: string;
+  uploadedAt: string;
+  versionNo: number;
+};
+
+export const candidateResumeApi = {
+  async upload(
+    candidateId: string,
+    payload: {
+      filename: string;
+      mimeType: string;
+      sizeBytes: number;
+      storageUri: string;
+      primary?: boolean;
+      rawTextForParsing?: string;
+    },
+  ): Promise<CandidateResumeDto> {
+    return request<CandidateResumeDto>(`/ats/candidates/${candidateId}/resumes`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async list(candidateId: string): Promise<CandidateResumeDto[]> {
+    return request<CandidateResumeDto[]>(`/ats/candidates/${candidateId}/resumes`);
+  },
+  async markPrimary(resumeId: string): Promise<CandidateResumeDto> {
+    return request<CandidateResumeDto>(`/ats/resumes/${resumeId}/primary`, { method: "POST" });
+  },
+  async remove(resumeId: string): Promise<void> {
+    await request<void>(`/ats/resumes/${resumeId}`, { method: "DELETE" });
+  },
+};
+
+export type DocumentType =
+  | "ID_PROOF"
+  | "ADDRESS_PROOF"
+  | "EDUCATION"
+  | "EXPERIENCE_LETTER"
+  | "RELIEVING_LETTER"
+  | "PAYSLIP"
+  | "CERTIFICATION"
+  | "PORTFOLIO"
+  | "OFFER_LETTER"
+  | "SIGNED_NDA"
+  | "OTHER";
+export const DOCUMENT_TYPES: DocumentType[] = [
+  "ID_PROOF",
+  "ADDRESS_PROOF",
+  "EDUCATION",
+  "EXPERIENCE_LETTER",
+  "RELIEVING_LETTER",
+  "PAYSLIP",
+  "CERTIFICATION",
+  "PORTFOLIO",
+  "OFFER_LETTER",
+  "SIGNED_NDA",
+  "OTHER",
+];
+
+export type CandidateDocumentDto = {
+  id: string;
+  candidateId: string;
+  documentType: DocumentType;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageUri: string;
+  notes?: string;
+  uploadedAt: string;
+  versionNo: number;
+};
+
+export const candidateDocumentApi = {
+  async upload(
+    candidateId: string,
+    payload: {
+      documentType: DocumentType;
+      filename: string;
+      mimeType: string;
+      sizeBytes: number;
+      storageUri: string;
+      notes?: string;
+    },
+  ): Promise<CandidateDocumentDto> {
+    return request<CandidateDocumentDto>(`/ats/candidates/${candidateId}/documents`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async list(candidateId: string): Promise<CandidateDocumentDto[]> {
+    return request<CandidateDocumentDto[]>(`/ats/candidates/${candidateId}/documents`);
+  },
+  async remove(documentId: string): Promise<void> {
+    await request<void>(`/ats/documents/${documentId}`, { method: "DELETE" });
+  },
+};
+
+export type NoteType = "GENERAL" | "SCREENING" | "INTERVIEW" | "HR" | "REFERENCE_CHECK" | "OFFER";
+export const NOTE_TYPES: NoteType[] = [
+  "GENERAL",
+  "SCREENING",
+  "INTERVIEW",
+  "HR",
+  "REFERENCE_CHECK",
+  "OFFER",
+];
+
+export type CandidateNoteDto = {
+  id: string;
+  candidateId: string;
+  noteType: NoteType;
+  body: string;
+  privateNote: boolean;
+  createdBy?: string;
+  createdAt: string;
+  versionNo: number;
+};
+
+export const candidateNoteApi = {
+  async add(
+    candidateId: string,
+    payload: { noteType: NoteType; body: string; privateNote?: boolean },
+  ): Promise<CandidateNoteDto> {
+    return request<CandidateNoteDto>(`/ats/candidates/${candidateId}/notes`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async list(candidateId: string): Promise<CandidateNoteDto[]> {
+    return request<CandidateNoteDto[]>(`/ats/candidates/${candidateId}/notes`);
+  },
+};
+
+export type CandidateTagDto = { id: string; candidateId: string; tag: string };
+
+export const candidateTagApi = {
+  async add(candidateId: string, tag: string): Promise<CandidateTagDto> {
+    return request<CandidateTagDto>(`/ats/candidates/${candidateId}/tags`, {
+      method: "POST",
+      body: { tag },
+    });
+  },
+  async list(candidateId: string): Promise<CandidateTagDto[]> {
+    return request<CandidateTagDto[]>(`/ats/candidates/${candidateId}/tags`);
+  },
+  async remove(candidateId: string, tag: string): Promise<void> {
+    await request<void>(`/ats/candidates/${candidateId}/tags/${encodeURIComponent(tag)}`, {
+      method: "DELETE",
+    });
+  },
+};
+
+export type CommunicationChannel =
+  | "EMAIL"
+  | "PHONE"
+  | "SMS"
+  | "WHATSAPP"
+  | "IN_PERSON"
+  | "VIDEO"
+  | "LINKEDIN"
+  | "OTHER";
+export const COMMUNICATION_CHANNELS: CommunicationChannel[] = [
+  "EMAIL",
+  "PHONE",
+  "SMS",
+  "WHATSAPP",
+  "IN_PERSON",
+  "VIDEO",
+  "LINKEDIN",
+  "OTHER",
+];
+
+export type CommunicationDirection = "INBOUND" | "OUTBOUND";
+
+export type CandidateCommunicationDto = {
+  id: string;
+  candidateId: string;
+  applicationId?: string;
+  channel: CommunicationChannel;
+  direction: CommunicationDirection;
+  subject?: string;
+  bodySummary?: string;
+  externalRef?: string;
+  occurredAt: string;
+  sentBy?: string;
+  versionNo: number;
+};
+
+export const candidateCommunicationApi = {
+  async log(
+    candidateId: string,
+    payload: {
+      channel: CommunicationChannel;
+      direction: CommunicationDirection;
+      applicationId?: string;
+      subject?: string;
+      bodySummary?: string;
+      externalRef?: string;
+      occurredAt?: string;
+    },
+  ): Promise<CandidateCommunicationDto> {
+    return request<CandidateCommunicationDto>(`/ats/candidates/${candidateId}/communications`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async list(candidateId: string): Promise<CandidateCommunicationDto[]> {
+    return request<CandidateCommunicationDto[]>(`/ats/candidates/${candidateId}/communications`);
+  },
+};
+
+export type TimelineEventType =
+  | "CANDIDATE_CREATED"
+  | "CANDIDATE_UPDATED"
+  | "CANDIDATE_STATUS_CHANGED"
+  | "CANDIDATE_CONSENT_RECORDED"
+  | "CANDIDATE_CONSENT_WITHDRAWN"
+  | "CANDIDATE_TAGGED"
+  | "CANDIDATE_UNTAGGED"
+  | "RESUME_UPLOADED"
+  | "RESUME_MARKED_PRIMARY"
+  | "RESUME_PARSED"
+  | "DOCUMENT_UPLOADED"
+  | "NOTE_ADDED"
+  | "COMMUNICATION_LOGGED"
+  | "APPLICATION_CREATED"
+  | "APPLICATION_STATUS_CHANGED"
+  | "APPLICATION_REJECTED"
+  | "APPLICATION_WITHDRAWN"
+  | "APPLICATION_HIRED";
+
+export type CandidateTimelineEventDto = {
+  id: string;
+  candidateId: string;
+  applicationId?: string;
+  eventType: TimelineEventType;
+  eventSummary: string;
+  eventData?: string;
+  actorId?: string;
+  occurredAt: string;
+};
+
+export const candidateTimelineApi = {
+  async forCandidate(candidateId: string): Promise<CandidateTimelineEventDto[]> {
+    return request<CandidateTimelineEventDto[]>(`/ats/candidates/${candidateId}/timeline`);
+  },
+  async forApplication(applicationId: string): Promise<CandidateTimelineEventDto[]> {
+    return request<CandidateTimelineEventDto[]>(`/ats/applications/${applicationId}/timeline`);
+  },
+};
+
+// ---- Job Applications (ATS pipeline) ----------------------------------------
+
+export type ApplicationStatus =
+  | "NEW"
+  | "SCREENING"
+  | "SHORTLISTED"
+  | "INTERVIEW_SCHEDULED"
+  | "INTERVIEWING"
+  | "INTERVIEW_COMPLETED"
+  | "OFFER_INITIATED"
+  | "OFFER_EXTENDED"
+  | "OFFER_ACCEPTED"
+  | "OFFER_DECLINED"
+  | "HIRED"
+  | "ONBOARDING"
+  | "ON_HOLD"
+  | "REJECTED"
+  | "WITHDRAWN";
+
+export const APPLICATION_STATUSES: ApplicationStatus[] = [
+  "NEW",
+  "SCREENING",
+  "SHORTLISTED",
+  "INTERVIEW_SCHEDULED",
+  "INTERVIEWING",
+  "INTERVIEW_COMPLETED",
+  "OFFER_INITIATED",
+  "OFFER_EXTENDED",
+  "OFFER_ACCEPTED",
+  "OFFER_DECLINED",
+  "HIRED",
+  "ONBOARDING",
+  "ON_HOLD",
+  "REJECTED",
+  "WITHDRAWN",
+];
+
+/** Forward-only pipeline order — the exact sequence ApplicationPolicy.FORWARD allows. */
+export const APPLICATION_FORWARD_STAGES: ApplicationStatus[] = [
+  "NEW",
+  "SCREENING",
+  "SHORTLISTED",
+  "INTERVIEW_SCHEDULED",
+  "INTERVIEWING",
+  "INTERVIEW_COMPLETED",
+  "OFFER_INITIATED",
+  "OFFER_EXTENDED",
+  "OFFER_ACCEPTED",
+  "ONBOARDING",
+  "HIRED",
+];
+
+export type RejectionReason =
+  | "NOT_QUALIFIED"
+  | "POOR_INTERVIEW"
+  | "COMPENSATION_MISMATCH"
+  | "LOCATION_MISMATCH"
+  | "EXPERIENCE_MISMATCH"
+  | "POSITION_CLOSED"
+  | "CANDIDATE_WITHDREW"
+  | "DUPLICATE"
+  | "BACKGROUND_CHECK_FAILED"
+  | "OTHER";
+export const REJECTION_REASONS: RejectionReason[] = [
+  "NOT_QUALIFIED",
+  "POOR_INTERVIEW",
+  "COMPENSATION_MISMATCH",
+  "LOCATION_MISMATCH",
+  "EXPERIENCE_MISMATCH",
+  "POSITION_CLOSED",
+  "CANDIDATE_WITHDREW",
+  "DUPLICATE",
+  "BACKGROUND_CHECK_FAILED",
+  "OTHER",
+];
+
+export type JobApplicationDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  applicationNumber: string;
+  candidateId: string;
+  jobRequisitionId: string;
+  resumeId?: string;
+  source: CandidateSource;
+  sourceDetails?: string;
+  referredByEmployeeId?: string;
+  status: ApplicationStatus;
+  workflowInstanceId?: string;
+  appliedAt: string;
+  screenedAt?: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  decisionNotes?: string;
+  rejectionReason?: RejectionReason;
+  versionNo: number;
+};
+
+export const jobApplicationApi = {
+  async create(payload: {
+    tenantId: string;
+    companyId: string;
+    applicationNumber: string;
+    candidateId: string;
+    jobRequisitionId: string;
+    resumeId?: string;
+    source: CandidateSource;
+    sourceDetails?: string;
+    referredByEmployeeId?: string;
+  }): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>("/ats/applications", { method: "POST", body: payload });
+  },
+  async advance(
+    id: string,
+    targetStatus: ApplicationStatus,
+    notes?: string,
+  ): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>(`/ats/applications/${id}/advance`, {
+      method: "POST",
+      body: { targetStatus, notes },
+    });
+  },
+  async hold(id: string): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>(`/ats/applications/${id}/hold`, { method: "POST" });
+  },
+  async resume(
+    id: string,
+    targetStatus: ApplicationStatus,
+    notes?: string,
+  ): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>(`/ats/applications/${id}/resume`, {
+      method: "POST",
+      body: { targetStatus, notes },
+    });
+  },
+  async reject(id: string, reason: RejectionReason, notes?: string): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>(`/ats/applications/${id}/reject`, {
+      method: "POST",
+      body: { reason, notes },
+    });
+  },
+  async withdraw(id: string, notes: string): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>(`/ats/applications/${id}/withdraw`, {
+      method: "POST",
+      body: { notes },
+    });
+  },
+  async getById(id: string): Promise<JobApplicationDto> {
+    return request<JobApplicationDto>(`/ats/applications/${id}`);
+  },
+  async byCandidate(candidateId: string): Promise<JobApplicationDto[]> {
+    return request<JobApplicationDto[]>(`/ats/applications/by-candidate/${candidateId}`);
+  },
+  async byRequisition(requisitionId: string): Promise<JobApplicationDto[]> {
+    return request<JobApplicationDto[]>(`/ats/applications/by-requisition/${requisitionId}`);
+  },
+  async byStatus(
+    companyId: string,
+    status: ApplicationStatus,
+    page = 0,
+    size = 20,
+  ): Promise<SpringPage<JobApplicationDto>> {
+    return request<SpringPage<JobApplicationDto>>(
+      `/ats/applications?companyId=${companyId}&status=${status}&page=${page}&size=${size}`,
+    );
+  },
+};
+
+// ---- Interview Rounds --------------------------------------------------------
+
+export type InterviewType =
+  | "PHONE_SCREEN"
+  | "TECHNICAL"
+  | "BEHAVIORAL"
+  | "PANEL"
+  | "HR"
+  | "EXECUTIVE"
+  | "TAKE_HOME"
+  | "LIVE_CODING"
+  | "ONSITE"
+  | "FINAL"
+  | "OTHER";
+export const INTERVIEW_TYPES: InterviewType[] = [
+  "PHONE_SCREEN",
+  "TECHNICAL",
+  "BEHAVIORAL",
+  "PANEL",
+  "HR",
+  "EXECUTIVE",
+  "TAKE_HOME",
+  "LIVE_CODING",
+  "ONSITE",
+  "FINAL",
+  "OTHER",
+];
+
+export type InterviewMode = "VIDEO" | "IN_PERSON" | "PHONE" | "HYBRID";
+export const INTERVIEW_MODES: InterviewMode[] = ["VIDEO", "IN_PERSON", "PHONE", "HYBRID"];
+
+export type InterviewStatus =
+  | "DRAFT"
+  | "SCHEDULED"
+  | "RESCHEDULED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW"
+  | "PENDING_FEEDBACK";
+export const INTERVIEW_STATUSES: InterviewStatus[] = [
+  "DRAFT",
+  "SCHEDULED",
+  "RESCHEDULED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+  "NO_SHOW",
+  "PENDING_FEEDBACK",
+];
+
+export type InterviewDecision = "PENDING" | "PROCEED" | "HOLD" | "REJECT";
+export const INTERVIEW_DECISIONS: InterviewDecision[] = ["PENDING", "PROCEED", "HOLD", "REJECT"];
+
+export type InterviewRoundDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  applicationId: string;
+  templateId?: string;
+  roundNumber: number;
+  name: string;
+  interviewType: InterviewType;
+  durationMinutes: number;
+  mode: InterviewMode;
+  location?: string;
+  meetingUrl?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
+  actualStart?: string;
+  actualEnd?: string;
+  status: InterviewStatus;
+  decision: InterviewDecision;
+  decisionNotes?: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  coordinatorEmployeeId?: string;
+  externalCalendarRef?: string;
+  versionNo: number;
+};
+
+export const interviewRoundApi = {
+  async create(payload: {
+    applicationId: string;
+    templateId?: string;
+    name: string;
+    interviewType: InterviewType;
+    durationMinutes?: number;
+    mode: InterviewMode;
+    location?: string;
+    meetingUrl?: string;
+    coordinatorEmployeeId?: string;
+  }): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>("/interviews/rounds", { method: "POST", body: payload });
+  },
+  async schedule(
+    id: string,
+    scheduledStart: string,
+    scheduledEnd: string,
+  ): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/schedule`, {
+      method: "POST",
+      body: { scheduledStart, scheduledEnd },
+    });
+  },
+  async reschedule(
+    id: string,
+    scheduledStart: string,
+    scheduledEnd: string,
+  ): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/reschedule`, {
+      method: "POST",
+      body: { scheduledStart, scheduledEnd },
+    });
+  },
+  async start(id: string): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/start`, { method: "POST" });
+  },
+  async complete(id: string): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/complete`, { method: "POST" });
+  },
+  async markNoShow(id: string): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/no-show`, { method: "POST" });
+  },
+  async cancel(id: string, reason: string): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/cancel`, {
+      method: "POST",
+      body: { reason },
+    });
+  },
+  async decide(
+    id: string,
+    decision: InterviewDecision,
+    notes?: string,
+  ): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}/decision`, {
+      method: "POST",
+      body: { decision, notes },
+    });
+  },
+  async getById(id: string): Promise<InterviewRoundDto> {
+    return request<InterviewRoundDto>(`/interviews/rounds/${id}`);
+  },
+  async forApplication(applicationId: string): Promise<InterviewRoundDto[]> {
+    return request<InterviewRoundDto[]>(`/interviews/rounds/by-application/${applicationId}`);
+  },
+  async byStatus(companyId: string, status: InterviewStatus): Promise<InterviewRoundDto[]> {
+    return request<InterviewRoundDto[]>(
+      `/interviews/rounds?companyId=${companyId}&status=${status}`,
+    );
+  },
+  async scheduledBetween(
+    companyId: string,
+    from: string,
+    to: string,
+  ): Promise<InterviewRoundDto[]> {
+    return request<InterviewRoundDto[]>(
+      `/interviews/rounds/scheduled?companyId=${companyId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    );
+  },
+};
+
+// ---- Interview Panel ---------------------------------------------------------
+
+export type InterviewParticipantRole = "INTERVIEWER" | "PANEL_LEAD" | "OBSERVER" | "COORDINATOR";
+export const INTERVIEW_PARTICIPANT_ROLES: InterviewParticipantRole[] = [
+  "INTERVIEWER",
+  "PANEL_LEAD",
+  "OBSERVER",
+  "COORDINATOR",
+];
+
+export type InterviewParticipantAttendance = "UNKNOWN" | "ATTENDED" | "ABSENT" | "PARTIAL";
+export const INTERVIEW_PARTICIPANT_ATTENDANCE: InterviewParticipantAttendance[] = [
+  "UNKNOWN",
+  "ATTENDED",
+  "ABSENT",
+  "PARTIAL",
+];
+
+export type InterviewParticipantDto = {
+  id: string;
+  roundId: string;
+  employeeId: string;
+  role: InterviewParticipantRole;
+  attendance: InterviewParticipantAttendance;
+  notes?: string;
+  externalCalendarRef?: string;
+  versionNo: number;
+};
+
+export const interviewPanelApi = {
+  async add(
+    roundId: string,
+    payload: { employeeId: string; role?: InterviewParticipantRole; notes?: string },
+  ): Promise<InterviewParticipantDto> {
+    return request<InterviewParticipantDto>(`/interviews/rounds/${roundId}/participants`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async updateAttendance(
+    participantId: string,
+    attendance: InterviewParticipantAttendance,
+  ): Promise<InterviewParticipantDto> {
+    return request<InterviewParticipantDto>(
+      `/interviews/participants/${participantId}/attendance`,
+      {
+        method: "PUT",
+        body: { attendance },
+      },
+    );
+  },
+  async remove(participantId: string): Promise<void> {
+    await request<void>(`/interviews/participants/${participantId}`, { method: "DELETE" });
+  },
+  async list(roundId: string): Promise<InterviewParticipantDto[]> {
+    return request<InterviewParticipantDto[]>(`/interviews/rounds/${roundId}/participants`);
+  },
+};
+
+// ---- Interview Templates ------------------------------------------------------
+
+export type InterviewTemplateDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  interviewType: InterviewType;
+  defaultDurationMinutes: number;
+  scorecardSchema?: string;
+  active: boolean;
+  versionNo: number;
+};
+
+export type InterviewTemplatePayload = {
+  tenantId?: string;
+  companyId?: string;
+  code?: string;
+  name: string;
+  description?: string;
+  interviewType: InterviewType;
+  defaultDurationMinutes?: number;
+  scorecardSchema?: string;
+  active?: boolean;
+};
+
+export const interviewTemplateApi = {
+  async create(payload: InterviewTemplatePayload): Promise<InterviewTemplateDto> {
+    return request<InterviewTemplateDto>("/interviews/templates", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async update(id: string, payload: InterviewTemplatePayload): Promise<InterviewTemplateDto> {
+    return request<InterviewTemplateDto>(`/interviews/templates/${id}`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async getById(id: string): Promise<InterviewTemplateDto> {
+    return request<InterviewTemplateDto>(`/interviews/templates/${id}`);
+  },
+  async listForCompany(companyId: string): Promise<InterviewTemplateDto[]> {
+    return request<InterviewTemplateDto[]>(`/interviews/templates?companyId=${companyId}`);
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/interviews/templates/${id}`, { method: "DELETE" });
+  },
+};
+
+// ---- Interview Scorecards + Candidate Feedback --------------------------------
+
+export type ScorecardRecommendation =
+  | "STRONG_HIRE"
+  | "HIRE"
+  | "LEAN_HIRE"
+  | "NO_DECISION"
+  | "LEAN_NO_HIRE"
+  | "NO_HIRE"
+  | "STRONG_NO_HIRE";
+export const SCORECARD_RECOMMENDATIONS: ScorecardRecommendation[] = [
+  "STRONG_HIRE",
+  "HIRE",
+  "LEAN_HIRE",
+  "NO_DECISION",
+  "LEAN_NO_HIRE",
+  "NO_HIRE",
+  "STRONG_NO_HIRE",
+];
+
+export type InterviewScorecardDto = {
+  id: string;
+  roundId: string;
+  interviewerId: string;
+  overallRating?: number;
+  recommendation: ScorecardRecommendation;
+  strengths?: string;
+  weaknesses?: string;
+  comments?: string;
+  criteriaJson?: string;
+  submittedAt: string;
+  versionNo: number;
+};
+
+export type RoundScorecardSummaryDto = {
+  submittedCount: number;
+  averageRating?: number;
+  weightedRecommendationScore?: number;
+  leansHire: boolean;
+  scorecards: InterviewScorecardDto[];
+};
+
+export const interviewScorecardApi = {
+  async submit(
+    roundId: string,
+    payload: {
+      interviewerId: string;
+      overallRating?: number;
+      recommendation: ScorecardRecommendation;
+      strengths?: string;
+      weaknesses?: string;
+      comments?: string;
+      criteriaJson?: string;
+    },
+  ): Promise<InterviewScorecardDto> {
+    return request<InterviewScorecardDto>(`/interviews/rounds/${roundId}/scorecards`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async list(roundId: string): Promise<InterviewScorecardDto[]> {
+    return request<InterviewScorecardDto[]>(`/interviews/rounds/${roundId}/scorecards`);
+  },
+  async summary(roundId: string): Promise<RoundScorecardSummaryDto> {
+    return request<RoundScorecardSummaryDto>(`/interviews/rounds/${roundId}/scorecards/summary`);
+  },
+};
+
+export type CandidateInterviewFeedbackDto = {
+  id: string;
+  roundId: string;
+  candidateId: string;
+  ratingExperience?: number;
+  ratingProcess?: number;
+  wouldReapply?: boolean;
+  comments?: string;
+  submittedAt: string;
+  versionNo: number;
+};
+
+export const candidateInterviewFeedbackApi = {
+  async submit(
+    roundId: string,
+    payload: {
+      ratingExperience?: number;
+      ratingProcess?: number;
+      wouldReapply?: boolean;
+      comments?: string;
+    },
+  ): Promise<CandidateInterviewFeedbackDto> {
+    return request<CandidateInterviewFeedbackDto>(
+      `/interviews/rounds/${roundId}/candidate-feedback`,
+      { method: "POST", body: payload },
+    );
+  },
+  /** Returns null when no feedback has been submitted for this round yet (404). */
+  async get(roundId: string): Promise<CandidateInterviewFeedbackDto | null> {
+    try {
+      return await request<CandidateInterviewFeedbackDto>(
+        `/interviews/rounds/${roundId}/candidate-feedback`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null;
+      throw err;
+    }
+  },
+};
+
+// ---- Offers ------------------------------------------------------------------
+
+export type OfferStatus =
+  | "DRAFT"
+  | "PENDING_APPROVAL"
+  | "APPROVED"
+  | "REJECTED"
+  | "EXTENDED"
+  | "ACCEPTED"
+  | "DECLINED"
+  | "REVISED"
+  | "EXPIRED"
+  | "WITHDRAWN";
+export const OFFER_STATUSES: OfferStatus[] = [
+  "DRAFT",
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "REJECTED",
+  "EXTENDED",
+  "ACCEPTED",
+  "DECLINED",
+  "REVISED",
+  "EXPIRED",
+  "WITHDRAWN",
+];
+
+export type NegotiationParty = "CANDIDATE" | "COMPANY";
+
+export type OfferDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  offerNumber: string;
+  applicationId: string;
+  candidateId?: string;
+  jobRequisitionId?: string;
+  templateId?: string;
+  version: number;
+  previousOfferId?: string;
+  designation: string;
+  departmentOrgUnitId?: string;
+  location?: string;
+  employmentType: RecruitmentEmploymentType;
+  targetJoiningDate?: string;
+  currency: string;
+  baseSalary: number;
+  variablePay?: number;
+  oneTimeBonus?: number;
+  hiringBonus?: number;
+  retentionBonus?: number;
+  totalCtc: number;
+  noticePeriodDays?: number;
+  probationDays?: number;
+  offerDocumentUri?: string;
+  status: OfferStatus;
+  approvalWorkflowInstanceId?: string;
+  submittedAt?: string;
+  approvedAt?: string;
+  extendedAt?: string;
+  expiresAt?: string;
+  acceptedAt?: string;
+  declinedAt?: string;
+  declineReason?: string;
+  revisedAt?: string;
+  withdrawnAt?: string;
+  withdrawnReason?: string;
+  versionNo: number;
+};
+
+export type CreateOfferPayload = {
+  tenantId: string;
+  companyId: string;
+  offerNumber: string;
+  applicationId: string;
+  templateId?: string;
+  designation: string;
+  departmentOrgUnitId?: string;
+  location?: string;
+  employmentType: RecruitmentEmploymentType;
+  targetJoiningDate?: string;
+  currency: string;
+  baseSalary: number;
+  variablePay?: number;
+  oneTimeBonus?: number;
+  hiringBonus?: number;
+  retentionBonus?: number;
+  totalCtc: number;
+  salaryBreakdownJson?: string;
+  benefitsJson?: string;
+  noticePeriodDays?: number;
+  probationDays?: number;
+  offerBody?: string;
+  offerDocumentUri?: string;
+};
+
+export type UpdateOfferPayload = Omit<
+  CreateOfferPayload,
+  "tenantId" | "companyId" | "offerNumber" | "applicationId" | "templateId"
+>;
+
+export type OfferNegotiationDto = {
+  id: string;
+  offerId: string;
+  proposedBy: NegotiationParty;
+  proposedChangesJson?: string;
+  notes?: string;
+  submittedAt: string;
+  respondedAt?: string;
+  accepted?: boolean;
+  resultingOfferId?: string;
+};
+
+export const offerApi = {
+  async create(payload: CreateOfferPayload): Promise<OfferDto> {
+    return request<OfferDto>("/offers", { method: "POST", body: payload });
+  },
+  async update(id: string, payload: UpdateOfferPayload): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}`, { method: "PUT", body: payload });
+  },
+  async submit(id: string, workflowDefinitionId: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/submit`, {
+      method: "POST",
+      body: { workflowDefinitionId },
+    });
+  },
+  async approve(id: string, notes?: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/approve`, {
+      method: "POST",
+      body: notes ? { notes } : undefined,
+    });
+  },
+  async reject(id: string, notes?: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/reject`, {
+      method: "POST",
+      body: notes ? { notes } : undefined,
+    });
+  },
+  async extend(id: string, expiresAt: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/extend`, { method: "POST", body: { expiresAt } });
+  },
+  async accept(id: string, candidateSignature: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/accept`, {
+      method: "POST",
+      body: { candidateSignature },
+    });
+  },
+  async decline(id: string, reason: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/decline`, { method: "POST", body: { reason } });
+  },
+  async revise(id: string, payload: CreateOfferPayload): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/revise`, { method: "POST", body: payload });
+  },
+  async withdraw(id: string, reason: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/withdraw`, { method: "POST", body: { reason } });
+  },
+  async markExpired(id: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/expire`, { method: "POST" });
+  },
+  async sendReminder(id: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}/remind`, { method: "POST" });
+  },
+  async logNegotiation(
+    id: string,
+    payload: { proposedBy: NegotiationParty; proposedChangesJson?: string; notes?: string },
+  ): Promise<OfferNegotiationDto> {
+    return request<OfferNegotiationDto>(`/offers/${id}/negotiations`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async listNegotiations(id: string): Promise<OfferNegotiationDto[]> {
+    return request<OfferNegotiationDto[]>(`/offers/${id}/negotiations`);
+  },
+  async getById(id: string): Promise<OfferDto> {
+    return request<OfferDto>(`/offers/${id}`);
+  },
+  async forApplication(applicationId: string): Promise<OfferDto[]> {
+    return request<OfferDto[]>(`/offers/by-application/${applicationId}`);
+  },
+  async byStatus(companyId: string, status: OfferStatus): Promise<OfferDto[]> {
+    return request<OfferDto[]>(`/offers?companyId=${companyId}&status=${status}`);
+  },
+};
+
+// ---- Offer Templates -----------------------------------------------------
+
+export type OfferTemplateDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  bodyTemplate: string;
+  defaultCurrency?: string;
+  defaultNoticePeriodDays?: number;
+  defaultProbationDays?: number;
+  defaultExpiryDays: number;
+  active: boolean;
+  versionNo: number;
+};
+
+export type OfferTemplatePayload = {
+  tenantId?: string;
+  companyId?: string;
+  code?: string;
+  name: string;
+  description?: string;
+  bodyTemplate: string;
+  defaultCurrency?: string;
+  defaultNoticePeriodDays?: number;
+  defaultProbationDays?: number;
+  defaultExpiryDays?: number;
+  active?: boolean;
+};
+
+export const offerTemplateApi = {
+  async create(payload: OfferTemplatePayload): Promise<OfferTemplateDto> {
+    return request<OfferTemplateDto>("/offers/templates", { method: "POST", body: payload });
+  },
+  async getById(id: string): Promise<OfferTemplateDto> {
+    return request<OfferTemplateDto>(`/offers/templates/${id}`);
+  },
+  async listForCompany(companyId: string): Promise<OfferTemplateDto[]> {
+    return request<OfferTemplateDto[]>(`/offers/templates?companyId=${companyId}`);
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/offers/templates/${id}`, { method: "DELETE" });
+  },
+};
+
+// ---- Preboarding ---------------------------------------------------------
+
+export type PreboardingChecklistStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "JOINED"
+  | "NO_SHOW";
+export const PREBOARDING_CHECKLIST_STATUSES: PreboardingChecklistStatus[] = [
+  "PENDING",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+  "JOINED",
+  "NO_SHOW",
+];
+
+export type PreboardingTaskStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "WAITING_ON_CANDIDATE"
+  | "WAITING_ON_COMPANY"
+  | "COMPLETED"
+  | "SKIPPED"
+  | "FAILED";
+export const PREBOARDING_TASK_STATUSES: PreboardingTaskStatus[] = [
+  "PENDING",
+  "IN_PROGRESS",
+  "WAITING_ON_CANDIDATE",
+  "WAITING_ON_COMPANY",
+  "COMPLETED",
+  "SKIPPED",
+  "FAILED",
+];
+
+export type PreboardingTaskType =
+  | "DOCUMENT_COLLECTION"
+  | "ID_VERIFICATION"
+  | "BACKGROUND_VERIFICATION"
+  | "REFERENCE_CHECK"
+  | "MEDICAL_CHECK"
+  | "IT_ASSET"
+  | "EMAIL_ACCOUNT"
+  | "EMPLOYEE_ID"
+  | "JOINING_KIT"
+  | "JOINING_CONFIRMATION"
+  | "OTHER";
+export const PREBOARDING_TASK_TYPES: PreboardingTaskType[] = [
+  "DOCUMENT_COLLECTION",
+  "ID_VERIFICATION",
+  "BACKGROUND_VERIFICATION",
+  "REFERENCE_CHECK",
+  "MEDICAL_CHECK",
+  "IT_ASSET",
+  "EMAIL_ACCOUNT",
+  "EMPLOYEE_ID",
+  "JOINING_KIT",
+  "JOINING_CONFIRMATION",
+  "OTHER",
+];
+
+export type PreboardingTaskOwner =
+  | "HR"
+  | "IT"
+  | "ADMIN"
+  | "HIRING_MANAGER"
+  | "CANDIDATE"
+  | "RECRUITER"
+  | "VENDOR";
+export const PREBOARDING_TASK_OWNERS: PreboardingTaskOwner[] = [
+  "HR",
+  "IT",
+  "ADMIN",
+  "HIRING_MANAGER",
+  "CANDIDATE",
+  "RECRUITER",
+  "VENDOR",
+];
+
+export type PreboardingChecklistDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  offerId: string;
+  applicationId?: string;
+  candidateId?: string;
+  joiningDate?: string;
+  status: PreboardingChecklistStatus;
+  completionPercent: number;
+  joiningConfirmedAt?: string;
+  joiningConfirmedBy?: string;
+  employeeId?: string;
+  notes?: string;
+  versionNo: number;
+};
+
+export type PreboardingTaskInstanceDto = {
+  id: string;
+  checklistId: string;
+  templateId?: string;
+  name: string;
+  taskType: PreboardingTaskType;
+  owner: PreboardingTaskOwner;
+  assignedEmployeeId?: string;
+  mandatory: boolean;
+  sortOrder: number;
+  status: PreboardingTaskStatus;
+  dueDate?: string;
+  startedAt?: string;
+  completedAt?: string;
+  completedBy?: string;
+  externalRef?: string;
+  resultJson?: string;
+  notes?: string;
+  versionNo: number;
+};
+
+export const preboardingApi = {
+  async createFromOffer(offerId: string): Promise<PreboardingChecklistDto> {
+    return request<PreboardingChecklistDto>(`/preboarding/checklists/from-offer/${offerId}`, {
+      method: "POST",
+    });
+  },
+  async getChecklist(id: string): Promise<PreboardingChecklistDto> {
+    return request<PreboardingChecklistDto>(`/preboarding/checklists/${id}`);
+  },
+  async listTasks(checklistId: string): Promise<PreboardingTaskInstanceDto[]> {
+    return request<PreboardingTaskInstanceDto[]>(`/preboarding/checklists/${checklistId}/tasks`);
+  },
+  async remindTask(taskId: string): Promise<PreboardingTaskInstanceDto> {
+    return request<PreboardingTaskInstanceDto>(`/preboarding/tasks/${taskId}/remind`, {
+      method: "POST",
+    });
+  },
+  async updateTaskStatus(
+    taskId: string,
+    payload: { status: PreboardingTaskStatus; notes?: string; resultJson?: string },
+  ): Promise<PreboardingTaskInstanceDto> {
+    return request<PreboardingTaskInstanceDto>(`/preboarding/tasks/${taskId}/status`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async confirmJoining(
+    checklistId: string,
+    payload?: { employeeId?: string; notes?: string },
+  ): Promise<PreboardingChecklistDto> {
+    return request<PreboardingChecklistDto>(
+      `/preboarding/checklists/${checklistId}/confirm-joining`,
+      {
+        method: "POST",
+        body: payload,
+      },
+    );
+  },
+  /** Backend binds this endpoint's whole body to a bare string, not `{reason}`. */
+  async markNoShow(checklistId: string, reason?: string): Promise<PreboardingChecklistDto> {
+    return request<PreboardingChecklistDto>(`/preboarding/checklists/${checklistId}/no-show`, {
+      method: "POST",
+      body: reason,
+    });
+  },
+  /** Backend binds this endpoint's whole body to a bare string, not `{reason}`. */
+  async cancel(checklistId: string, reason?: string): Promise<PreboardingChecklistDto> {
+    return request<PreboardingChecklistDto>(`/preboarding/checklists/${checklistId}/cancel`, {
+      method: "POST",
+      body: reason,
+    });
+  },
+  async byStatus(
+    companyId: string,
+    status: PreboardingChecklistStatus,
+  ): Promise<PreboardingChecklistDto[]> {
+    return request<PreboardingChecklistDto[]>(
+      `/preboarding/checklists?companyId=${companyId}&status=${status}`,
+    );
+  },
+};
+
+// ---- Preboarding Task Templates -----------------------------------------
+
+export type PreboardingTaskTemplateDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  taskType: PreboardingTaskType;
+  sortOrder: number;
+  mandatory: boolean;
+  defaultOwner: PreboardingTaskOwner;
+  defaultSlaDays?: number;
+  active: boolean;
+  versionNo: number;
+};
+
+export type PreboardingTaskTemplatePayload = {
+  tenantId?: string;
+  companyId?: string;
+  code?: string;
+  name: string;
+  description?: string;
+  taskType: PreboardingTaskType;
+  sortOrder?: number;
+  mandatory?: boolean;
+  defaultOwner?: PreboardingTaskOwner;
+  defaultSlaDays?: number;
+  active?: boolean;
+};
+
+export const preboardingTaskTemplateApi = {
+  async create(payload: PreboardingTaskTemplatePayload): Promise<PreboardingTaskTemplateDto> {
+    return request<PreboardingTaskTemplateDto>("/preboarding/task-templates", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async listForCompany(companyId: string): Promise<PreboardingTaskTemplateDto[]> {
+    return request<PreboardingTaskTemplateDto[]>(
+      `/preboarding/task-templates?companyId=${companyId}`,
+    );
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/preboarding/task-templates/${id}`, { method: "DELETE" });
+  },
+};
