@@ -37,6 +37,7 @@ import { Route as AppAboutRouteImport } from './routes/_app.about'
 import { Route as AppRecruitmentIndexRouteImport } from './routes/_app.recruitment.index'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 import { Route as AppRecruitmentRequisitionsIndexRouteImport } from './routes/_app.recruitment.requisitions.index'
+import { Route as AppRecruitmentRequisitionsIdRouteImport } from './routes/_app.recruitment.requisitions.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -179,6 +180,12 @@ const AppRecruitmentRequisitionsIndexRoute =
     path: '/requisitions/',
     getParentRoute: () => AppRecruitmentRoute,
   } as any)
+const AppRecruitmentRequisitionsIdRoute =
+  AppRecruitmentRequisitionsIdRouteImport.update({
+    id: '/requisitions/$id',
+    path: '/requisitions/$id',
+    getParentRoute: () => AppRecruitmentRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
   '/recruitment/': typeof AppRecruitmentIndexRoute
+  '/recruitment/requisitions/$id': typeof AppRecruitmentRequisitionsIdRoute
   '/recruitment/requisitions/': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -235,6 +243,7 @@ export interface FileRoutesByTo {
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
   '/recruitment': typeof AppRecruitmentIndexRoute
+  '/recruitment/requisitions/$id': typeof AppRecruitmentRequisitionsIdRoute
   '/recruitment/requisitions': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRoutesById {
@@ -266,6 +275,7 @@ export interface FileRoutesById {
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
   '/_app/recruitment/': typeof AppRecruitmentIndexRoute
+  '/_app/recruitment/requisitions/$id': typeof AppRecruitmentRequisitionsIdRoute
   '/_app/recruitment/requisitions/': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRouteTypes {
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/design-system/organization'
     | '/employees/$id'
     | '/recruitment/'
+    | '/recruitment/requisitions/$id'
     | '/recruitment/requisitions/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/design-system/organization'
     | '/employees/$id'
     | '/recruitment'
+    | '/recruitment/requisitions/$id'
     | '/recruitment/requisitions'
   id:
     | '__root__'
@@ -355,6 +367,7 @@ export interface FileRouteTypes {
     | '/design-system/organization'
     | '/_app/employees/$id'
     | '/_app/recruitment/'
+    | '/_app/recruitment/requisitions/$id'
     | '/_app/recruitment/requisitions/'
   fileRoutesById: FileRoutesById
 }
@@ -564,6 +577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecruitmentRequisitionsIndexRouteImport
       parentRoute: typeof AppRecruitmentRoute
     }
+    '/_app/recruitment/requisitions/$id': {
+      id: '/_app/recruitment/requisitions/$id'
+      path: '/requisitions/$id'
+      fullPath: '/recruitment/requisitions/$id'
+      preLoaderRoute: typeof AppRecruitmentRequisitionsIdRouteImport
+      parentRoute: typeof AppRecruitmentRoute
+    }
   }
 }
 
@@ -581,11 +601,13 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 
 interface AppRecruitmentRouteChildren {
   AppRecruitmentIndexRoute: typeof AppRecruitmentIndexRoute
+  AppRecruitmentRequisitionsIdRoute: typeof AppRecruitmentRequisitionsIdRoute
   AppRecruitmentRequisitionsIndexRoute: typeof AppRecruitmentRequisitionsIndexRoute
 }
 
 const AppRecruitmentRouteChildren: AppRecruitmentRouteChildren = {
   AppRecruitmentIndexRoute: AppRecruitmentIndexRoute,
+  AppRecruitmentRequisitionsIdRoute: AppRecruitmentRequisitionsIdRoute,
   AppRecruitmentRequisitionsIndexRoute: AppRecruitmentRequisitionsIndexRoute,
 }
 

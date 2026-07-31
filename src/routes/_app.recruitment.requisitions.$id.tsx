@@ -66,15 +66,15 @@ function RequisitionDetail() {
                   </StatusChip>
                 </div>
               </div>
-              <RequisitionLifecycleActions requisition={r} variant="bar" />
+              <RequisitionLifecycleActions requisition={r} variant="buttons" />
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Headcount" value={`${r.filledCount ?? 0} / ${r.headcount} filled`} />
               <Field label="Target start" value={formatDate(r.targetStartDate)} />
               <Field label="Budget" value={formatMoney(r.budgetAmount, r.budgetCurrency)} />
-              <Field label="Hiring manager" value={r.hiringManagerName ?? "—"} />
-              <Field label="Recruiter" value={r.recruiterName ?? "—"} />
-              <Field label="Department" value={r.departmentName ?? "—"} />
+              <Field label="Hiring manager" value={r.hiringManagerId ?? "—"} />
+              <Field label="Recruiter" value={r.recruiterId ?? "—"} />
+              <Field label="Department" value={r.departmentOrgUnitId ?? "—"} />
               <div className="sm:col-span-2 lg:col-span-3">
                 <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Justification
