@@ -116,6 +116,43 @@ const emptyForm: FormState = {
   probationDays: "",
 };
 
+/** Mirrors CreateOfferRequest's @Pattern on `offerNumber` in the backend. */
+const OFFER_NUMBER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+/** Mirrors the backend's @Pattern("^[A-Z]{3}$") on `currency`. */
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+/** Mirrors CreateOfferTemplateRequest's @Pattern on `code` in the backend. */
+const OFFER_TEMPLATE_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+/** Shared by both the create and revise forms — both submit a CreateOfferPayload. */
+function validateOfferForm(f: FormState, requireApplication: boolean): string | null {
+  if (!f.offerNumber.trim() || !f.designation.trim() || (requireApplication && !f.applicationId)) {
+    return requireApplication
+      ? "Offer number, application, and designation are required"
+      : "Offer number and designation are required";
+  }
+  if (!OFFER_NUMBER_PATTERN.test(f.offerNumber.trim())) {
+    return "Offer number must start with a letter or digit and contain only letters, digits, '.', '_', '/', or '-'";
+  }
+  if (!f.currency.trim() || !CURRENCY_PATTERN.test(f.currency.trim())) {
+    return "Currency must be a 3-letter uppercase code, e.g. INR";
+  }
+  const baseSalary = Number(f.baseSalary);
+  if (!f.baseSalary || !Number.isFinite(baseSalary) || baseSalary < 0) {
+    return "Base salary is required and cannot be negative";
+  }
+  const totalCtc = Number(f.totalCtc);
+  if (!f.totalCtc || !Number.isFinite(totalCtc) || totalCtc < 0) {
+    return "Total CTC is required and cannot be negative";
+  }
+  if (f.noticePeriodDays && Number(f.noticePeriodDays) < 0) {
+    return "Notice period cannot be negative";
+  }
+  if (f.probationDays && Number(f.probationDays) < 0) {
+    return "Probation days cannot be negative";
+  }
+  return null;
+}
+
 function OffersPage() {
   const { activeCompanyId, tenantId } = useTenant();
   const { has } = usePermissions();
@@ -143,6 +180,8 @@ function OffersPage() {
   const [withdrawReason, setWithdrawReason] = useState("");
   const [negoOpen, setNegoOpen] = useState(false);
   const [negoNotes, setNegoNotes] = useState("");
+  const [reviseOpen, setReviseOpen] = useState(false);
+  const [reviseForm, setReviseForm] = useState<FormState>(emptyForm);
 
   const canWrite = has("OFFER_WRITE");
   const canApprove = has("OFFER_APPROVE");
@@ -203,12 +242,9 @@ function OffersPage() {
   };
 
   const submitCreate = async () => {
-    if (!form.offerNumber.trim() || !form.applicationId || !form.designation.trim()) {
-      toast.error("Offer number, application, and designation are required");
-      return;
-    }
-    if (!form.baseSalary || !form.totalCtc || !form.currency.trim()) {
-      toast.error("Currency, base salary, and total CTC are required");
+    const validationError = validateOfferForm(form, true);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     if (!tenantId || !activeCompanyId) return;
@@ -369,6 +405,72 @@ function OffersPage() {
     }
   };
 
+  const openRevise = () => {
+    if (!selected) return;
+    setReviseForm({
+      offerNumber: `${selected.offerNumber}-R${selected.version + 1}`,
+      applicationId: selected.applicationId,
+      templateId: selected.templateId ?? "",
+      designation: selected.designation,
+      departmentOrgUnitId: selected.departmentOrgUnitId ?? "",
+      location: selected.location ?? "",
+      employmentType: selected.employmentType,
+      targetJoiningDate: selected.targetJoiningDate ?? "",
+      currency: selected.currency,
+      baseSalary: String(selected.baseSalary),
+      variablePay: selected.variablePay !== undefined ? String(selected.variablePay) : "",
+      oneTimeBonus: selected.oneTimeBonus !== undefined ? String(selected.oneTimeBonus) : "",
+      totalCtc: String(selected.totalCtc),
+      noticePeriodDays:
+        selected.noticePeriodDays !== undefined ? String(selected.noticePeriodDays) : "",
+      probationDays: selected.probationDays !== undefined ? String(selected.probationDays) : "",
+    });
+    setReviseOpen(true);
+  };
+
+  const doRevise = async () => {
+    if (!selected || !tenantId || !activeCompanyId) return;
+    const validationError = validateOfferForm(reviseForm, false);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    const payload: CreateOfferPayload = {
+      tenantId,
+      companyId: activeCompanyId,
+      offerNumber: reviseForm.offerNumber.trim(),
+      applicationId: reviseForm.applicationId,
+      templateId: reviseForm.templateId || undefined,
+      designation: reviseForm.designation.trim(),
+      departmentOrgUnitId: reviseForm.departmentOrgUnitId.trim() || undefined,
+      location: reviseForm.location.trim() || undefined,
+      employmentType: reviseForm.employmentType,
+      targetJoiningDate: reviseForm.targetJoiningDate || undefined,
+      currency: reviseForm.currency.trim(),
+      baseSalary: Number(reviseForm.baseSalary),
+      variablePay: reviseForm.variablePay ? Number(reviseForm.variablePay) : undefined,
+      oneTimeBonus: reviseForm.oneTimeBonus ? Number(reviseForm.oneTimeBonus) : undefined,
+      totalCtc: Number(reviseForm.totalCtc),
+      noticePeriodDays: reviseForm.noticePeriodDays
+        ? Number(reviseForm.noticePeriodDays)
+        : undefined,
+      probationDays: reviseForm.probationDays ? Number(reviseForm.probationDays) : undefined,
+    };
+    setBusy(true);
+    try {
+      await offerApi.revise(selected.id, payload);
+      toast.success("Revised offer created as a new draft");
+      setReviseOpen(false);
+      setSelected(null);
+      setStatus("DRAFT");
+      await load("DRAFT");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to revise offer.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -493,23 +595,24 @@ function OffersPage() {
           </DialogHeader>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor="f-offer-number">
                 Offer number<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input
+                id="f-offer-number"
                 value={form.offerNumber}
                 onChange={(e) => setForm({ ...form, offerNumber: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor="f-application">
                 Application<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Select
                 value={form.applicationId}
                 onValueChange={(v) => setForm({ ...form, applicationId: v })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-application">
                   <SelectValue placeholder="Select application" />
                 </SelectTrigger>
                 <SelectContent>
@@ -522,12 +625,12 @@ function OffersPage() {
               </Select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Template (optional)</Label>
+              <Label htmlFor="f-template-optional">Template (optional)</Label>
               <Select
                 value={form.templateId}
                 onValueChange={(v) => setForm({ ...form, templateId: v })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-template-optional">
                   <SelectValue placeholder="No template" />
                 </SelectTrigger>
                 <SelectContent>
@@ -540,23 +643,24 @@ function OffersPage() {
               </Select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>
+              <Label htmlFor="f-designation">
                 Designation<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input
+                id="f-designation"
                 value={form.designation}
                 onChange={(e) => setForm({ ...form, designation: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Employment type</Label>
+              <Label htmlFor="f-employment-type">Employment type</Label>
               <Select
                 value={form.employmentType}
                 onValueChange={(v) =>
                   setForm({ ...form, employmentType: v as RecruitmentEmploymentType })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-employment-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -569,75 +673,91 @@ function OffersPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Location</Label>
+              <Label htmlFor="f-location">Location</Label>
               <Input
+                id="f-location"
                 value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Target joining date</Label>
+              <Label htmlFor="f-target-joining-date">Target joining date</Label>
               <Input
+                id="f-target-joining-date"
                 type="date"
                 value={form.targetJoiningDate}
                 onChange={(e) => setForm({ ...form, targetJoiningDate: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Currency</Label>
+              <Label htmlFor="f-currency">Currency</Label>
               <Input
+                id="f-currency"
+                maxLength={3}
                 value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor="f-base-salary">
                 Base salary<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input
+                id="f-base-salary"
                 type="number"
+                min={0}
                 value={form.baseSalary}
                 onChange={(e) => setForm({ ...form, baseSalary: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor="f-total-ctc">
                 Total CTC<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input
+                id="f-total-ctc"
                 type="number"
+                min={0}
                 value={form.totalCtc}
                 onChange={(e) => setForm({ ...form, totalCtc: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Variable pay</Label>
+              <Label htmlFor="f-variable-pay">Variable pay</Label>
               <Input
+                id="f-variable-pay"
                 type="number"
+                min={0}
                 value={form.variablePay}
                 onChange={(e) => setForm({ ...form, variablePay: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>One-time bonus</Label>
+              <Label htmlFor="f-one-time-bonus">One-time bonus</Label>
               <Input
+                id="f-one-time-bonus"
                 type="number"
+                min={0}
                 value={form.oneTimeBonus}
                 onChange={(e) => setForm({ ...form, oneTimeBonus: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Notice period (days)</Label>
+              <Label htmlFor="f-notice-period-days">Notice period (days)</Label>
               <Input
+                id="f-notice-period-days"
                 type="number"
+                min={0}
                 value={form.noticePeriodDays}
                 onChange={(e) => setForm({ ...form, noticePeriodDays: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Probation (days)</Label>
+              <Label htmlFor="f-probation-days">Probation (days)</Label>
               <Input
+                id="f-probation-days"
                 type="number"
+                min={0}
                 value={form.probationDays}
                 onChange={(e) => setForm({ ...form, probationDays: e.target.value })}
               />
@@ -775,6 +895,12 @@ function OffersPage() {
                     </Button>
                   </>
                 )}
+                {(selected.status === "EXTENDED" || selected.status === "PENDING_APPROVAL") &&
+                  canWrite && (
+                    <Button size="sm" variant="outline" onClick={openRevise}>
+                      Revise offer
+                    </Button>
+                  )}
                 {!["ACCEPTED", "DECLINED", "EXPIRED", "WITHDRAWN", "REJECTED"].includes(
                   selected.status,
                 ) &&
@@ -822,8 +948,13 @@ function OffersPage() {
             <DialogTitle>Extend offer</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>Expires at</Label>
-            <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            <Label htmlFor="f-expires-at">Expires at</Label>
+            <Input
+              id="f-expires-at"
+              type="date"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExtendOpen(false)} disabled={busy}>
@@ -843,10 +974,14 @@ function OffersPage() {
             <DialogTitle>Decline offer</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor="f-reason">
               Reason<span className="ml-0.5 text-destructive">*</span>
             </Label>
-            <Textarea value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} />
+            <Textarea
+              id="f-reason"
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeclineOpen(false)} disabled={busy}>
@@ -866,10 +1001,14 @@ function OffersPage() {
             <DialogTitle>Withdraw offer</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor="f-reason-2">
               Reason<span className="ml-0.5 text-destructive">*</span>
             </Label>
-            <Textarea value={withdrawReason} onChange={(e) => setWithdrawReason(e.target.value)} />
+            <Textarea
+              id="f-reason-2"
+              value={withdrawReason}
+              onChange={(e) => setWithdrawReason(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawOpen(false)} disabled={busy}>
@@ -892,8 +1031,12 @@ function OffersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>Notes</Label>
-            <Textarea value={negoNotes} onChange={(e) => setNegoNotes(e.target.value)} />
+            <Label htmlFor="f-notes">Notes</Label>
+            <Textarea
+              id="f-notes"
+              value={negoNotes}
+              onChange={(e) => setNegoNotes(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNegoOpen(false)} disabled={busy}>
@@ -902,6 +1045,137 @@ function OffersPage() {
             <Button onClick={() => void doLogNego()} disabled={busy}>
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               Log
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={reviseOpen} onOpenChange={setReviseOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Revise offer</DialogTitle>
+            <DialogDescription>
+              Creates a new offer version with updated terms for the same application. The current
+              offer is superseded once this is created.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-offerNumber">
+                Offer number<span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="revise-offerNumber"
+                value={reviseForm.offerNumber}
+                onChange={(e) => setReviseForm({ ...reviseForm, offerNumber: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-designation">
+                Designation<span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="revise-designation"
+                value={reviseForm.designation}
+                onChange={(e) => setReviseForm({ ...reviseForm, designation: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-currency">
+                Currency<span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="revise-currency"
+                maxLength={3}
+                value={reviseForm.currency}
+                onChange={(e) =>
+                  setReviseForm({ ...reviseForm, currency: e.target.value.toUpperCase() })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-baseSalary">
+                Base salary<span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="revise-baseSalary"
+                type="number"
+                min={0}
+                value={reviseForm.baseSalary}
+                onChange={(e) => setReviseForm({ ...reviseForm, baseSalary: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-totalCtc">
+                Total CTC<span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="revise-totalCtc"
+                type="number"
+                min={0}
+                value={reviseForm.totalCtc}
+                onChange={(e) => setReviseForm({ ...reviseForm, totalCtc: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-variablePay">Variable pay</Label>
+              <Input
+                id="revise-variablePay"
+                type="number"
+                min={0}
+                value={reviseForm.variablePay}
+                onChange={(e) => setReviseForm({ ...reviseForm, variablePay: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-oneTimeBonus">One-time bonus</Label>
+              <Input
+                id="revise-oneTimeBonus"
+                type="number"
+                min={0}
+                value={reviseForm.oneTimeBonus}
+                onChange={(e) => setReviseForm({ ...reviseForm, oneTimeBonus: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-targetJoiningDate">Target joining date</Label>
+              <Input
+                id="revise-targetJoiningDate"
+                type="date"
+                value={reviseForm.targetJoiningDate}
+                onChange={(e) =>
+                  setReviseForm({ ...reviseForm, targetJoiningDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-noticePeriodDays">Notice period (days)</Label>
+              <Input
+                id="revise-noticePeriodDays"
+                type="number"
+                min={0}
+                value={reviseForm.noticePeriodDays}
+                onChange={(e) => setReviseForm({ ...reviseForm, noticePeriodDays: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="revise-probationDays">Probation (days)</Label>
+              <Input
+                id="revise-probationDays"
+                type="number"
+                min={0}
+                value={reviseForm.probationDays}
+                onChange={(e) => setReviseForm({ ...reviseForm, probationDays: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviseOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={() => void doRevise()} disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              Create revised offer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -938,6 +1212,21 @@ function OfferTemplatesTab({
       toast.error("Code, name, and body template are required");
       return;
     }
+    if (!OFFER_TEMPLATE_CODE_PATTERN.test(form.code.trim())) {
+      toast.error(
+        "Code must start with a letter or digit and contain only letters, digits, '.', '_', or '-'",
+      );
+      return;
+    }
+    if (form.defaultCurrency.trim() && !CURRENCY_PATTERN.test(form.defaultCurrency.trim())) {
+      toast.error("Default currency must be a 3-letter uppercase code, e.g. INR");
+      return;
+    }
+    const defaultExpiryDays = Number(form.defaultExpiryDays);
+    if (!Number.isFinite(defaultExpiryDays) || defaultExpiryDays < 1) {
+      toast.error("Default expiry must be at least 1 day");
+      return;
+    }
     setSaving(true);
     try {
       await offerTemplateApi.create({
@@ -946,7 +1235,7 @@ function OfferTemplatesTab({
         name: form.name.trim(),
         bodyTemplate: form.bodyTemplate.trim(),
         defaultCurrency: form.defaultCurrency.trim() || undefined,
-        defaultExpiryDays: Number(form.defaultExpiryDays) || 7,
+        defaultExpiryDays,
       });
       toast.success("Template created");
       setForm(null);
@@ -1021,7 +1310,12 @@ function OfferTemplatesTab({
                   </TableCell>
                   {canDelete && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => void remove(t.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void remove(t.id)}
+                        aria-label={`Delete template ${t.name}`}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
@@ -1041,39 +1335,48 @@ function OfferTemplatesTab({
           {form && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Code</Label>
+                <Label htmlFor="f-code">Code</Label>
                 <Input
+                  id="f-code"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Name</Label>
+                <Label htmlFor="f-name">Name</Label>
                 <Input
+                  id="f-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Default currency</Label>
+                  <Label htmlFor="f-default-currency">Default currency</Label>
                   <Input
+                    id="f-default-currency"
+                    maxLength={3}
                     value={form.defaultCurrency}
-                    onChange={(e) => setForm({ ...form, defaultCurrency: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, defaultCurrency: e.target.value.toUpperCase() })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Default expiry (days)</Label>
+                  <Label htmlFor="f-default-expiry-days">Default expiry (days)</Label>
                   <Input
+                    id="f-default-expiry-days"
                     type="number"
+                    min={1}
                     value={form.defaultExpiryDays}
                     onChange={(e) => setForm({ ...form, defaultExpiryDays: e.target.value })}
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Body template</Label>
+                <Label htmlFor="f-body-template">Body template</Label>
                 <Textarea
+                  id="f-body-template"
                   rows={6}
                   value={form.bodyTemplate}
                   onChange={(e) => setForm({ ...form, bodyTemplate: e.target.value })}

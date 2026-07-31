@@ -112,6 +112,9 @@ const APPLICATION_SOURCE_STATUSES: ApplicationStatus[] = [
   "INTERVIEWING",
 ];
 
+/** Mirrors CreateInterviewTemplateRequest's @Pattern on `code` in the backend. */
+const TEMPLATE_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
 function toLocalInput(iso?: string): string {
   if (!iso) return "";
   return iso.slice(0, 16);
@@ -210,13 +213,18 @@ function InterviewsPage() {
       toast.error("Application and round name are required");
       return;
     }
+    const durationMinutes = Number(newRound.durationMinutes);
+    if (!Number.isFinite(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440) {
+      toast.error("Duration must be between 1 and 1440 minutes");
+      return;
+    }
     setSaving(true);
     try {
       await interviewRoundApi.create({
         applicationId: newRound.applicationId,
         name: newRound.name.trim(),
         interviewType: newRound.interviewType,
-        durationMinutes: Number(newRound.durationMinutes) || 60,
+        durationMinutes,
         mode: newRound.mode,
         location: newRound.location.trim() || undefined,
         meetingUrl: newRound.meetingUrl.trim() || undefined,
@@ -462,7 +470,7 @@ function InterviewsPage() {
       </Tabs>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Schedule Interview</DialogTitle>
             <DialogDescription>
@@ -471,14 +479,14 @@ function InterviewsPage() {
           </DialogHeader>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>
+              <Label htmlFor="f-application">
                 Application<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Select
                 value={newRound.applicationId}
                 onValueChange={(v) => setNewRound({ ...newRound, applicationId: v })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-application">
                   <SelectValue placeholder="Select application" />
                 </SelectTrigger>
                 <SelectContent>
@@ -491,24 +499,25 @@ function InterviewsPage() {
               </Select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>
+              <Label htmlFor="f-round-name">
                 Round name<span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input
+                id="f-round-name"
                 value={newRound.name}
                 onChange={(e) => setNewRound({ ...newRound, name: e.target.value })}
                 placeholder="e.g. Technical Round 1"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label htmlFor="f-type">Type</Label>
               <Select
                 value={newRound.interviewType}
                 onValueChange={(v) =>
                   setNewRound({ ...newRound, interviewType: v as InterviewType })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -521,12 +530,12 @@ function InterviewsPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Mode</Label>
+              <Label htmlFor="f-mode">Mode</Label>
               <Select
                 value={newRound.mode}
                 onValueChange={(v) => setNewRound({ ...newRound, mode: v as InterviewMode })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-mode">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -539,23 +548,28 @@ function InterviewsPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Duration (minutes)</Label>
+              <Label htmlFor="f-duration-minutes">Duration (minutes)</Label>
               <Input
+                id="f-duration-minutes"
                 type="number"
+                min={1}
+                max={1440}
                 value={newRound.durationMinutes}
                 onChange={(e) => setNewRound({ ...newRound, durationMinutes: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Location</Label>
+              <Label htmlFor="f-location">Location</Label>
               <Input
+                id="f-location"
                 value={newRound.location}
                 onChange={(e) => setNewRound({ ...newRound, location: e.target.value })}
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Meeting URL</Label>
+              <Label htmlFor="f-meeting-url">Meeting URL</Label>
               <Input
+                id="f-meeting-url"
                 value={newRound.meetingUrl}
                 onChange={(e) => setNewRound({ ...newRound, meetingUrl: e.target.value })}
               />
@@ -690,16 +704,18 @@ function InterviewsPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Start</Label>
+              <Label htmlFor="f-start">Start</Label>
               <Input
+                id="f-start"
                 type="datetime-local"
                 value={scheduleStart}
                 onChange={(e) => setScheduleStart(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>End</Label>
+              <Label htmlFor="f-end">End</Label>
               <Input
+                id="f-end"
                 type="datetime-local"
                 value={scheduleEnd}
                 onChange={(e) => setScheduleEnd(e.target.value)}
@@ -724,10 +740,14 @@ function InterviewsPage() {
             <DialogTitle>Cancel round</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor="f-reason">
               Reason<span className="ml-0.5 text-destructive">*</span>
             </Label>
-            <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
+            <Textarea
+              id="f-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelOpen(false)} disabled={busy}>
@@ -748,9 +768,9 @@ function InterviewsPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Decision</Label>
+              <Label htmlFor="f-decision">Decision</Label>
               <Select value={decision} onValueChange={(v) => setDecision(v as InterviewDecision)}>
-                <SelectTrigger>
+                <SelectTrigger id="f-decision">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -761,8 +781,12 @@ function InterviewsPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Notes</Label>
-              <Textarea value={decisionNotes} onChange={(e) => setDecisionNotes(e.target.value)} />
+              <Label htmlFor="f-notes">Notes</Label>
+              <Textarea
+                id="f-notes"
+                value={decisionNotes}
+                onChange={(e) => setDecisionNotes(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -893,7 +917,12 @@ function PanelTab({ roundId, canWrite }: { roundId: string; canWrite: boolean })
                     <StatusChip tone="neutral">{p.attendance}</StatusChip>
                   )}
                   {canWrite && (
-                    <Button variant="ghost" size="icon" onClick={() => void remove(p.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => void remove(p.id)}
+                      aria-label="Remove panelist"
+                    >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
@@ -911,13 +940,17 @@ function PanelTab({ roundId, canWrite }: { roundId: string; canWrite: boolean })
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Employee ID</Label>
-              <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} />
+              <Label htmlFor="f-employee-id">Employee ID</Label>
+              <Input
+                id="f-employee-id"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Role</Label>
+              <Label htmlFor="f-role">Role</Label>
               <Select value={role} onValueChange={(v) => setRole(v as InterviewParticipantRole)}>
-                <SelectTrigger>
+                <SelectTrigger id="f-role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1064,13 +1097,18 @@ function ScorecardsTab({ roundId, canSubmit }: { roundId: string; canSubmit: boo
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Interviewer (employee ID)</Label>
-              <Input value={interviewerId} onChange={(e) => setInterviewerId(e.target.value)} />
+              <Label htmlFor="f-interviewer-employee-id">Interviewer (employee ID)</Label>
+              <Input
+                id="f-interviewer-employee-id"
+                value={interviewerId}
+                onChange={(e) => setInterviewerId(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Overall rating (1-5)</Label>
+                <Label htmlFor="f-overall-rating-1-5">Overall rating (1-5)</Label>
                 <Input
+                  id="f-overall-rating-1-5"
                   type="number"
                   min={1}
                   max={5}
@@ -1079,12 +1117,12 @@ function ScorecardsTab({ roundId, canSubmit }: { roundId: string; canSubmit: boo
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Recommendation</Label>
+                <Label htmlFor="f-recommendation">Recommendation</Label>
                 <Select
                   value={recommendation}
                   onValueChange={(v) => setRecommendation(v as ScorecardRecommendation)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-recommendation">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1098,16 +1136,28 @@ function ScorecardsTab({ roundId, canSubmit }: { roundId: string; canSubmit: boo
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Strengths</Label>
-              <Textarea value={strengths} onChange={(e) => setStrengths(e.target.value)} />
+              <Label htmlFor="f-strengths">Strengths</Label>
+              <Textarea
+                id="f-strengths"
+                value={strengths}
+                onChange={(e) => setStrengths(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Weaknesses</Label>
-              <Textarea value={weaknesses} onChange={(e) => setWeaknesses(e.target.value)} />
+              <Label htmlFor="f-weaknesses">Weaknesses</Label>
+              <Textarea
+                id="f-weaknesses"
+                value={weaknesses}
+                onChange={(e) => setWeaknesses(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Comments</Label>
-              <Textarea value={comments} onChange={(e) => setComments(e.target.value)} />
+              <Label htmlFor="f-comments">Comments</Label>
+              <Textarea
+                id="f-comments"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -1205,8 +1255,9 @@ function FeedbackTab({ roundId, canWrite }: { roundId: string; canWrite: boolean
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Experience (1-5)</Label>
+                <Label htmlFor="f-experience-1-5">Experience (1-5)</Label>
                 <Input
+                  id="f-experience-1-5"
                   type="number"
                   min={1}
                   max={5}
@@ -1215,8 +1266,9 @@ function FeedbackTab({ roundId, canWrite }: { roundId: string; canWrite: boolean
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Process (1-5)</Label>
+                <Label htmlFor="f-process-1-5">Process (1-5)</Label>
                 <Input
+                  id="f-process-1-5"
                   type="number"
                   min={1}
                   max={5}
@@ -1226,12 +1278,12 @@ function FeedbackTab({ roundId, canWrite }: { roundId: string; canWrite: boolean
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Would reapply?</Label>
+              <Label htmlFor="f-would-reapply">Would reapply?</Label>
               <Select
                 value={wouldReapply ? "yes" : "no"}
                 onValueChange={(v) => setWouldReapply(v === "yes")}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-would-reapply">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1241,8 +1293,12 @@ function FeedbackTab({ roundId, canWrite }: { roundId: string; canWrite: boolean
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Comments</Label>
-              <Textarea value={comments} onChange={(e) => setComments(e.target.value)} />
+              <Label htmlFor="f-comments-2">Comments</Label>
+              <Textarea
+                id="f-comments-2"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -1290,6 +1346,21 @@ function TemplatesTab({
       toast.error("Code and name are required");
       return;
     }
+    if (!TEMPLATE_CODE_PATTERN.test(form.code.trim())) {
+      toast.error(
+        "Code must start with a letter or digit and contain only letters, digits, '.', '_', or '-'",
+      );
+      return;
+    }
+    const defaultDurationMinutes = Number(form.defaultDurationMinutes);
+    if (
+      !Number.isFinite(defaultDurationMinutes) ||
+      defaultDurationMinutes < 1 ||
+      defaultDurationMinutes > 1440
+    ) {
+      toast.error("Default duration must be between 1 and 1440 minutes");
+      return;
+    }
     setSaving(true);
     try {
       await interviewTemplateApi.create({
@@ -1298,7 +1369,7 @@ function TemplatesTab({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         interviewType: form.interviewType,
-        defaultDurationMinutes: Number(form.defaultDurationMinutes) || 60,
+        defaultDurationMinutes,
       });
       toast.success("Template created");
       setForm(null);
@@ -1374,7 +1445,12 @@ function TemplatesTab({
                   </TableCell>
                   {canDelete && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => void remove(t.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void remove(t.id)}
+                        aria-label={`Delete template ${t.name}`}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
@@ -1394,26 +1470,28 @@ function TemplatesTab({
           {form && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Code</Label>
+                <Label htmlFor="f-code">Code</Label>
                 <Input
+                  id="f-code"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Name</Label>
+                <Label htmlFor="f-name">Name</Label>
                 <Input
+                  id="f-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <Label htmlFor="f-type-2">Type</Label>
                 <Select
                   value={form.interviewType}
                   onValueChange={(v) => setForm({ ...form, interviewType: v as InterviewType })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-type-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1426,16 +1504,20 @@ function TemplatesTab({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Default duration (minutes)</Label>
+                <Label htmlFor="f-default-duration-minutes">Default duration (minutes)</Label>
                 <Input
+                  id="f-default-duration-minutes"
                   type="number"
+                  min={1}
+                  max={1440}
                   value={form.defaultDurationMinutes}
                   onChange={(e) => setForm({ ...form, defaultDurationMinutes: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Description</Label>
+                <Label htmlFor="f-description">Description</Label>
                 <Textarea
+                  id="f-description"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />

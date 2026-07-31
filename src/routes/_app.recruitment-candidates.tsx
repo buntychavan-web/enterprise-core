@@ -65,6 +65,11 @@ const STATUS_TONE: Record<CandidateStatus, StatusTone> = {
 const ALL = "__ALL__";
 const PAGE_SIZE = 20;
 
+/** Simple client-side mirror of the backend's @Email validation on `email`. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Mirrors the backend's @Pattern("^[A-Z]{3}$") on currency fields. */
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+
 type FormState = {
   firstName: string;
   middleName: string;
@@ -166,6 +171,17 @@ function CandidatesPage() {
     }
     if (!form.email.trim() && !form.phone.trim()) {
       toast.error("Provide an email or a phone number");
+      return;
+    }
+    if (form.email.trim() && !EMAIL_PATTERN.test(form.email.trim())) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    if (
+      form.expectedCtcCurrency.trim() &&
+      !CURRENCY_PATTERN.test(form.expectedCtcCurrency.trim())
+    ) {
+      toast.error("Expected CTC currency must be a 3-letter uppercase code, e.g. INR");
       return;
     }
     const payload: CandidatePayload = {
@@ -354,97 +370,114 @@ function CandidatesPage() {
           {form && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="f-first-name">
                   First name<span className="ml-0.5 text-destructive">*</span>
                 </Label>
                 <Input
+                  id="f-first-name"
                   value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="f-last-name">
                   Last name<span className="ml-0.5 text-destructive">*</span>
                 </Label>
                 <Input
+                  id="f-last-name"
                   value={form.lastName}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Email</Label>
+                <Label htmlFor="f-email">Email</Label>
                 <Input
+                  id="f-email"
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Phone</Label>
+                <Label htmlFor="f-phone">Phone</Label>
                 <Input
+                  id="f-phone"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Current location</Label>
+                <Label htmlFor="f-current-location">Current location</Label>
                 <Input
+                  id="f-current-location"
                   value={form.currentLocation}
                   onChange={(e) => setForm({ ...form, currentLocation: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Current employer</Label>
+                <Label htmlFor="f-current-employer">Current employer</Label>
                 <Input
+                  id="f-current-employer"
                   value={form.currentEmployer}
                   onChange={(e) => setForm({ ...form, currentEmployer: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Current designation</Label>
+                <Label htmlFor="f-current-designation">Current designation</Label>
                 <Input
+                  id="f-current-designation"
                   value={form.currentDesignation}
                   onChange={(e) => setForm({ ...form, currentDesignation: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Total experience (months)</Label>
+                <Label htmlFor="f-total-experience-months">Total experience (months)</Label>
                 <Input
+                  id="f-total-experience-months"
                   type="number"
+                  min={0}
                   value={form.totalExperienceMonths}
                   onChange={(e) => setForm({ ...form, totalExperienceMonths: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Expected CTC currency</Label>
+                <Label htmlFor="f-expected-ctc-currency">Expected CTC currency</Label>
                 <Input
+                  id="f-expected-ctc-currency"
+                  maxLength={3}
                   value={form.expectedCtcCurrency}
-                  onChange={(e) => setForm({ ...form, expectedCtcCurrency: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, expectedCtcCurrency: e.target.value.toUpperCase() })
+                  }
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Expected CTC amount</Label>
+                <Label htmlFor="f-expected-ctc-amount">Expected CTC amount</Label>
                 <Input
+                  id="f-expected-ctc-amount"
                   type="number"
+                  min={0}
                   value={form.expectedCtcAmount}
                   onChange={(e) => setForm({ ...form, expectedCtcAmount: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Notice period (days)</Label>
+                <Label htmlFor="f-notice-period-days">Notice period (days)</Label>
                 <Input
+                  id="f-notice-period-days"
                   type="number"
+                  min={0}
                   value={form.noticePeriodDays}
                   onChange={(e) => setForm({ ...form, noticePeriodDays: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Source</Label>
+                <Label htmlFor="f-source">Source</Label>
                 <Select
                   value={form.source}
                   onValueChange={(v) => setForm({ ...form, source: v as CandidateSource })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-source">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -457,22 +490,25 @@ function CandidatesPage() {
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Source details</Label>
+                <Label htmlFor="f-source-details">Source details</Label>
                 <Input
+                  id="f-source-details"
                   value={form.sourceDetails}
                   onChange={(e) => setForm({ ...form, sourceDetails: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>LinkedIn URL</Label>
+                <Label htmlFor="f-linkedin-url">LinkedIn URL</Label>
                 <Input
+                  id="f-linkedin-url"
                   value={form.linkedinUrl}
                   onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Summary</Label>
+                <Label htmlFor="f-summary">Summary</Label>
                 <Textarea
+                  id="f-summary"
                   value={form.summary}
                   onChange={(e) => setForm({ ...form, summary: e.target.value })}
                 />

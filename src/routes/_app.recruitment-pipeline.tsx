@@ -405,9 +405,9 @@ function PipelinePage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Candidate</Label>
+              <Label htmlFor="f-candidate">Candidate</Label>
               <Select value={pickCandidate} onValueChange={setPickCandidate}>
-                <SelectTrigger>
+                <SelectTrigger id="f-candidate">
                   <SelectValue placeholder="Select candidate" />
                 </SelectTrigger>
                 <SelectContent>
@@ -420,9 +420,9 @@ function PipelinePage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Requisition (open)</Label>
+              <Label htmlFor="f-requisition-open">Requisition (open)</Label>
               <Select value={pickRequisition} onValueChange={setPickRequisition}>
-                <SelectTrigger>
+                <SelectTrigger id="f-requisition-open">
                   <SelectValue placeholder="Select requisition" />
                 </SelectTrigger>
                 <SelectContent>
@@ -462,12 +462,12 @@ function PipelinePage() {
           <div className="space-y-3">
             {action?.type === "reject" && (
               <div className="space-y-1.5">
-                <Label>Reason</Label>
+                <Label htmlFor="f-reason">Reason</Label>
                 <Select
                   value={rejectReason}
                   onValueChange={(v) => setRejectReason(v as RejectionReason)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-reason">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -482,13 +482,18 @@ function PipelinePage() {
             )}
             {action?.type !== "hold" && (
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="pipeline-action-notes">
                   Notes
                   {action?.type === "withdraw" && (
                     <span className="ml-0.5 text-destructive">*</span>
                   )}
                 </Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+                <Textarea
+                  id="pipeline-action-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
               </div>
             )}
           </div>

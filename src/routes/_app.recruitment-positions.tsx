@@ -61,6 +61,11 @@ export const Route = createFileRoute("/_app/recruitment-positions")({
   component: PositionsPage,
 });
 
+/** Mirrors CreateJobPositionRequest's @Pattern on `code` in the backend. */
+const CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+/** Mirrors the backend's @Pattern("^[A-Z]{3}$") on currency fields. */
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+
 type FormState = {
   id?: string;
   code: string;
@@ -165,6 +170,20 @@ function PositionsPage() {
     }
     if (creating && !form.code.trim()) {
       toast.error("Code is required");
+      return;
+    }
+    if (creating && !CODE_PATTERN.test(form.code.trim())) {
+      toast.error(
+        "Code must start with a letter or digit and contain only letters, digits, '.', '_', or '-'",
+      );
+      return;
+    }
+    if (form.salaryCurrency.trim() && !CURRENCY_PATTERN.test(form.salaryCurrency.trim())) {
+      toast.error("Salary currency must be a 3-letter uppercase code, e.g. INR");
+      return;
+    }
+    if (form.salaryMin && form.salaryMax && Number(form.salaryMin) > Number(form.salaryMax)) {
+      toast.error("Salary min cannot be greater than salary max");
       return;
     }
     const payload: JobPositionPayload = {
@@ -352,7 +371,7 @@ function PositionsPage() {
       </div>
 
       <Dialog open={form !== null} onOpenChange={(o) => !o && setForm(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{creating ? "New Position" : "Edit Position"}</DialogTitle>
             <DialogDescription>
@@ -392,14 +411,14 @@ function PositionsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Employment type</Label>
+                <Label htmlFor="pos-employment-type">Employment type</Label>
                 <Select
                   value={form.employmentType}
                   onValueChange={(v) =>
                     setForm({ ...form, employmentType: v as RecruitmentEmploymentType })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="pos-employment-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -439,8 +458,11 @@ function PositionsPage() {
                 <Label htmlFor="pos-currency">Salary currency</Label>
                 <Input
                   id="pos-currency"
+                  maxLength={3}
                   value={form.salaryCurrency}
-                  onChange={(e) => setForm({ ...form, salaryCurrency: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, salaryCurrency: e.target.value.toUpperCase() })
+                  }
                 />
               </div>
               <div className="space-y-1.5">
@@ -448,6 +470,7 @@ function PositionsPage() {
                 <Input
                   id="pos-min"
                   type="number"
+                  min={0}
                   value={form.salaryMin}
                   onChange={(e) => setForm({ ...form, salaryMin: e.target.value })}
                 />
@@ -457,6 +480,7 @@ function PositionsPage() {
                 <Input
                   id="pos-max"
                   type="number"
+                  min={0}
                   value={form.salaryMax}
                   onChange={(e) => setForm({ ...form, salaryMax: e.target.value })}
                 />

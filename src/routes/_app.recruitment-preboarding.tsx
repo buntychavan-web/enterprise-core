@@ -90,6 +90,9 @@ const TASK_STATUS_TONE: Record<PreboardingTaskStatus, StatusTone> = {
   FAILED: "danger",
 };
 
+/** Mirrors CreatePreboardingTaskTemplateRequest's @Pattern on `code` in the backend. */
+const TASK_TEMPLATE_CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
 function PreboardingPage() {
   const { activeCompanyId } = useTenant();
   const { has } = usePermissions();
@@ -408,9 +411,9 @@ function PreboardingPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>Accepted offer</Label>
+            <Label htmlFor="f-accepted-offer">Accepted offer</Label>
             <Select value={pickOffer} onValueChange={setPickOffer}>
-              <SelectTrigger>
+              <SelectTrigger id="f-accepted-offer">
                 <SelectValue placeholder="Select offer" />
               </SelectTrigger>
               <SelectContent>
@@ -532,8 +535,11 @@ function PreboardingPage() {
             <DialogTitle>Confirm joining</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>Employee ID (if already provisioned)</Label>
+            <Label htmlFor="f-employee-id-if-already-provisioned">
+              Employee ID (if already provisioned)
+            </Label>
             <Input
+              id="f-employee-id-if-already-provisioned"
               value={confirmEmployeeId}
               onChange={(e) => setConfirmEmployeeId(e.target.value)}
             />
@@ -556,8 +562,12 @@ function PreboardingPage() {
             <DialogTitle>Mark as no-show</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>Reason</Label>
-            <Textarea value={noShowReason} onChange={(e) => setNoShowReason(e.target.value)} />
+            <Label htmlFor="f-reason">Reason</Label>
+            <Textarea
+              id="f-reason"
+              value={noShowReason}
+              onChange={(e) => setNoShowReason(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNoShowOpen(false)} disabled={busy}>
@@ -577,8 +587,12 @@ function PreboardingPage() {
             <DialogTitle>Cancel checklist</DialogTitle>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label>Reason</Label>
-            <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
+            <Label htmlFor="f-reason-2">Reason</Label>
+            <Textarea
+              id="f-reason-2"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelOpen(false)} disabled={busy}>
@@ -620,6 +634,16 @@ function TaskTemplatesTab({
     if (!form || !companyId) return;
     if (!form.code.trim() || !form.name.trim()) {
       toast.error("Code and name are required");
+      return;
+    }
+    if (!TASK_TEMPLATE_CODE_PATTERN.test(form.code.trim())) {
+      toast.error(
+        "Code must start with a letter or digit and contain only letters, digits, '.', '_', or '-'",
+      );
+      return;
+    }
+    if (form.defaultSlaDays && Number(form.defaultSlaDays) < 0) {
+      toast.error("Default SLA days cannot be negative");
       return;
     }
     setSaving(true);
@@ -707,7 +731,12 @@ function TaskTemplatesTab({
                   </TableCell>
                   {canWrite && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => void remove(t.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void remove(t.id)}
+                        aria-label={`Delete task template ${t.name}`}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
@@ -727,26 +756,28 @@ function TaskTemplatesTab({
           {form && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Code</Label>
+                <Label htmlFor="f-code">Code</Label>
                 <Input
+                  id="f-code"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Name</Label>
+                <Label htmlFor="f-name">Name</Label>
                 <Input
+                  id="f-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <Label htmlFor="f-type">Type</Label>
                 <Select
                   value={form.taskType}
                   onValueChange={(v) => setForm({ ...form, taskType: v as PreboardingTaskType })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -759,14 +790,14 @@ function TaskTemplatesTab({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Default owner</Label>
+                <Label htmlFor="f-default-owner">Default owner</Label>
                 <Select
                   value={form.defaultOwner}
                   onValueChange={(v) =>
                     setForm({ ...form, defaultOwner: v as PreboardingTaskOwner })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-default-owner">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -779,9 +810,11 @@ function TaskTemplatesTab({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Default SLA (days)</Label>
+                <Label htmlFor="f-default-sla-days">Default SLA (days)</Label>
                 <Input
+                  id="f-default-sla-days"
                   type="number"
+                  min={0}
                   value={form.defaultSlaDays}
                   onChange={(e) => setForm({ ...form, defaultSlaDays: e.target.value })}
                 />

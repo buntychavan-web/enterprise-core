@@ -114,6 +114,11 @@ const NOTE_REQUIRED: Partial<Record<LifecycleAction, boolean>> = {
   cancel: true,
 };
 
+/** Mirrors CreateJobRequisitionRequest's @Pattern on `requisitionNumber` in the backend. */
+const REQUISITION_NUMBER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+/** Mirrors the backend's @Pattern("^[A-Z]{3}$") on currency fields. */
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+
 function availableActions(status: RequisitionStatus): LifecycleAction[] {
   switch (status) {
     case "DRAFT":
@@ -249,6 +254,21 @@ function RequisitionsPage() {
       toast.error("Requisition number, position, and title are required");
       return;
     }
+    if (!REQUISITION_NUMBER_PATTERN.test(form.requisitionNumber.trim())) {
+      toast.error(
+        "Requisition number must start with a letter or digit and contain only letters, digits, '.', '_', '/', or '-'",
+      );
+      return;
+    }
+    const headcount = Number(form.headcount);
+    if (!Number.isFinite(headcount) || headcount < 1) {
+      toast.error("Headcount must be at least 1");
+      return;
+    }
+    if (form.budgetCurrency.trim() && !CURRENCY_PATTERN.test(form.budgetCurrency.trim())) {
+      toast.error("Budget currency must be a 3-letter uppercase code, e.g. INR");
+      return;
+    }
     if (!activeCompanyId || !tenantId) {
       toast.error("Select a company first");
       return;
@@ -262,7 +282,7 @@ function RequisitionsPage() {
       departmentOrgUnitId: form.departmentOrgUnitId.trim() || undefined,
       location: form.location.trim() || undefined,
       employmentType: form.employmentType,
-      headcount: Number(form.headcount) || 1,
+      headcount,
       priority: form.priority,
       justification: form.justification.trim() || undefined,
       hiringManagerId: form.hiringManagerId.trim() || undefined,
@@ -483,20 +503,21 @@ function RequisitionsPage() {
           {form && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="f-requisition-number">
                   Requisition number<span className="ml-0.5 text-destructive">*</span>
                 </Label>
                 <Input
+                  id="f-requisition-number"
                   value={form.requisitionNumber}
                   onChange={(e) => setForm({ ...form, requisitionNumber: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="f-position">
                   Position<span className="ml-0.5 text-destructive">*</span>
                 </Label>
                 <Select value={form.jobPositionId} onValueChange={onPickPosition}>
-                  <SelectTrigger>
+                  <SelectTrigger id="f-position">
                     <SelectValue placeholder="Select position" />
                   </SelectTrigger>
                   <SelectContent>
@@ -509,23 +530,24 @@ function RequisitionsPage() {
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>
+                <Label htmlFor="f-title">
                   Title<span className="ml-0.5 text-destructive">*</span>
                 </Label>
                 <Input
+                  id="f-title"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Employment type</Label>
+                <Label htmlFor="f-employment-type">Employment type</Label>
                 <Select
                   value={form.employmentType}
                   onValueChange={(v) =>
                     setForm({ ...form, employmentType: v as RecruitmentEmploymentType })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-employment-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -538,12 +560,12 @@ function RequisitionsPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Priority</Label>
+                <Label htmlFor="f-priority">Priority</Label>
                 <Select
                   value={form.priority}
                   onValueChange={(v) => setForm({ ...form, priority: v as RequisitionPriority })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="f-priority">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -556,8 +578,9 @@ function RequisitionsPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Headcount</Label>
+                <Label htmlFor="f-headcount">Headcount</Label>
                 <Input
+                  id="f-headcount"
                   type="number"
                   min={1}
                   value={form.headcount}
@@ -565,59 +588,71 @@ function RequisitionsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Location</Label>
+                <Label htmlFor="f-location">Location</Label>
                 <Input
+                  id="f-location"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Department (org unit ID)</Label>
+                <Label htmlFor="f-department-org-unit-id">Department (org unit ID)</Label>
                 <Input
+                  id="f-department-org-unit-id"
                   value={form.departmentOrgUnitId}
                   onChange={(e) => setForm({ ...form, departmentOrgUnitId: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Hiring manager (employee ID)</Label>
+                <Label htmlFor="f-hiring-manager-employee-id">Hiring manager (employee ID)</Label>
                 <Input
+                  id="f-hiring-manager-employee-id"
                   value={form.hiringManagerId}
                   onChange={(e) => setForm({ ...form, hiringManagerId: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Recruiter (employee ID)</Label>
+                <Label htmlFor="f-recruiter-employee-id">Recruiter (employee ID)</Label>
                 <Input
+                  id="f-recruiter-employee-id"
                   value={form.recruiterId}
                   onChange={(e) => setForm({ ...form, recruiterId: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Target start date</Label>
+                <Label htmlFor="f-target-start-date">Target start date</Label>
                 <Input
+                  id="f-target-start-date"
                   type="date"
                   value={form.targetStartDate}
                   onChange={(e) => setForm({ ...form, targetStartDate: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Budget currency</Label>
+                <Label htmlFor="f-budget-currency">Budget currency</Label>
                 <Input
+                  id="f-budget-currency"
+                  maxLength={3}
                   value={form.budgetCurrency}
-                  onChange={(e) => setForm({ ...form, budgetCurrency: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, budgetCurrency: e.target.value.toUpperCase() })
+                  }
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Budget amount</Label>
+                <Label htmlFor="f-budget-amount">Budget amount</Label>
                 <Input
+                  id="f-budget-amount"
                   type="number"
+                  min={0}
                   value={form.budgetAmount}
                   onChange={(e) => setForm({ ...form, budgetAmount: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Justification</Label>
+                <Label htmlFor="f-justification">Justification</Label>
                 <Textarea
+                  id="f-justification"
                   value={form.justification}
                   onChange={(e) => setForm({ ...form, justification: e.target.value })}
                 />
@@ -650,11 +685,16 @@ function RequisitionsPage() {
               action.type === "close" ||
               action.type === "cancel") && (
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="requisition-action-note">
                   {action.type === "close" || action.type === "cancel" ? "Reason" : "Notes"}
                   {NOTE_REQUIRED[action.type] && <span className="ml-0.5 text-destructive">*</span>}
                 </Label>
-                <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
+                <Textarea
+                  id="requisition-action-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                />
               </div>
             )}
           <DialogFooter>

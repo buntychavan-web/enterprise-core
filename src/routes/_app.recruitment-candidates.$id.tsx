@@ -177,6 +177,19 @@ function CandidateDetailPage() {
     }
   };
 
+  // Targeted reloads for single mutations — avoids re-fetching all seven
+  // sub-resource collections (an extra 6 requests) when only one tab's data
+  // actually changed. Every mutation also touches the timeline.
+  const loadTimeline = () => candidateTimelineApi.forCandidate(id).then(setTimeline);
+  const reloadNotes = () => Promise.all([candidateNoteApi.list(id).then(setNotes), loadTimeline()]);
+  const reloadTags = () => Promise.all([candidateTagApi.list(id).then(setTags), loadTimeline()]);
+  const reloadComms = () =>
+    Promise.all([candidateCommunicationApi.list(id).then(setComms), loadTimeline()]);
+  const reloadResumes = () =>
+    Promise.all([candidateResumeApi.list(id).then(setResumes), loadTimeline()]);
+  const reloadDocuments = () =>
+    Promise.all([candidateDocumentApi.list(id).then(setDocuments), loadTimeline()]);
+
   useEffect(() => {
     void loadCandidate();
     void loadSubResources();
@@ -190,7 +203,7 @@ function CandidateDetailPage() {
       toast.success("Status updated");
       setStatusDialog(false);
       setStatusReason("");
-      await Promise.all([loadCandidate(), loadSubResources()]);
+      await Promise.all([loadCandidate(), loadTimeline()]);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to update status.");
     } finally {
@@ -204,7 +217,7 @@ function CandidateDetailPage() {
       await candidateApi.recordConsent(id, { consentGiven, consentSource });
       toast.success(consentGiven ? "Consent recorded" : "Consent withdrawn");
       setConsentDialog(false);
-      await loadCandidate();
+      await Promise.all([loadCandidate(), loadTimeline()]);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to record consent.");
     } finally {
@@ -223,7 +236,7 @@ function CandidateDetailPage() {
       toast.success("Note added");
       setNoteDialog(false);
       setNoteBody("");
-      await loadSubResources();
+      await reloadNotes();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to add note.");
     } finally {
@@ -242,7 +255,7 @@ function CandidateDetailPage() {
       toast.success("Tag added");
       setTagDialog(false);
       setTagValue("");
-      await loadSubResources();
+      await reloadTags();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to add tag.");
     } finally {
@@ -254,7 +267,7 @@ function CandidateDetailPage() {
     try {
       await candidateTagApi.remove(id, tag);
       toast.success("Tag removed");
-      await loadSubResources();
+      await reloadTags();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to remove tag.");
     }
@@ -273,7 +286,7 @@ function CandidateDetailPage() {
       setCommDialog(false);
       setCommSubject("");
       setCommSummary("");
-      await loadSubResources();
+      await reloadComms();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to log communication.");
     } finally {
@@ -298,7 +311,7 @@ function CandidateDetailPage() {
       setResumeDialog(false);
       setResumeUri("");
       setResumeFilename("");
-      await loadSubResources();
+      await reloadResumes();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to add resume.");
     } finally {
@@ -310,7 +323,7 @@ function CandidateDetailPage() {
     try {
       await candidateResumeApi.markPrimary(resumeId);
       toast.success("Marked as primary resume");
-      await loadSubResources();
+      await reloadResumes();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to update resume.");
     }
@@ -334,7 +347,7 @@ function CandidateDetailPage() {
       setDocDialog(false);
       setDocUri("");
       setDocFilename("");
-      await loadSubResources();
+      await reloadDocuments();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to add document.");
     } finally {
@@ -696,9 +709,9 @@ function CandidateDetailPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>New status</Label>
+              <Label htmlFor="f-new-status">New status</Label>
               <Select value={nextStatus} onValueChange={(v) => setNextStatus(v as CandidateStatus)}>
-                <SelectTrigger>
+                <SelectTrigger id="f-new-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -711,8 +724,12 @@ function CandidateDetailPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Reason (optional)</Label>
-              <Textarea value={statusReason} onChange={(e) => setStatusReason(e.target.value)} />
+              <Label htmlFor="f-reason-optional">Reason (optional)</Label>
+              <Textarea
+                id="f-reason-optional"
+                value={statusReason}
+                onChange={(e) => setStatusReason(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -734,12 +751,12 @@ function CandidateDetailPage() {
           </DialogHeader>
           {consentGiven && (
             <div className="space-y-1.5">
-              <Label>Consent source</Label>
+              <Label htmlFor="f-consent-source">Consent source</Label>
               <Select
                 value={consentSource}
                 onValueChange={(v) => setConsentSource(v as CandidateConsentSource)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-consent-source">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -771,9 +788,9 @@ function CandidateDetailPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label htmlFor="f-type">Type</Label>
               <Select value={noteType} onValueChange={(v) => setNoteType(v as NoteType)}>
-                <SelectTrigger>
+                <SelectTrigger id="f-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -786,10 +803,15 @@ function CandidateDetailPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor="f-note">
                 Note<span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Textarea value={noteBody} onChange={(e) => setNoteBody(e.target.value)} rows={4} />
+              <Textarea
+                id="f-note"
+                value={noteBody}
+                onChange={(e) => setNoteBody(e.target.value)}
+                rows={4}
+              />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
@@ -841,12 +863,12 @@ function CandidateDetailPage() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Channel</Label>
+              <Label htmlFor="f-channel">Channel</Label>
               <Select
                 value={commChannel}
                 onValueChange={(v) => setCommChannel(v as CommunicationChannel)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-channel">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -859,12 +881,12 @@ function CandidateDetailPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Direction</Label>
+              <Label htmlFor="f-direction">Direction</Label>
               <Select
                 value={commDirection}
                 onValueChange={(v) => setCommDirection(v as "INBOUND" | "OUTBOUND")}
               >
-                <SelectTrigger>
+                <SelectTrigger id="f-direction">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -874,12 +896,20 @@ function CandidateDetailPage() {
               </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label>Subject</Label>
-              <Input value={commSubject} onChange={(e) => setCommSubject(e.target.value)} />
+              <Label htmlFor="f-subject">Subject</Label>
+              <Input
+                id="f-subject"
+                value={commSubject}
+                onChange={(e) => setCommSubject(e.target.value)}
+              />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label>Summary</Label>
-              <Textarea value={commSummary} onChange={(e) => setCommSummary(e.target.value)} />
+              <Label htmlFor="f-summary">Summary</Label>
+              <Textarea
+                id="f-summary"
+                value={commSummary}
+                onChange={(e) => setCommSummary(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -904,12 +934,20 @@ function CandidateDetailPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Filename</Label>
-              <Input value={resumeFilename} onChange={(e) => setResumeFilename(e.target.value)} />
+              <Label htmlFor="f-filename">Filename</Label>
+              <Input
+                id="f-filename"
+                value={resumeFilename}
+                onChange={(e) => setResumeFilename(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Storage URI</Label>
-              <Input value={resumeUri} onChange={(e) => setResumeUri(e.target.value)} />
+              <Label htmlFor="f-storage-uri">Storage URI</Label>
+              <Input
+                id="f-storage-uri"
+                value={resumeUri}
+                onChange={(e) => setResumeUri(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -934,9 +972,9 @@ function CandidateDetailPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label htmlFor="f-type-2">Type</Label>
               <Select value={docType} onValueChange={(v) => setDocType(v as DocumentType)}>
-                <SelectTrigger>
+                <SelectTrigger id="f-type-2">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -949,12 +987,20 @@ function CandidateDetailPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Filename</Label>
-              <Input value={docFilename} onChange={(e) => setDocFilename(e.target.value)} />
+              <Label htmlFor="f-filename-2">Filename</Label>
+              <Input
+                id="f-filename-2"
+                value={docFilename}
+                onChange={(e) => setDocFilename(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>Storage URI</Label>
-              <Input value={docUri} onChange={(e) => setDocUri(e.target.value)} />
+              <Label htmlFor="f-storage-uri-2">Storage URI</Label>
+              <Input
+                id="f-storage-uri-2"
+                value={docUri}
+                onChange={(e) => setDocUri(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
