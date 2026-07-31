@@ -18,6 +18,7 @@ import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppRecruitmentRouteImport } from './routes/_app.recruitment'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppPayrollRouteImport } from './routes/_app.payroll'
@@ -78,6 +79,11 @@ const AppTeamRoute = AppTeamRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecruitmentRoute = AppRecruitmentRouteImport.update({
+  id: '/recruitment',
+  path: '/recruitment',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/payroll': typeof AppPayrollRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
+  '/recruitment': typeof AppRecruitmentRoute
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
   '/users': typeof AppUsersRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/payroll': typeof AppPayrollRoute
   '/payslips': typeof AppPayslipsRoute
   '/profile': typeof AppProfileRoute
+  '/recruitment': typeof AppRecruitmentRoute
   '/settings': typeof AppSettingsRoute
   '/team': typeof AppTeamRoute
   '/users': typeof AppUsersRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/_app/payroll': typeof AppPayrollRoute
   '/_app/payslips': typeof AppPayslipsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/recruitment': typeof AppRecruitmentRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/team': typeof AppTeamRoute
   '/_app/users': typeof AppUsersRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/payslips'
     | '/profile'
+    | '/recruitment'
     | '/settings'
     | '/team'
     | '/users'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/payslips'
     | '/profile'
+    | '/recruitment'
     | '/settings'
     | '/team'
     | '/users'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/_app/payroll'
     | '/_app/payslips'
     | '/_app/profile'
+    | '/_app/recruitment'
     | '/_app/settings'
     | '/_app/team'
     | '/_app/users'
@@ -394,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recruitment': {
+      id: '/_app/recruitment'
+      path: '/recruitment'
+      fullPath: '/recruitment'
+      preLoaderRoute: typeof AppRecruitmentRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -539,6 +558,7 @@ interface AppRouteChildren {
   AppPayrollRoute: typeof AppPayrollRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppRecruitmentRoute: typeof AppRecruitmentRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTeamRoute: typeof AppTeamRoute
   AppUsersRoute: typeof AppUsersRoute
@@ -560,6 +580,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPayrollRoute: AppPayrollRoute,
   AppPayslipsRoute: AppPayslipsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppRecruitmentRoute: AppRecruitmentRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTeamRoute: AppTeamRoute,
   AppUsersRoute: AppUsersRoute,
