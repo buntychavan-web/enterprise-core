@@ -36,6 +36,7 @@ import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcement
 import { Route as AppAboutRouteImport } from './routes/_app.about'
 import { Route as AppRecruitmentIndexRouteImport } from './routes/_app.recruitment.index'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
+import { Route as AppRecruitmentRequisitionsIndexRouteImport } from './routes/_app.recruitment.requisitions.index'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -172,6 +173,12 @@ const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppEmployeesRoute,
 } as any)
+const AppRecruitmentRequisitionsIndexRoute =
+  AppRecruitmentRequisitionsIndexRouteImport.update({
+    id: '/requisitions/',
+    path: '/requisitions/',
+    getParentRoute: () => AppRecruitmentRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
   '/recruitment/': typeof AppRecruitmentIndexRoute
+  '/recruitment/requisitions/': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -227,6 +235,7 @@ export interface FileRoutesByTo {
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
   '/recruitment': typeof AppRecruitmentIndexRoute
+  '/recruitment/requisitions': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -257,6 +266,7 @@ export interface FileRoutesById {
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
   '/_app/recruitment/': typeof AppRecruitmentIndexRoute
+  '/_app/recruitment/requisitions/': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/design-system/organization'
     | '/employees/$id'
     | '/recruitment/'
+    | '/recruitment/requisitions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/design-system/organization'
     | '/employees/$id'
     | '/recruitment'
+    | '/recruitment/requisitions'
   id:
     | '__root__'
     | '/'
@@ -343,6 +355,7 @@ export interface FileRouteTypes {
     | '/design-system/organization'
     | '/_app/employees/$id'
     | '/_app/recruitment/'
+    | '/_app/recruitment/requisitions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -544,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEmployeesIdRouteImport
       parentRoute: typeof AppEmployeesRoute
     }
+    '/_app/recruitment/requisitions/': {
+      id: '/_app/recruitment/requisitions/'
+      path: '/requisitions'
+      fullPath: '/recruitment/requisitions/'
+      preLoaderRoute: typeof AppRecruitmentRequisitionsIndexRouteImport
+      parentRoute: typeof AppRecruitmentRoute
+    }
   }
 }
 
@@ -561,10 +581,12 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 
 interface AppRecruitmentRouteChildren {
   AppRecruitmentIndexRoute: typeof AppRecruitmentIndexRoute
+  AppRecruitmentRequisitionsIndexRoute: typeof AppRecruitmentRequisitionsIndexRoute
 }
 
 const AppRecruitmentRouteChildren: AppRecruitmentRouteChildren = {
   AppRecruitmentIndexRoute: AppRecruitmentIndexRoute,
+  AppRecruitmentRequisitionsIndexRoute: AppRecruitmentRequisitionsIndexRoute,
 }
 
 const AppRecruitmentRouteWithChildren = AppRecruitmentRoute._addFileChildren(
