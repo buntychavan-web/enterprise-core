@@ -41,9 +41,7 @@ function AnnouncementsPage() {
 
   const filtered = useMemo(
     () =>
-      tab === "All"
-        ? (query.data ?? [])
-        : (query.data ?? []).filter((a) => a.category === tab),
+      tab === "All" ? (query.data ?? []) : (query.data ?? []).filter((a) => a.category === tab),
     [query.data, tab],
   );
 

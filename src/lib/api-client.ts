@@ -264,7 +264,6 @@ export type UserPreferenceResponse = {
   productUpdates?: boolean;
 };
 
-
 /* -------------------------------------------------------------------------- */
 /* Errors                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -892,8 +891,8 @@ export const holidaysApi = {
 
 export const announcementsApi = {
   list(signal?: AbortSignal) {
-    return request<AnnouncementResponse[]>("/announcements", { signal }).then(
-      (d) => (Array.isArray(d) ? d : []),
+    return request<AnnouncementResponse[]>("/announcements", { signal }).then((d) =>
+      Array.isArray(d) ? d : [],
     );
   },
 };
@@ -910,7 +909,6 @@ export const userPreferencesApi = {
 /* -------------------------------------------------------------------------- */
 /* Dashboard KPI counts                                                       */
 /* -------------------------------------------------------------------------- */
-
 
 export type DashboardSummary = {
   employees: number | null;

@@ -59,10 +59,7 @@ function HolidaysPage() {
   });
 
   const filtered = useMemo(
-    () =>
-      type === "all"
-        ? (query.data ?? [])
-        : (query.data ?? []).filter((h) => h.type === type),
+    () => (type === "all" ? (query.data ?? []) : (query.data ?? []).filter((h) => h.type === type)),
     [query.data, type],
   );
 
