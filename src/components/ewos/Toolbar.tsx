@@ -32,6 +32,7 @@ export function Toolbar({
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             className="pl-8"
           />
         </div>

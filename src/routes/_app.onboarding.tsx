@@ -24,12 +24,14 @@ function OnboardingDashboardPage() {
   const [dashboard, setDashboard] = useState<OnboardingDashboardDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeCompanyId) return;
     let cancelled = false;
     setLoading(true);
     setUnavailable(false);
+    setError(null);
 
     onboardingDashboardApi
       .dashboard(activeCompanyId)
@@ -38,7 +40,11 @@ function OnboardingDashboardPage() {
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err instanceof ApiError && err.status === 404) setUnavailable(true);
+        if (err instanceof ApiError && err.status === 404) {
+          setUnavailable(true);
+        } else {
+          setError(err instanceof ApiError ? err.message : "Failed to load onboarding metrics.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -75,6 +81,8 @@ function OnboardingDashboardPage() {
           title="Onboarding APIs unavailable"
           description="Could not reach the onboarding backend."
         />
+      ) : error ? (
+        <EmptyState title="Couldn't load onboarding metrics" description={error} />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

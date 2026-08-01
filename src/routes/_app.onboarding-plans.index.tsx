@@ -193,7 +193,7 @@ function OnboardingPlansPage() {
             searchPlaceholder="Search by employee ID or joining date…"
             filters={
               <Select value={status} onValueChange={(v) => setStatus(v as OnboardingPlanStatus)}>
-                <SelectTrigger className="h-9 w-44">
+                <SelectTrigger className="h-9 w-44" aria-label="Filter plans by status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -263,9 +263,17 @@ function OnboardingPlansPage() {
                       <TableRow
                         key={p.id}
                         className="cursor-pointer"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View onboarding plan for employee ${p.employeeId}`}
                         onClick={() =>
                           void navigate({ to: "/onboarding-plans/$id", params: { id: p.id } })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter" && e.key !== " ") return;
+                          e.preventDefault();
+                          void navigate({ to: "/onboarding-plans/$id", params: { id: p.id } });
+                        }}
                       >
                         <TableCell className="font-mono text-xs">{p.employeeId}</TableCell>
                         <TableCell className="text-sm">{p.joiningDate ?? "—"}</TableCell>
@@ -359,6 +367,7 @@ function OnboardingPlansPage() {
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 placeholder="Optional"
+                maxLength={4000}
               />
             </div>
           </div>
@@ -529,6 +538,7 @@ function TaskTemplatesTab({
                   id="f-code"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
+                  maxLength={64}
                 />
               </div>
               <div className="space-y-1.5">
@@ -537,6 +547,7 @@ function TaskTemplatesTab({
                   id="f-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  maxLength={256}
                 />
               </div>
               <div className="space-y-1.5">

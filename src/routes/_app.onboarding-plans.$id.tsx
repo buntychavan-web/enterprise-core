@@ -402,7 +402,7 @@ function OnboardingPlanDetailPage() {
     );
   }
 
-  if (notFound || !plan) {
+  if (notFound) {
     return (
       <div className="space-y-6">
         <Link
@@ -415,6 +415,24 @@ function OnboardingPlanDetailPage() {
         <EmptyState
           title="Plan not found"
           description="This onboarding plan doesn't exist or you don't have access to it."
+        />
+      </div>
+    );
+  }
+
+  if (error || !plan) {
+    return (
+      <div className="space-y-6">
+        <Link
+          to="/onboarding-plans"
+          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to plans
+        </Link>
+        <EmptyState
+          title="Couldn't load this plan"
+          description={error ?? "Something went wrong loading this onboarding plan."}
         />
       </div>
     );
@@ -463,8 +481,6 @@ function OnboardingPlanDetailPage() {
           )}
         </div>
       )}
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -612,7 +628,7 @@ function OnboardingPlanDetailPage() {
                 value={taskStatusFilter}
                 onValueChange={(v) => setTaskStatusFilter(v as OnboardingTaskStatus | "ALL")}
               >
-                <SelectTrigger className="h-9 w-44">
+                <SelectTrigger className="h-9 w-44" aria-label="Filter tasks by status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -649,7 +665,15 @@ function OnboardingPlanDetailPage() {
                     <TableRow
                       key={t.id}
                       className="cursor-pointer"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`View details for task ${t.name}`}
                       onClick={() => openTaskDetail(t)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        openTaskDetail(t);
+                      }}
                     >
                       <TableCell className="text-sm">
                         <div className="font-medium">
@@ -846,6 +870,7 @@ function OnboardingPlanDetailPage() {
                 id="f-task-name"
                 value={taskForm.name}
                 onChange={(e) => setTaskForm({ ...taskForm, name: e.target.value })}
+                maxLength={256}
               />
             </div>
             <div className="space-y-1.5">
@@ -934,6 +959,7 @@ function OnboardingPlanDetailPage() {
                 id="f-task-notes"
                 value={taskForm.notes}
                 onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
+                maxLength={4000}
               />
             </div>
           </div>
