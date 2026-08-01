@@ -237,6 +237,33 @@ export type PayrollRunResponse = {
   finalizedAt?: string;
 };
 
+export type HolidayResponse = {
+  id?: string;
+  date: string;
+  name: string;
+  type: "National" | "Regional" | "Optional" | "Company";
+  location?: string;
+  year?: number;
+  recurring?: boolean;
+};
+
+export type AnnouncementResponse = {
+  id: string;
+  title: string;
+  body?: string;
+  category: "Company" | "HR" | "Product" | "Policy";
+  publishedAt?: string;
+  author?: string;
+  pinned?: boolean;
+};
+
+export type UserPreferenceResponse = {
+  userId?: string;
+  emailDigest?: boolean;
+  approvalReminders?: boolean;
+  productUpdates?: boolean;
+};
+
 /* -------------------------------------------------------------------------- */
 /* Errors                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -846,6 +873,36 @@ export const payrollApi = {
       params: query,
       signal,
     }).then((d) => toPage<PayslipResponse>(d, query.size ?? 20));
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Company calendar & announcements                                           */
+/* -------------------------------------------------------------------------- */
+
+export const holidaysApi = {
+  list(year: number, signal?: AbortSignal) {
+    return request<HolidayResponse[]>("/holidays", {
+      params: { year },
+      signal,
+    }).then((d) => (Array.isArray(d) ? d : []));
+  },
+};
+
+export const announcementsApi = {
+  list(signal?: AbortSignal) {
+    return request<AnnouncementResponse[]>("/announcements", { signal }).then((d) =>
+      Array.isArray(d) ? d : [],
+    );
+  },
+};
+
+export const userPreferencesApi = {
+  get(signal?: AbortSignal) {
+    return request<UserPreferenceResponse>("/users/me/preferences", { signal });
+  },
+  update(body: Partial<UserPreferenceResponse>) {
+    return request<UserPreferenceResponse>("/users/me/preferences", { method: "PUT", body });
   },
 };
 

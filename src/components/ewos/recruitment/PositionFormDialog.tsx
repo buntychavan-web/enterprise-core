@@ -35,11 +35,7 @@ import {
 } from "@/components/ui/select";
 import { ApiError } from "@/lib/api-client";
 import { humanizeEnum } from "@/lib/format";
-import {
-  EMPLOYMENT_TYPES,
-  jobPositionsApi,
-  type JobPositionResponse,
-} from "@/lib/recruitment-api";
+import { EMPLOYMENT_TYPES, jobPositionsApi, type JobPositionResponse } from "@/lib/recruitment-api";
 
 const schema = z
   .object({
@@ -71,7 +67,13 @@ const schema = z
       ctx.addIssue({ code: "custom", path: ["salaryMin"], message: "Enter a positive amount" });
     if (max !== undefined && (Number.isNaN(max) || max < 0))
       ctx.addIssue({ code: "custom", path: ["salaryMax"], message: "Enter a positive amount" });
-    if (min !== undefined && max !== undefined && !Number.isNaN(min) && !Number.isNaN(max) && max < min)
+    if (
+      min !== undefined &&
+      max !== undefined &&
+      !Number.isNaN(min) &&
+      !Number.isNaN(max) &&
+      max < min
+    )
       ctx.addIssue({ code: "custom", path: ["salaryMax"], message: "Maximum must exceed minimum" });
   });
 

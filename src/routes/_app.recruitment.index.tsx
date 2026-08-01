@@ -126,11 +126,7 @@ function RecruitmentDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <CompanyScopeSelect
-          companies={companies}
-          companyId={companyId}
-          onChange={setCompanyId}
-        />
+        <CompanyScopeSelect companies={companies} companyId={companyId} onChange={setCompanyId} />
       </div>
 
       <QueryState
@@ -180,7 +176,11 @@ function RecruitmentDashboard() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: -16 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-border"
+                      vertical={false}
+                    />
                     <XAxis
                       dataKey="status"
                       tick={{ fontSize: 11 }}

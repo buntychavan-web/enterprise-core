@@ -158,8 +158,8 @@ const REQUISITIONS = "/recruitment/requisitions";
 
 export const jobPositionsApi = {
   list(companyId: string, signal?: AbortSignal) {
-    return request<JobPositionResponse[]>(POSITIONS, { params: { companyId }, signal }).then(
-      (d) => (Array.isArray(d) ? d : []),
+    return request<JobPositionResponse[]>(POSITIONS, { params: { companyId }, signal }).then((d) =>
+      Array.isArray(d) ? d : [],
     );
   },
   get(id: string, signal?: AbortSignal) {
@@ -285,8 +285,7 @@ export const requisitionActions = {
   resumable: (s: RequisitionStatus) => s === "ON_HOLD",
   fillable: (s: RequisitionStatus) => s === "OPEN",
   closeable: (s: RequisitionStatus) => ["OPEN", "ON_HOLD", "FILLED", "APPROVED"].includes(s),
-  cancellable: (s: RequisitionStatus) =>
-    !["FILLED", "CLOSED", "CANCELLED", "REJECTED"].includes(s),
+  cancellable: (s: RequisitionStatus) => !["FILLED", "CLOSED", "CANCELLED", "REJECTED"].includes(s),
 };
 
 export type RecruitmentRecord = ResourceRecord;

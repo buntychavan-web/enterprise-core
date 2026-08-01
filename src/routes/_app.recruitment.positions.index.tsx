@@ -44,11 +44,7 @@ import { downloadCsv, timestampedName } from "@/lib/export";
 import { formatMoney, humanizeEnum } from "@/lib/format";
 import { ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import {
-  EMPLOYMENT_TYPES,
-  jobPositionsApi,
-  type JobPositionResponse,
-} from "@/lib/recruitment-api";
+import { EMPLOYMENT_TYPES, jobPositionsApi, type JobPositionResponse } from "@/lib/recruitment-api";
 
 export const Route = createFileRoute("/_app/recruitment/positions/")({
   head: () => ({
@@ -294,11 +290,7 @@ function PositionsPage() {
                           </Button>
                         )}
                         {canAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setPendingDelete(p)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => setPendingDelete(p)}>
                             Delete
                           </Button>
                         )}
@@ -320,10 +312,7 @@ function PositionsPage() {
         companyId={companyId}
       />
 
-      <AlertDialog
-        open={!!pendingDelete}
-        onOpenChange={(v) => !v && setPendingDelete(null)}
-      >
+      <AlertDialog open={!!pendingDelete} onOpenChange={(v) => !v && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this job position?</AlertDialogTitle>

@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Megaphone, Pin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ewos/PageHeader";
-import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
+import { QueryState } from "@/components/ewos/QueryState";
 import { EmptyState } from "@/components/ewos/EmptyState";
+import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ANNOUNCEMENTS_FULL, type Announcement } from "@/lib/mock/workspace";
+import { announcementsApi, type AnnouncementResponse } from "@/lib/api-client";
+import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/announcements")({
   head: () => ({
@@ -19,7 +22,7 @@ export const Route = createFileRoute("/_app/announcements")({
   component: AnnouncementsPage,
 });
 
-const TONE: Record<Announcement["category"], StatusTone> = {
+const TONE: Record<AnnouncementResponse["category"], StatusTone> = {
   Company: "info",
   HR: "success",
   Product: "neutral",
@@ -30,10 +33,16 @@ const TABS = ["All", "Company", "HR", "Product", "Policy"] as const;
 
 function AnnouncementsPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("All");
+
+  const query = useQuery({
+    queryKey: ["announcements"],
+    queryFn: ({ signal }) => announcementsApi.list(signal),
+  });
+
   const filtered = useMemo(
     () =>
-      tab === "All" ? ANNOUNCEMENTS_FULL : ANNOUNCEMENTS_FULL.filter((a) => a.category === tab),
-    [tab],
+      tab === "All" ? (query.data ?? []) : (query.data ?? []).filter((a) => a.category === tab),
+    [query.data, tab],
   );
 
   return (
@@ -53,36 +62,49 @@ function AnnouncementsPage() {
           ))}
         </TabsList>
         <TabsContent value={tab} className="mt-4 space-y-3">
-          {filtered.length === 0 ? (
-            <Card>
-              <CardContent className="p-6">
-                <EmptyState
-                  icon={Megaphone}
-                  title="Nothing here"
-                  description="No announcements in this category yet."
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            filtered.map((a) => (
-              <Card key={a.id}>
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {a.pinned && (
-                      <StatusChip tone="warning" icon={<Pin className="h-3 w-3" />}>
-                        Pinned
-                      </StatusChip>
-                    )}
-                    <StatusChip tone={TONE[a.category]}>{a.category}</StatusChip>
-                    <span className="ml-auto text-xs text-muted-foreground">{a.publishedAt}</span>
-                  </div>
-                  <h3 className="mt-2 text-base font-semibold text-foreground">{a.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>
-                  <div className="mt-3 text-xs text-muted-foreground">— {a.author}</div>
+          <QueryState
+            isLoading={query.isLoading}
+            error={query.error}
+            onRetry={() => query.refetch()}
+            label="announcements"
+          >
+            {filtered.length === 0 ? (
+              <Card>
+                <CardContent className="p-6">
+                  <EmptyState
+                    icon={Megaphone}
+                    title="Nothing here"
+                    description={
+                      tab !== "All"
+                        ? "No announcements in this category yet."
+                        : "Announcements will appear once the backend endpoint is available."
+                    }
+                  />
                 </CardContent>
               </Card>
-            ))
-          )}
+            ) : (
+              filtered.map((a) => (
+                <Card key={a.id}>
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {a.pinned && (
+                        <StatusChip tone="warning" icon={<Pin className="h-3 w-3" />}>
+                          Pinned
+                        </StatusChip>
+                      )}
+                      <StatusChip tone={TONE[a.category]}>{a.category}</StatusChip>
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {formatDate(a.publishedAt)}
+                      </span>
+                    </div>
+                    <h3 className="mt-2 text-base font-semibold text-foreground">{a.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>
+                    <div className="mt-3 text-xs text-muted-foreground">— {a.author || "EWOS"}</div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </QueryState>
         </TabsContent>
       </Tabs>
     </div>
