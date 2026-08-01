@@ -17,8 +17,16 @@ import { Route as DesignSystemOrganizationRouteImport } from './routes/design-sy
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTenantManagementRouteImport } from './routes/_app.tenant-management'
+import { Route as AppTeamRatingDistributionRouteImport } from './routes/_app.team-rating-distribution'
+import { Route as AppTeamProgressRouteImport } from './routes/_app.team-progress'
+import { Route as AppTeamPerformanceSummaryRouteImport } from './routes/_app.team-performance-summary'
+import { Route as AppTeamPerformanceDashboardRouteImport } from './routes/_app.team-performance-dashboard'
+import { Route as AppTeamPendingReviewsRouteImport } from './routes/_app.team-pending-reviews'
+import { Route as AppTeamGoalApprovalRouteImport } from './routes/_app.team-goal-approval'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppRolesRouteImport } from './routes/_app.roles'
+import { Route as AppReviewerPendingReviewsRouteImport } from './routes/_app.reviewer-pending-reviews'
+import { Route as AppReviewerDashboardRouteImport } from './routes/_app.reviewer-dashboard'
 import { Route as AppRecruitmentRequisitionsRouteImport } from './routes/_app.recruitment-requisitions'
 import { Route as AppRecruitmentPreboardingRouteImport } from './routes/_app.recruitment-preboarding'
 import { Route as AppRecruitmentPositionsRouteImport } from './routes/_app.recruitment-positions'
@@ -29,6 +37,15 @@ import { Route as AppRecruitmentCandidatesRouteImport } from './routes/_app.recr
 import { Route as AppRecruitmentRouteImport } from './routes/_app.recruitment'
 import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppPerformanceTemplatesRouteImport } from './routes/_app.performance-templates'
+import { Route as AppPerformanceReportsRouteImport } from './routes/_app.performance-reports'
+import { Route as AppPerformanceRatingDistributionRouteImport } from './routes/_app.performance-rating-distribution'
+import { Route as AppPerformanceProgressRouteImport } from './routes/_app.performance-progress'
+import { Route as AppPerformanceEmployeeAssignmentRouteImport } from './routes/_app.performance-employee-assignment'
+import { Route as AppPerformanceDashboardRouteImport } from './routes/_app.performance-dashboard'
+import { Route as AppPerformanceCyclesRouteImport } from './routes/_app.performance-cycles'
+import { Route as AppPerformanceCalibrationRouteImport } from './routes/_app.performance-calibration'
+import { Route as AppPerformanceBellCurveRouteImport } from './routes/_app.performance-bell-curve'
 import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppOutsourcingRouteImport } from './routes/_app.outsourcing'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
@@ -36,10 +53,18 @@ import { Route as AppOperationsDashboardRouteImport } from './routes/_app.operat
 import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMyTeamRouteImport } from './routes/_app.my-team'
+import { Route as AppMyPerformanceTimelineRouteImport } from './routes/_app.my-performance-timeline'
+import { Route as AppMyPerformanceRouteImport } from './routes/_app.my-performance'
 import { Route as AppMyPayslipsRouteImport } from './routes/_app.my-payslips'
 import { Route as AppMyOnboardingRouteImport } from './routes/_app.my-onboarding'
 import { Route as AppMyLeaveRouteImport } from './routes/_app.my-leave'
+import { Route as AppMyGoalsRouteImport } from './routes/_app.my-goals'
+import { Route as AppMyDevelopmentPlanRouteImport } from './routes/_app.my-development-plan'
+import { Route as AppMyCompetenciesRouteImport } from './routes/_app.my-competencies'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app.my-attendance'
+import { Route as AppMyAppraisalSelfReviewRouteImport } from './routes/_app.my-appraisal-self-review'
+import { Route as AppMyAppraisalHistoryRouteImport } from './routes/_app.my-appraisal-history'
+import { Route as AppMyAppraisalRouteImport } from './routes/_app.my-appraisal'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppIntegrationMonitoringRouteImport } from './routes/_app.integration-monitoring'
 import { Route as AppIntegrationConfigurationsRouteImport } from './routes/_app.integration-configurations'
@@ -51,13 +76,17 @@ import { Route as AppDataExchangeRouteImport } from './routes/_app.data-exchange
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClientGoliveRouteImport } from './routes/_app.client-golive'
 import { Route as AppClientApprovalsRouteImport } from './routes/_app.client-approvals'
+import { Route as AppBulkAppraisalLaunchRouteImport } from './routes/_app.bulk-appraisal-launch'
 import { Route as AppAuditHistoryRouteImport } from './routes/_app.audit-history'
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAboutRouteImport } from './routes/_app.about'
 import { Route as AppOnboardingPlansIndexRouteImport } from './routes/_app.onboarding-plans.index'
+import { Route as AppReviewerAssessmentIdRouteImport } from './routes/_app.reviewer-assessment.$id'
 import { Route as AppRecruitmentCandidatesIdRouteImport } from './routes/_app.recruitment-candidates.$id'
+import { Route as AppPerformanceCyclesIdRouteImport } from './routes/_app.performance-cycles.$id'
 import { Route as AppOnboardingPlansIdRouteImport } from './routes/_app.onboarding-plans.$id'
+import { Route as AppManagerReviewIdRouteImport } from './routes/_app.manager-review.$id'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -100,6 +129,39 @@ const AppTenantManagementRoute = AppTenantManagementRouteImport.update({
   path: '/tenant-management',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTeamRatingDistributionRoute =
+  AppTeamRatingDistributionRouteImport.update({
+    id: '/team-rating-distribution',
+    path: '/team-rating-distribution',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppTeamProgressRoute = AppTeamProgressRouteImport.update({
+  id: '/team-progress',
+  path: '/team-progress',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamPerformanceSummaryRoute =
+  AppTeamPerformanceSummaryRouteImport.update({
+    id: '/team-performance-summary',
+    path: '/team-performance-summary',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppTeamPerformanceDashboardRoute =
+  AppTeamPerformanceDashboardRouteImport.update({
+    id: '/team-performance-dashboard',
+    path: '/team-performance-dashboard',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppTeamPendingReviewsRoute = AppTeamPendingReviewsRouteImport.update({
+  id: '/team-pending-reviews',
+  path: '/team-pending-reviews',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamGoalApprovalRoute = AppTeamGoalApprovalRouteImport.update({
+  id: '/team-goal-approval',
+  path: '/team-goal-approval',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -108,6 +170,17 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppRolesRoute = AppRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReviewerPendingReviewsRoute =
+  AppReviewerPendingReviewsRouteImport.update({
+    id: '/reviewer-pending-reviews',
+    path: '/reviewer-pending-reviews',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppReviewerDashboardRoute = AppReviewerDashboardRouteImport.update({
+  id: '/reviewer-dashboard',
+  path: '/reviewer-dashboard',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRecruitmentRequisitionsRoute =
@@ -164,6 +237,54 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPerformanceTemplatesRoute = AppPerformanceTemplatesRouteImport.update({
+  id: '/performance-templates',
+  path: '/performance-templates',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerformanceReportsRoute = AppPerformanceReportsRouteImport.update({
+  id: '/performance-reports',
+  path: '/performance-reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerformanceRatingDistributionRoute =
+  AppPerformanceRatingDistributionRouteImport.update({
+    id: '/performance-rating-distribution',
+    path: '/performance-rating-distribution',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppPerformanceProgressRoute = AppPerformanceProgressRouteImport.update({
+  id: '/performance-progress',
+  path: '/performance-progress',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerformanceEmployeeAssignmentRoute =
+  AppPerformanceEmployeeAssignmentRouteImport.update({
+    id: '/performance-employee-assignment',
+    path: '/performance-employee-assignment',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppPerformanceDashboardRoute = AppPerformanceDashboardRouteImport.update({
+  id: '/performance-dashboard',
+  path: '/performance-dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerformanceCyclesRoute = AppPerformanceCyclesRouteImport.update({
+  id: '/performance-cycles',
+  path: '/performance-cycles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerformanceCalibrationRoute =
+  AppPerformanceCalibrationRouteImport.update({
+    id: '/performance-calibration',
+    path: '/performance-calibration',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppPerformanceBellCurveRoute = AppPerformanceBellCurveRouteImport.update({
+  id: '/performance-bell-curve',
+  path: '/performance-bell-curve',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPayslipsRoute = AppPayslipsRouteImport.update({
   id: '/payslips',
   path: '/payslips',
@@ -199,6 +320,17 @@ const AppMyTeamRoute = AppMyTeamRouteImport.update({
   path: '/my-team',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMyPerformanceTimelineRoute =
+  AppMyPerformanceTimelineRouteImport.update({
+    id: '/my-performance-timeline',
+    path: '/my-performance-timeline',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppMyPerformanceRoute = AppMyPerformanceRouteImport.update({
+  id: '/my-performance',
+  path: '/my-performance',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMyPayslipsRoute = AppMyPayslipsRouteImport.update({
   id: '/my-payslips',
   path: '/my-payslips',
@@ -214,9 +346,40 @@ const AppMyLeaveRoute = AppMyLeaveRouteImport.update({
   path: '/my-leave',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMyGoalsRoute = AppMyGoalsRouteImport.update({
+  id: '/my-goals',
+  path: '/my-goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyDevelopmentPlanRoute = AppMyDevelopmentPlanRouteImport.update({
+  id: '/my-development-plan',
+  path: '/my-development-plan',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyCompetenciesRoute = AppMyCompetenciesRouteImport.update({
+  id: '/my-competencies',
+  path: '/my-competencies',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
   id: '/my-attendance',
   path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyAppraisalSelfReviewRoute =
+  AppMyAppraisalSelfReviewRouteImport.update({
+    id: '/my-appraisal-self-review',
+    path: '/my-appraisal-self-review',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppMyAppraisalHistoryRoute = AppMyAppraisalHistoryRouteImport.update({
+  id: '/my-appraisal-history',
+  path: '/my-appraisal-history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyAppraisalRoute = AppMyAppraisalRouteImport.update({
+  id: '/my-appraisal',
+  path: '/my-appraisal',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLeaveRoute = AppLeaveRouteImport.update({
@@ -276,6 +439,11 @@ const AppClientApprovalsRoute = AppClientApprovalsRouteImport.update({
   path: '/client-approvals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBulkAppraisalLaunchRoute = AppBulkAppraisalLaunchRouteImport.update({
+  id: '/bulk-appraisal-launch',
+  path: '/bulk-appraisal-launch',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAuditHistoryRoute = AppAuditHistoryRouteImport.update({
   id: '/audit-history',
   path: '/audit-history',
@@ -301,15 +469,30 @@ const AppOnboardingPlansIndexRoute = AppOnboardingPlansIndexRouteImport.update({
   path: '/onboarding-plans/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReviewerAssessmentIdRoute = AppReviewerAssessmentIdRouteImport.update({
+  id: '/reviewer-assessment/$id',
+  path: '/reviewer-assessment/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRecruitmentCandidatesIdRoute =
   AppRecruitmentCandidatesIdRouteImport.update({
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AppRecruitmentCandidatesRoute,
   } as any)
+const AppPerformanceCyclesIdRoute = AppPerformanceCyclesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppPerformanceCyclesRoute,
+} as any)
 const AppOnboardingPlansIdRoute = AppOnboardingPlansIdRouteImport.update({
   id: '/onboarding-plans/$id',
   path: '/onboarding-plans/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppManagerReviewIdRoute = AppManagerReviewIdRouteImport.update({
+  id: '/manager-review/$id',
+  path: '/manager-review/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
@@ -326,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
   '/audit-history': typeof AppAuditHistoryRoute
+  '/bulk-appraisal-launch': typeof AppBulkAppraisalLaunchRoute
   '/client-approvals': typeof AppClientApprovalsRoute
   '/client-golive': typeof AppClientGoliveRoute
   '/dashboard': typeof AppDashboardRoute
@@ -337,10 +521,18 @@ export interface FileRoutesByFullPath {
   '/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
+  '/my-appraisal': typeof AppMyAppraisalRoute
+  '/my-appraisal-history': typeof AppMyAppraisalHistoryRoute
+  '/my-appraisal-self-review': typeof AppMyAppraisalSelfReviewRoute
   '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-competencies': typeof AppMyCompetenciesRoute
+  '/my-development-plan': typeof AppMyDevelopmentPlanRoute
+  '/my-goals': typeof AppMyGoalsRoute
   '/my-leave': typeof AppMyLeaveRoute
   '/my-onboarding': typeof AppMyOnboardingRoute
   '/my-payslips': typeof AppMyPayslipsRoute
+  '/my-performance': typeof AppMyPerformanceRoute
+  '/my-performance-timeline': typeof AppMyPerformanceTimelineRoute
   '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
@@ -348,6 +540,15 @@ export interface FileRoutesByFullPath {
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
   '/payslips': typeof AppPayslipsRoute
+  '/performance-bell-curve': typeof AppPerformanceBellCurveRoute
+  '/performance-calibration': typeof AppPerformanceCalibrationRoute
+  '/performance-cycles': typeof AppPerformanceCyclesRouteWithChildren
+  '/performance-dashboard': typeof AppPerformanceDashboardRoute
+  '/performance-employee-assignment': typeof AppPerformanceEmployeeAssignmentRoute
+  '/performance-progress': typeof AppPerformanceProgressRoute
+  '/performance-rating-distribution': typeof AppPerformanceRatingDistributionRoute
+  '/performance-reports': typeof AppPerformanceReportsRoute
+  '/performance-templates': typeof AppPerformanceTemplatesRoute
   '/profile': typeof AppProfileRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/recruitment': typeof AppRecruitmentRoute
@@ -358,15 +559,26 @@ export interface FileRoutesByFullPath {
   '/recruitment-positions': typeof AppRecruitmentPositionsRoute
   '/recruitment-preboarding': typeof AppRecruitmentPreboardingRoute
   '/recruitment-requisitions': typeof AppRecruitmentRequisitionsRoute
+  '/reviewer-dashboard': typeof AppReviewerDashboardRoute
+  '/reviewer-pending-reviews': typeof AppReviewerPendingReviewsRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
+  '/team-goal-approval': typeof AppTeamGoalApprovalRoute
+  '/team-pending-reviews': typeof AppTeamPendingReviewsRoute
+  '/team-performance-dashboard': typeof AppTeamPerformanceDashboardRoute
+  '/team-performance-summary': typeof AppTeamPerformanceSummaryRoute
+  '/team-progress': typeof AppTeamProgressRoute
+  '/team-rating-distribution': typeof AppTeamRatingDistributionRoute
   '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
+  '/manager-review/$id': typeof AppManagerReviewIdRoute
   '/onboarding-plans/$id': typeof AppOnboardingPlansIdRoute
+  '/performance-cycles/$id': typeof AppPerformanceCyclesIdRoute
   '/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
+  '/reviewer-assessment/$id': typeof AppReviewerAssessmentIdRoute
   '/onboarding-plans/': typeof AppOnboardingPlansIndexRoute
 }
 export interface FileRoutesByTo {
@@ -377,6 +589,7 @@ export interface FileRoutesByTo {
   '/announcements': typeof AppAnnouncementsRoute
   '/attendance': typeof AppAttendanceRoute
   '/audit-history': typeof AppAuditHistoryRoute
+  '/bulk-appraisal-launch': typeof AppBulkAppraisalLaunchRoute
   '/client-approvals': typeof AppClientApprovalsRoute
   '/client-golive': typeof AppClientGoliveRoute
   '/dashboard': typeof AppDashboardRoute
@@ -388,10 +601,18 @@ export interface FileRoutesByTo {
   '/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
+  '/my-appraisal': typeof AppMyAppraisalRoute
+  '/my-appraisal-history': typeof AppMyAppraisalHistoryRoute
+  '/my-appraisal-self-review': typeof AppMyAppraisalSelfReviewRoute
   '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-competencies': typeof AppMyCompetenciesRoute
+  '/my-development-plan': typeof AppMyDevelopmentPlanRoute
+  '/my-goals': typeof AppMyGoalsRoute
   '/my-leave': typeof AppMyLeaveRoute
   '/my-onboarding': typeof AppMyOnboardingRoute
   '/my-payslips': typeof AppMyPayslipsRoute
+  '/my-performance': typeof AppMyPerformanceRoute
+  '/my-performance-timeline': typeof AppMyPerformanceTimelineRoute
   '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
   '/onboarding': typeof AppOnboardingRoute
@@ -399,6 +620,15 @@ export interface FileRoutesByTo {
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
   '/payslips': typeof AppPayslipsRoute
+  '/performance-bell-curve': typeof AppPerformanceBellCurveRoute
+  '/performance-calibration': typeof AppPerformanceCalibrationRoute
+  '/performance-cycles': typeof AppPerformanceCyclesRouteWithChildren
+  '/performance-dashboard': typeof AppPerformanceDashboardRoute
+  '/performance-employee-assignment': typeof AppPerformanceEmployeeAssignmentRoute
+  '/performance-progress': typeof AppPerformanceProgressRoute
+  '/performance-rating-distribution': typeof AppPerformanceRatingDistributionRoute
+  '/performance-reports': typeof AppPerformanceReportsRoute
+  '/performance-templates': typeof AppPerformanceTemplatesRoute
   '/profile': typeof AppProfileRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/recruitment': typeof AppRecruitmentRoute
@@ -409,15 +639,26 @@ export interface FileRoutesByTo {
   '/recruitment-positions': typeof AppRecruitmentPositionsRoute
   '/recruitment-preboarding': typeof AppRecruitmentPreboardingRoute
   '/recruitment-requisitions': typeof AppRecruitmentRequisitionsRoute
+  '/reviewer-dashboard': typeof AppReviewerDashboardRoute
+  '/reviewer-pending-reviews': typeof AppReviewerPendingReviewsRoute
   '/roles': typeof AppRolesRoute
   '/settings': typeof AppSettingsRoute
+  '/team-goal-approval': typeof AppTeamGoalApprovalRoute
+  '/team-pending-reviews': typeof AppTeamPendingReviewsRoute
+  '/team-performance-dashboard': typeof AppTeamPerformanceDashboardRoute
+  '/team-performance-summary': typeof AppTeamPerformanceSummaryRoute
+  '/team-progress': typeof AppTeamProgressRoute
+  '/team-rating-distribution': typeof AppTeamRatingDistributionRoute
   '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
+  '/manager-review/$id': typeof AppManagerReviewIdRoute
   '/onboarding-plans/$id': typeof AppOnboardingPlansIdRoute
+  '/performance-cycles/$id': typeof AppPerformanceCyclesIdRoute
   '/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
+  '/reviewer-assessment/$id': typeof AppReviewerAssessmentIdRoute
   '/onboarding-plans': typeof AppOnboardingPlansIndexRoute
 }
 export interface FileRoutesById {
@@ -430,6 +671,7 @@ export interface FileRoutesById {
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/audit-history': typeof AppAuditHistoryRoute
+  '/_app/bulk-appraisal-launch': typeof AppBulkAppraisalLaunchRoute
   '/_app/client-approvals': typeof AppClientApprovalsRoute
   '/_app/client-golive': typeof AppClientGoliveRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -441,10 +683,18 @@ export interface FileRoutesById {
   '/_app/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/_app/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/_app/leave': typeof AppLeaveRoute
+  '/_app/my-appraisal': typeof AppMyAppraisalRoute
+  '/_app/my-appraisal-history': typeof AppMyAppraisalHistoryRoute
+  '/_app/my-appraisal-self-review': typeof AppMyAppraisalSelfReviewRoute
   '/_app/my-attendance': typeof AppMyAttendanceRoute
+  '/_app/my-competencies': typeof AppMyCompetenciesRoute
+  '/_app/my-development-plan': typeof AppMyDevelopmentPlanRoute
+  '/_app/my-goals': typeof AppMyGoalsRoute
   '/_app/my-leave': typeof AppMyLeaveRoute
   '/_app/my-onboarding': typeof AppMyOnboardingRoute
   '/_app/my-payslips': typeof AppMyPayslipsRoute
+  '/_app/my-performance': typeof AppMyPerformanceRoute
+  '/_app/my-performance-timeline': typeof AppMyPerformanceTimelineRoute
   '/_app/my-team': typeof AppMyTeamRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/onboarding': typeof AppOnboardingRoute
@@ -452,6 +702,15 @@ export interface FileRoutesById {
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/outsourcing': typeof AppOutsourcingRoute
   '/_app/payslips': typeof AppPayslipsRoute
+  '/_app/performance-bell-curve': typeof AppPerformanceBellCurveRoute
+  '/_app/performance-calibration': typeof AppPerformanceCalibrationRoute
+  '/_app/performance-cycles': typeof AppPerformanceCyclesRouteWithChildren
+  '/_app/performance-dashboard': typeof AppPerformanceDashboardRoute
+  '/_app/performance-employee-assignment': typeof AppPerformanceEmployeeAssignmentRoute
+  '/_app/performance-progress': typeof AppPerformanceProgressRoute
+  '/_app/performance-rating-distribution': typeof AppPerformanceRatingDistributionRoute
+  '/_app/performance-reports': typeof AppPerformanceReportsRoute
+  '/_app/performance-templates': typeof AppPerformanceTemplatesRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/provider-dashboard': typeof AppProviderDashboardRoute
   '/_app/recruitment': typeof AppRecruitmentRoute
@@ -462,15 +721,26 @@ export interface FileRoutesById {
   '/_app/recruitment-positions': typeof AppRecruitmentPositionsRoute
   '/_app/recruitment-preboarding': typeof AppRecruitmentPreboardingRoute
   '/_app/recruitment-requisitions': typeof AppRecruitmentRequisitionsRoute
+  '/_app/reviewer-dashboard': typeof AppReviewerDashboardRoute
+  '/_app/reviewer-pending-reviews': typeof AppReviewerPendingReviewsRoute
   '/_app/roles': typeof AppRolesRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/team-goal-approval': typeof AppTeamGoalApprovalRoute
+  '/_app/team-pending-reviews': typeof AppTeamPendingReviewsRoute
+  '/_app/team-performance-dashboard': typeof AppTeamPerformanceDashboardRoute
+  '/_app/team-performance-summary': typeof AppTeamPerformanceSummaryRoute
+  '/_app/team-progress': typeof AppTeamProgressRoute
+  '/_app/team-rating-distribution': typeof AppTeamRatingDistributionRoute
   '/_app/tenant-management': typeof AppTenantManagementRoute
   '/_app/users': typeof AppUsersRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
+  '/_app/manager-review/$id': typeof AppManagerReviewIdRoute
   '/_app/onboarding-plans/$id': typeof AppOnboardingPlansIdRoute
+  '/_app/performance-cycles/$id': typeof AppPerformanceCyclesIdRoute
   '/_app/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
+  '/_app/reviewer-assessment/$id': typeof AppReviewerAssessmentIdRoute
   '/_app/onboarding-plans/': typeof AppOnboardingPlansIndexRoute
 }
 export interface FileRouteTypes {
@@ -483,6 +753,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/attendance'
     | '/audit-history'
+    | '/bulk-appraisal-launch'
     | '/client-approvals'
     | '/client-golive'
     | '/dashboard'
@@ -494,10 +765,18 @@ export interface FileRouteTypes {
     | '/integration-configurations'
     | '/integration-monitoring'
     | '/leave'
+    | '/my-appraisal'
+    | '/my-appraisal-history'
+    | '/my-appraisal-self-review'
     | '/my-attendance'
+    | '/my-competencies'
+    | '/my-development-plan'
+    | '/my-goals'
     | '/my-leave'
     | '/my-onboarding'
     | '/my-payslips'
+    | '/my-performance'
+    | '/my-performance-timeline'
     | '/my-team'
     | '/notifications'
     | '/onboarding'
@@ -505,6 +784,15 @@ export interface FileRouteTypes {
     | '/organization'
     | '/outsourcing'
     | '/payslips'
+    | '/performance-bell-curve'
+    | '/performance-calibration'
+    | '/performance-cycles'
+    | '/performance-dashboard'
+    | '/performance-employee-assignment'
+    | '/performance-progress'
+    | '/performance-rating-distribution'
+    | '/performance-reports'
+    | '/performance-templates'
     | '/profile'
     | '/provider-dashboard'
     | '/recruitment'
@@ -515,15 +803,26 @@ export interface FileRouteTypes {
     | '/recruitment-positions'
     | '/recruitment-preboarding'
     | '/recruitment-requisitions'
+    | '/reviewer-dashboard'
+    | '/reviewer-pending-reviews'
     | '/roles'
     | '/settings'
+    | '/team-goal-approval'
+    | '/team-pending-reviews'
+    | '/team-performance-dashboard'
+    | '/team-performance-summary'
+    | '/team-progress'
+    | '/team-rating-distribution'
     | '/tenant-management'
     | '/users'
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
+    | '/manager-review/$id'
     | '/onboarding-plans/$id'
+    | '/performance-cycles/$id'
     | '/recruitment-candidates/$id'
+    | '/reviewer-assessment/$id'
     | '/onboarding-plans/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -534,6 +833,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/attendance'
     | '/audit-history'
+    | '/bulk-appraisal-launch'
     | '/client-approvals'
     | '/client-golive'
     | '/dashboard'
@@ -545,10 +845,18 @@ export interface FileRouteTypes {
     | '/integration-configurations'
     | '/integration-monitoring'
     | '/leave'
+    | '/my-appraisal'
+    | '/my-appraisal-history'
+    | '/my-appraisal-self-review'
     | '/my-attendance'
+    | '/my-competencies'
+    | '/my-development-plan'
+    | '/my-goals'
     | '/my-leave'
     | '/my-onboarding'
     | '/my-payslips'
+    | '/my-performance'
+    | '/my-performance-timeline'
     | '/my-team'
     | '/notifications'
     | '/onboarding'
@@ -556,6 +864,15 @@ export interface FileRouteTypes {
     | '/organization'
     | '/outsourcing'
     | '/payslips'
+    | '/performance-bell-curve'
+    | '/performance-calibration'
+    | '/performance-cycles'
+    | '/performance-dashboard'
+    | '/performance-employee-assignment'
+    | '/performance-progress'
+    | '/performance-rating-distribution'
+    | '/performance-reports'
+    | '/performance-templates'
     | '/profile'
     | '/provider-dashboard'
     | '/recruitment'
@@ -566,15 +883,26 @@ export interface FileRouteTypes {
     | '/recruitment-positions'
     | '/recruitment-preboarding'
     | '/recruitment-requisitions'
+    | '/reviewer-dashboard'
+    | '/reviewer-pending-reviews'
     | '/roles'
     | '/settings'
+    | '/team-goal-approval'
+    | '/team-pending-reviews'
+    | '/team-performance-dashboard'
+    | '/team-performance-summary'
+    | '/team-progress'
+    | '/team-rating-distribution'
     | '/tenant-management'
     | '/users'
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
+    | '/manager-review/$id'
     | '/onboarding-plans/$id'
+    | '/performance-cycles/$id'
     | '/recruitment-candidates/$id'
+    | '/reviewer-assessment/$id'
     | '/onboarding-plans'
   id:
     | '__root__'
@@ -586,6 +914,7 @@ export interface FileRouteTypes {
     | '/_app/announcements'
     | '/_app/attendance'
     | '/_app/audit-history'
+    | '/_app/bulk-appraisal-launch'
     | '/_app/client-approvals'
     | '/_app/client-golive'
     | '/_app/dashboard'
@@ -597,10 +926,18 @@ export interface FileRouteTypes {
     | '/_app/integration-configurations'
     | '/_app/integration-monitoring'
     | '/_app/leave'
+    | '/_app/my-appraisal'
+    | '/_app/my-appraisal-history'
+    | '/_app/my-appraisal-self-review'
     | '/_app/my-attendance'
+    | '/_app/my-competencies'
+    | '/_app/my-development-plan'
+    | '/_app/my-goals'
     | '/_app/my-leave'
     | '/_app/my-onboarding'
     | '/_app/my-payslips'
+    | '/_app/my-performance'
+    | '/_app/my-performance-timeline'
     | '/_app/my-team'
     | '/_app/notifications'
     | '/_app/onboarding'
@@ -608,6 +945,15 @@ export interface FileRouteTypes {
     | '/_app/organization'
     | '/_app/outsourcing'
     | '/_app/payslips'
+    | '/_app/performance-bell-curve'
+    | '/_app/performance-calibration'
+    | '/_app/performance-cycles'
+    | '/_app/performance-dashboard'
+    | '/_app/performance-employee-assignment'
+    | '/_app/performance-progress'
+    | '/_app/performance-rating-distribution'
+    | '/_app/performance-reports'
+    | '/_app/performance-templates'
     | '/_app/profile'
     | '/_app/provider-dashboard'
     | '/_app/recruitment'
@@ -618,15 +964,26 @@ export interface FileRouteTypes {
     | '/_app/recruitment-positions'
     | '/_app/recruitment-preboarding'
     | '/_app/recruitment-requisitions'
+    | '/_app/reviewer-dashboard'
+    | '/_app/reviewer-pending-reviews'
     | '/_app/roles'
     | '/_app/settings'
+    | '/_app/team-goal-approval'
+    | '/_app/team-pending-reviews'
+    | '/_app/team-performance-dashboard'
+    | '/_app/team-performance-summary'
+    | '/_app/team-progress'
+    | '/_app/team-rating-distribution'
     | '/_app/tenant-management'
     | '/_app/users'
     | '/api/$'
     | '/design-system/organization'
     | '/_app/employees/$id'
+    | '/_app/manager-review/$id'
     | '/_app/onboarding-plans/$id'
+    | '/_app/performance-cycles/$id'
     | '/_app/recruitment-candidates/$id'
+    | '/_app/reviewer-assessment/$id'
     | '/_app/onboarding-plans/'
   fileRoutesById: FileRoutesById
 }
@@ -696,6 +1053,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantManagementRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/team-rating-distribution': {
+      id: '/_app/team-rating-distribution'
+      path: '/team-rating-distribution'
+      fullPath: '/team-rating-distribution'
+      preLoaderRoute: typeof AppTeamRatingDistributionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-progress': {
+      id: '/_app/team-progress'
+      path: '/team-progress'
+      fullPath: '/team-progress'
+      preLoaderRoute: typeof AppTeamProgressRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-performance-summary': {
+      id: '/_app/team-performance-summary'
+      path: '/team-performance-summary'
+      fullPath: '/team-performance-summary'
+      preLoaderRoute: typeof AppTeamPerformanceSummaryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-performance-dashboard': {
+      id: '/_app/team-performance-dashboard'
+      path: '/team-performance-dashboard'
+      fullPath: '/team-performance-dashboard'
+      preLoaderRoute: typeof AppTeamPerformanceDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-pending-reviews': {
+      id: '/_app/team-pending-reviews'
+      path: '/team-pending-reviews'
+      fullPath: '/team-pending-reviews'
+      preLoaderRoute: typeof AppTeamPendingReviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-goal-approval': {
+      id: '/_app/team-goal-approval'
+      path: '/team-goal-approval'
+      fullPath: '/team-goal-approval'
+      preLoaderRoute: typeof AppTeamGoalApprovalRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -708,6 +1107,20 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/roles'
       preLoaderRoute: typeof AppRolesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reviewer-pending-reviews': {
+      id: '/_app/reviewer-pending-reviews'
+      path: '/reviewer-pending-reviews'
+      fullPath: '/reviewer-pending-reviews'
+      preLoaderRoute: typeof AppReviewerPendingReviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reviewer-dashboard': {
+      id: '/_app/reviewer-dashboard'
+      path: '/reviewer-dashboard'
+      fullPath: '/reviewer-dashboard'
+      preLoaderRoute: typeof AppReviewerDashboardRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/recruitment-requisitions': {
@@ -780,6 +1193,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/performance-templates': {
+      id: '/_app/performance-templates'
+      path: '/performance-templates'
+      fullPath: '/performance-templates'
+      preLoaderRoute: typeof AppPerformanceTemplatesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-reports': {
+      id: '/_app/performance-reports'
+      path: '/performance-reports'
+      fullPath: '/performance-reports'
+      preLoaderRoute: typeof AppPerformanceReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-rating-distribution': {
+      id: '/_app/performance-rating-distribution'
+      path: '/performance-rating-distribution'
+      fullPath: '/performance-rating-distribution'
+      preLoaderRoute: typeof AppPerformanceRatingDistributionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-progress': {
+      id: '/_app/performance-progress'
+      path: '/performance-progress'
+      fullPath: '/performance-progress'
+      preLoaderRoute: typeof AppPerformanceProgressRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-employee-assignment': {
+      id: '/_app/performance-employee-assignment'
+      path: '/performance-employee-assignment'
+      fullPath: '/performance-employee-assignment'
+      preLoaderRoute: typeof AppPerformanceEmployeeAssignmentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-dashboard': {
+      id: '/_app/performance-dashboard'
+      path: '/performance-dashboard'
+      fullPath: '/performance-dashboard'
+      preLoaderRoute: typeof AppPerformanceDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-cycles': {
+      id: '/_app/performance-cycles'
+      path: '/performance-cycles'
+      fullPath: '/performance-cycles'
+      preLoaderRoute: typeof AppPerformanceCyclesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-calibration': {
+      id: '/_app/performance-calibration'
+      path: '/performance-calibration'
+      fullPath: '/performance-calibration'
+      preLoaderRoute: typeof AppPerformanceCalibrationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/performance-bell-curve': {
+      id: '/_app/performance-bell-curve'
+      path: '/performance-bell-curve'
+      fullPath: '/performance-bell-curve'
+      preLoaderRoute: typeof AppPerformanceBellCurveRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/payslips': {
       id: '/_app/payslips'
       path: '/payslips'
@@ -829,6 +1305,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMyTeamRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/my-performance-timeline': {
+      id: '/_app/my-performance-timeline'
+      path: '/my-performance-timeline'
+      fullPath: '/my-performance-timeline'
+      preLoaderRoute: typeof AppMyPerformanceTimelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-performance': {
+      id: '/_app/my-performance'
+      path: '/my-performance'
+      fullPath: '/my-performance'
+      preLoaderRoute: typeof AppMyPerformanceRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/my-payslips': {
       id: '/_app/my-payslips'
       path: '/my-payslips'
@@ -850,11 +1340,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMyLeaveRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/my-goals': {
+      id: '/_app/my-goals'
+      path: '/my-goals'
+      fullPath: '/my-goals'
+      preLoaderRoute: typeof AppMyGoalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-development-plan': {
+      id: '/_app/my-development-plan'
+      path: '/my-development-plan'
+      fullPath: '/my-development-plan'
+      preLoaderRoute: typeof AppMyDevelopmentPlanRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-competencies': {
+      id: '/_app/my-competencies'
+      path: '/my-competencies'
+      fullPath: '/my-competencies'
+      preLoaderRoute: typeof AppMyCompetenciesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/my-attendance': {
       id: '/_app/my-attendance'
       path: '/my-attendance'
       fullPath: '/my-attendance'
       preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-appraisal-self-review': {
+      id: '/_app/my-appraisal-self-review'
+      path: '/my-appraisal-self-review'
+      fullPath: '/my-appraisal-self-review'
+      preLoaderRoute: typeof AppMyAppraisalSelfReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-appraisal-history': {
+      id: '/_app/my-appraisal-history'
+      path: '/my-appraisal-history'
+      fullPath: '/my-appraisal-history'
+      preLoaderRoute: typeof AppMyAppraisalHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-appraisal': {
+      id: '/_app/my-appraisal'
+      path: '/my-appraisal'
+      fullPath: '/my-appraisal'
+      preLoaderRoute: typeof AppMyAppraisalRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/leave': {
@@ -934,6 +1466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/bulk-appraisal-launch': {
+      id: '/_app/bulk-appraisal-launch'
+      path: '/bulk-appraisal-launch'
+      fullPath: '/bulk-appraisal-launch'
+      preLoaderRoute: typeof AppBulkAppraisalLaunchRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/audit-history': {
       id: '/_app/audit-history'
       path: '/audit-history'
@@ -969,6 +1508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnboardingPlansIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reviewer-assessment/$id': {
+      id: '/_app/reviewer-assessment/$id'
+      path: '/reviewer-assessment/$id'
+      fullPath: '/reviewer-assessment/$id'
+      preLoaderRoute: typeof AppReviewerAssessmentIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recruitment-candidates/$id': {
       id: '/_app/recruitment-candidates/$id'
       path: '/$id'
@@ -976,11 +1522,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecruitmentCandidatesIdRouteImport
       parentRoute: typeof AppRecruitmentCandidatesRoute
     }
+    '/_app/performance-cycles/$id': {
+      id: '/_app/performance-cycles/$id'
+      path: '/$id'
+      fullPath: '/performance-cycles/$id'
+      preLoaderRoute: typeof AppPerformanceCyclesIdRouteImport
+      parentRoute: typeof AppPerformanceCyclesRoute
+    }
     '/_app/onboarding-plans/$id': {
       id: '/_app/onboarding-plans/$id'
       path: '/onboarding-plans/$id'
       fullPath: '/onboarding-plans/$id'
       preLoaderRoute: typeof AppOnboardingPlansIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/manager-review/$id': {
+      id: '/_app/manager-review/$id'
+      path: '/manager-review/$id'
+      fullPath: '/manager-review/$id'
+      preLoaderRoute: typeof AppManagerReviewIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/employees/$id': {
@@ -1005,6 +1565,17 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
   AppEmployeesRouteChildren,
 )
 
+interface AppPerformanceCyclesRouteChildren {
+  AppPerformanceCyclesIdRoute: typeof AppPerformanceCyclesIdRoute
+}
+
+const AppPerformanceCyclesRouteChildren: AppPerformanceCyclesRouteChildren = {
+  AppPerformanceCyclesIdRoute: AppPerformanceCyclesIdRoute,
+}
+
+const AppPerformanceCyclesRouteWithChildren =
+  AppPerformanceCyclesRoute._addFileChildren(AppPerformanceCyclesRouteChildren)
+
 interface AppRecruitmentCandidatesRouteChildren {
   AppRecruitmentCandidatesIdRoute: typeof AppRecruitmentCandidatesIdRoute
 }
@@ -1024,6 +1595,7 @@ interface AppRouteChildren {
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppAuditHistoryRoute: typeof AppAuditHistoryRoute
+  AppBulkAppraisalLaunchRoute: typeof AppBulkAppraisalLaunchRoute
   AppClientApprovalsRoute: typeof AppClientApprovalsRoute
   AppClientGoliveRoute: typeof AppClientGoliveRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -1035,10 +1607,18 @@ interface AppRouteChildren {
   AppIntegrationConfigurationsRoute: typeof AppIntegrationConfigurationsRoute
   AppIntegrationMonitoringRoute: typeof AppIntegrationMonitoringRoute
   AppLeaveRoute: typeof AppLeaveRoute
+  AppMyAppraisalRoute: typeof AppMyAppraisalRoute
+  AppMyAppraisalHistoryRoute: typeof AppMyAppraisalHistoryRoute
+  AppMyAppraisalSelfReviewRoute: typeof AppMyAppraisalSelfReviewRoute
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
+  AppMyCompetenciesRoute: typeof AppMyCompetenciesRoute
+  AppMyDevelopmentPlanRoute: typeof AppMyDevelopmentPlanRoute
+  AppMyGoalsRoute: typeof AppMyGoalsRoute
   AppMyLeaveRoute: typeof AppMyLeaveRoute
   AppMyOnboardingRoute: typeof AppMyOnboardingRoute
   AppMyPayslipsRoute: typeof AppMyPayslipsRoute
+  AppMyPerformanceRoute: typeof AppMyPerformanceRoute
+  AppMyPerformanceTimelineRoute: typeof AppMyPerformanceTimelineRoute
   AppMyTeamRoute: typeof AppMyTeamRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
@@ -1046,6 +1626,15 @@ interface AppRouteChildren {
   AppOrganizationRoute: typeof AppOrganizationRoute
   AppOutsourcingRoute: typeof AppOutsourcingRoute
   AppPayslipsRoute: typeof AppPayslipsRoute
+  AppPerformanceBellCurveRoute: typeof AppPerformanceBellCurveRoute
+  AppPerformanceCalibrationRoute: typeof AppPerformanceCalibrationRoute
+  AppPerformanceCyclesRoute: typeof AppPerformanceCyclesRouteWithChildren
+  AppPerformanceDashboardRoute: typeof AppPerformanceDashboardRoute
+  AppPerformanceEmployeeAssignmentRoute: typeof AppPerformanceEmployeeAssignmentRoute
+  AppPerformanceProgressRoute: typeof AppPerformanceProgressRoute
+  AppPerformanceRatingDistributionRoute: typeof AppPerformanceRatingDistributionRoute
+  AppPerformanceReportsRoute: typeof AppPerformanceReportsRoute
+  AppPerformanceTemplatesRoute: typeof AppPerformanceTemplatesRoute
   AppProfileRoute: typeof AppProfileRoute
   AppProviderDashboardRoute: typeof AppProviderDashboardRoute
   AppRecruitmentRoute: typeof AppRecruitmentRoute
@@ -1056,11 +1645,21 @@ interface AppRouteChildren {
   AppRecruitmentPositionsRoute: typeof AppRecruitmentPositionsRoute
   AppRecruitmentPreboardingRoute: typeof AppRecruitmentPreboardingRoute
   AppRecruitmentRequisitionsRoute: typeof AppRecruitmentRequisitionsRoute
+  AppReviewerDashboardRoute: typeof AppReviewerDashboardRoute
+  AppReviewerPendingReviewsRoute: typeof AppReviewerPendingReviewsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTeamGoalApprovalRoute: typeof AppTeamGoalApprovalRoute
+  AppTeamPendingReviewsRoute: typeof AppTeamPendingReviewsRoute
+  AppTeamPerformanceDashboardRoute: typeof AppTeamPerformanceDashboardRoute
+  AppTeamPerformanceSummaryRoute: typeof AppTeamPerformanceSummaryRoute
+  AppTeamProgressRoute: typeof AppTeamProgressRoute
+  AppTeamRatingDistributionRoute: typeof AppTeamRatingDistributionRoute
   AppTenantManagementRoute: typeof AppTenantManagementRoute
   AppUsersRoute: typeof AppUsersRoute
+  AppManagerReviewIdRoute: typeof AppManagerReviewIdRoute
   AppOnboardingPlansIdRoute: typeof AppOnboardingPlansIdRoute
+  AppReviewerAssessmentIdRoute: typeof AppReviewerAssessmentIdRoute
   AppOnboardingPlansIndexRoute: typeof AppOnboardingPlansIndexRoute
 }
 
@@ -1069,6 +1668,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppAuditHistoryRoute: AppAuditHistoryRoute,
+  AppBulkAppraisalLaunchRoute: AppBulkAppraisalLaunchRoute,
   AppClientApprovalsRoute: AppClientApprovalsRoute,
   AppClientGoliveRoute: AppClientGoliveRoute,
   AppDashboardRoute: AppDashboardRoute,
@@ -1080,10 +1680,18 @@ const AppRouteChildren: AppRouteChildren = {
   AppIntegrationConfigurationsRoute: AppIntegrationConfigurationsRoute,
   AppIntegrationMonitoringRoute: AppIntegrationMonitoringRoute,
   AppLeaveRoute: AppLeaveRoute,
+  AppMyAppraisalRoute: AppMyAppraisalRoute,
+  AppMyAppraisalHistoryRoute: AppMyAppraisalHistoryRoute,
+  AppMyAppraisalSelfReviewRoute: AppMyAppraisalSelfReviewRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
+  AppMyCompetenciesRoute: AppMyCompetenciesRoute,
+  AppMyDevelopmentPlanRoute: AppMyDevelopmentPlanRoute,
+  AppMyGoalsRoute: AppMyGoalsRoute,
   AppMyLeaveRoute: AppMyLeaveRoute,
   AppMyOnboardingRoute: AppMyOnboardingRoute,
   AppMyPayslipsRoute: AppMyPayslipsRoute,
+  AppMyPerformanceRoute: AppMyPerformanceRoute,
+  AppMyPerformanceTimelineRoute: AppMyPerformanceTimelineRoute,
   AppMyTeamRoute: AppMyTeamRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOnboardingRoute: AppOnboardingRoute,
@@ -1091,6 +1699,15 @@ const AppRouteChildren: AppRouteChildren = {
   AppOrganizationRoute: AppOrganizationRoute,
   AppOutsourcingRoute: AppOutsourcingRoute,
   AppPayslipsRoute: AppPayslipsRoute,
+  AppPerformanceBellCurveRoute: AppPerformanceBellCurveRoute,
+  AppPerformanceCalibrationRoute: AppPerformanceCalibrationRoute,
+  AppPerformanceCyclesRoute: AppPerformanceCyclesRouteWithChildren,
+  AppPerformanceDashboardRoute: AppPerformanceDashboardRoute,
+  AppPerformanceEmployeeAssignmentRoute: AppPerformanceEmployeeAssignmentRoute,
+  AppPerformanceProgressRoute: AppPerformanceProgressRoute,
+  AppPerformanceRatingDistributionRoute: AppPerformanceRatingDistributionRoute,
+  AppPerformanceReportsRoute: AppPerformanceReportsRoute,
+  AppPerformanceTemplatesRoute: AppPerformanceTemplatesRoute,
   AppProfileRoute: AppProfileRoute,
   AppProviderDashboardRoute: AppProviderDashboardRoute,
   AppRecruitmentRoute: AppRecruitmentRoute,
@@ -1101,11 +1718,21 @@ const AppRouteChildren: AppRouteChildren = {
   AppRecruitmentPositionsRoute: AppRecruitmentPositionsRoute,
   AppRecruitmentPreboardingRoute: AppRecruitmentPreboardingRoute,
   AppRecruitmentRequisitionsRoute: AppRecruitmentRequisitionsRoute,
+  AppReviewerDashboardRoute: AppReviewerDashboardRoute,
+  AppReviewerPendingReviewsRoute: AppReviewerPendingReviewsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTeamGoalApprovalRoute: AppTeamGoalApprovalRoute,
+  AppTeamPendingReviewsRoute: AppTeamPendingReviewsRoute,
+  AppTeamPerformanceDashboardRoute: AppTeamPerformanceDashboardRoute,
+  AppTeamPerformanceSummaryRoute: AppTeamPerformanceSummaryRoute,
+  AppTeamProgressRoute: AppTeamProgressRoute,
+  AppTeamRatingDistributionRoute: AppTeamRatingDistributionRoute,
   AppTenantManagementRoute: AppTenantManagementRoute,
   AppUsersRoute: AppUsersRoute,
+  AppManagerReviewIdRoute: AppManagerReviewIdRoute,
   AppOnboardingPlansIdRoute: AppOnboardingPlansIdRoute,
+  AppReviewerAssessmentIdRoute: AppReviewerAssessmentIdRoute,
   AppOnboardingPlansIndexRoute: AppOnboardingPlansIndexRoute,
 }
 

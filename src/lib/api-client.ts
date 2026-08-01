@@ -3303,3 +3303,955 @@ export const onboardingTaskTemplateApi = {
     await request<void>(`/onboarding/task-templates/${id}`, { method: "DELETE" });
   },
 };
+
+// ---- Performance Management (Sprint 24A/24B/24C) ---------------------------
+// com.ewos.performance — appraisal cycles (strict forward-only state machine),
+// appraisal templates, individual appraisals (self → manager → reviewer →
+// calibration → approval), bulk cycle launch, and reporting. Every endpoint
+// requires the PERF_READ/PERF_WRITE/PERF_APPRAISE_*/PERF_CALIBRATE/
+// PERF_APPROVE/PERF_ADMIN authority named per call below, EXCEPT
+// performanceSelfServiceApi, which mirrors onboardingSelfServiceApi exactly:
+// authenticated-only, scoped server-side to the caller's own linked employee
+// record (as employee, manager, or reviewer) — no PERF_* permission required.
+
+export type PerformanceCycleStatus =
+  | "DRAFT"
+  | "OPEN"
+  | "SELF_REVIEW"
+  | "MANAGER_REVIEW"
+  | "REVIEWER_REVIEW"
+  | "CALIBRATION"
+  | "HR_REVIEW"
+  | "FINAL_APPROVAL"
+  | "RELEASED"
+  | "CLOSED"
+  | "CANCELLED";
+export const PERFORMANCE_CYCLE_STATUSES: PerformanceCycleStatus[] = [
+  "DRAFT",
+  "OPEN",
+  "SELF_REVIEW",
+  "MANAGER_REVIEW",
+  "REVIEWER_REVIEW",
+  "CALIBRATION",
+  "HR_REVIEW",
+  "FINAL_APPROVAL",
+  "RELEASED",
+  "CLOSED",
+  "CANCELLED",
+];
+
+/** Mirrors the backend's PerformanceCycleLifecyclePolicy — forward-only, plus
+ *  CANCELLED reachable from any non-terminal status. UI convenience only: the
+ *  backend independently re-validates every transition. */
+export const PERFORMANCE_CYCLE_TRANSITIONS: Record<
+  PerformanceCycleStatus,
+  PerformanceCycleStatus[]
+> = {
+  DRAFT: ["OPEN", "CANCELLED"],
+  OPEN: ["SELF_REVIEW", "CANCELLED"],
+  SELF_REVIEW: ["MANAGER_REVIEW", "CANCELLED"],
+  MANAGER_REVIEW: ["REVIEWER_REVIEW", "CANCELLED"],
+  REVIEWER_REVIEW: ["CALIBRATION", "CANCELLED"],
+  CALIBRATION: ["HR_REVIEW", "CANCELLED"],
+  HR_REVIEW: ["FINAL_APPROVAL", "CANCELLED"],
+  FINAL_APPROVAL: ["RELEASED", "CANCELLED"],
+  RELEASED: ["CLOSED", "CANCELLED"],
+  CLOSED: [],
+  CANCELLED: [],
+};
+
+export type AppraisalStatus =
+  | "PENDING_SELF"
+  | "PENDING_MANAGER"
+  | "PENDING_REVIEWER"
+  | "CALIBRATION"
+  | "PENDING_APPROVAL"
+  | "FINALISED"
+  | "CANCELLED";
+export const APPRAISAL_STATUSES: AppraisalStatus[] = [
+  "PENDING_SELF",
+  "PENDING_MANAGER",
+  "PENDING_REVIEWER",
+  "CALIBRATION",
+  "PENDING_APPROVAL",
+  "FINALISED",
+  "CANCELLED",
+];
+
+export type IncrementRecommendation = "NONE" | "STANDARD" | "HIGH" | "WITHHOLD" | "SPECIAL";
+export const INCREMENT_RECOMMENDATIONS: IncrementRecommendation[] = [
+  "NONE",
+  "STANDARD",
+  "HIGH",
+  "WITHHOLD",
+  "SPECIAL",
+];
+
+export type PromotionRecommendation = "NONE" | "READY_NOW" | "READY_NEXT_CYCLE" | "NOT_READY";
+export const PROMOTION_RECOMMENDATIONS: PromotionRecommendation[] = [
+  "NONE",
+  "READY_NOW",
+  "READY_NEXT_CYCLE",
+  "NOT_READY",
+];
+
+export type CalibrationSessionStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export const CALIBRATION_SESSION_STATUSES: CalibrationSessionStatus[] = [
+  "PLANNED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+];
+
+export type AppraisalCycleLaunchBatchStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "COMPLETED"
+  | "PARTIALLY_COMPLETED"
+  | "FAILED";
+
+export type PerformanceCycleDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  periodStart: string;
+  periodEnd: string;
+  status: PerformanceCycleStatus;
+  selfAssessmentDue?: string;
+  managerAssessmentDue?: string;
+  reviewerAssessmentDue?: string;
+  calibrationDue?: string;
+  bellCurveEnabled: boolean;
+  bellCurveConfigJson?: string;
+};
+
+export type PerformanceCycleTransitionDto = {
+  id: string;
+  cycleId: string;
+  fromStatus: PerformanceCycleStatus;
+  toStatus: PerformanceCycleStatus;
+  notes?: string;
+  transitionedBy: string;
+  transitionedAt: string;
+};
+
+export type AppraisalTemplateDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  ratingScaleMin: number;
+  ratingScaleMax: number;
+  active: boolean;
+};
+
+export type TemplateSectionDto = {
+  id: string;
+  templateId: string;
+  code: string;
+  name: string;
+  description?: string;
+  weightage: number;
+  displayOrder: number;
+};
+
+export type AppraisalDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  cycleId: string;
+  templateId: string;
+  employeeId: string;
+  managerEmployeeId?: string;
+  reviewerEmployeeId?: string;
+  status: AppraisalStatus;
+  selfRating?: number;
+  selfComments?: string;
+  selfSubmittedAt?: string;
+  managerRating?: number;
+  managerComments?: string;
+  managerSubmittedAt?: string;
+  reviewerRating?: number;
+  reviewerComments?: string;
+  reviewerSubmittedAt?: string;
+  calibratedRating?: number;
+  calibrationNotes?: string;
+  calibratedAt?: string;
+  calibratedBy?: string;
+  finalRating?: number;
+  finalBand?: string;
+  incrementRecommendation?: IncrementRecommendation;
+  incrementPercent?: number;
+  incrementNotes?: string;
+  promotionRecommendation?: PromotionRecommendation;
+  promotionNotes?: string;
+  approvalWorkflowInstanceId?: string;
+};
+
+export type AppraisalReportRowDto = {
+  appraisalId: string;
+  employeeId: string;
+  employeeNumber?: string;
+  employeeName?: string;
+  status: AppraisalStatus;
+  selfRating?: number;
+  managerRating?: number;
+  reviewerRating?: number;
+  calibratedRating?: number;
+  finalRating?: number;
+  finalBand?: string;
+  incrementRecommendation?: IncrementRecommendation;
+  promotionRecommendation?: PromotionRecommendation;
+};
+
+export type PerformanceDashboardDto = {
+  cycleId: string;
+  pendingSelf: number;
+  pendingManager: number;
+  pendingReviewer: number;
+  inCalibration: number;
+  pendingApproval: number;
+  finalised: number;
+  cancelled: number;
+};
+
+export type BellCurveBucketDto = { band: string; count: number; percent: number };
+
+export type CalibrationSessionDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  cycleId: string;
+  name: string;
+  scheduledAt?: string;
+  status: CalibrationSessionStatus;
+  facilitatorId?: string;
+  notes?: string;
+  completedAt?: string;
+};
+
+export type CalibrationSummaryDto = {
+  totalCalibrated: number;
+  adjustedUp: number;
+  adjustedDown: number;
+  unchanged: number;
+  averageDelta: number;
+};
+
+export type FinalRatingBandCountDto = { band: string; count: number; averageRating?: number };
+export type FinalRatingSummaryDto = {
+  totalFinalised: number;
+  byBand: FinalRatingBandCountDto[];
+  byIncrementRecommendation: Record<string, number>;
+  byPromotionRecommendation: Record<string, number>;
+};
+
+export type OrgUnitProgressDto = {
+  orgUnitId: string;
+  orgUnitCode?: string;
+  orgUnitName?: string;
+  totalAppraisals: number;
+  pendingSelf: number;
+  pendingManager: number;
+  pendingReviewer: number;
+  inCalibration: number;
+  pendingApproval: number;
+  finalised: number;
+  cancelled: number;
+  completionPercent: number;
+};
+
+export type RatingDistributionBucketDto = { ratingBucket: number; count: number };
+
+export type AppraisalCycleLaunchBatchDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  cycleId: string;
+  templateId: string;
+  status: AppraisalCycleLaunchBatchStatus;
+  totalMatched: number;
+  totalCreated: number;
+  totalSkippedExisting: number;
+  totalFailed: number;
+  errorMessage?: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+};
+
+export type CreatePerformanceCyclePayload = {
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  periodStart: string;
+  periodEnd: string;
+  selfAssessmentDue?: string;
+  managerAssessmentDue?: string;
+  reviewerAssessmentDue?: string;
+  calibrationDue?: string;
+  bellCurveEnabled?: boolean;
+  bellCurveConfigJson?: string;
+};
+
+export type UpdatePerformanceCyclePayload = {
+  name: string;
+  description?: string;
+  selfAssessmentDue?: string;
+  managerAssessmentDue?: string;
+  reviewerAssessmentDue?: string;
+  calibrationDue?: string;
+  bellCurveEnabled: boolean;
+  bellCurveConfigJson?: string;
+};
+
+export type CreateAppraisalTemplatePayload = {
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  ratingScaleMin: number;
+  ratingScaleMax: number;
+};
+
+export type UpdateAppraisalTemplatePayload = {
+  name: string;
+  description?: string;
+  ratingScaleMin: number;
+  ratingScaleMax: number;
+  active: boolean;
+};
+
+export type CreateTemplateSectionPayload = {
+  code: string;
+  name: string;
+  description?: string;
+  weightage: number;
+  displayOrder?: number;
+};
+
+export type OpenAppraisalPayload = {
+  tenantId: string;
+  companyId: string;
+  cycleId: string;
+  templateId: string;
+  employeeId: string;
+  managerEmployeeId?: string;
+  reviewerEmployeeId?: string;
+};
+
+/** Shape shared by self/manager/reviewer assessment submission. */
+export type AssessmentPayload = { rating: number; comments?: string };
+
+export type CalibrationPayload = { calibratedRating: number; finalBand?: string; notes?: string };
+
+export type IncrementRecommendationPayload = {
+  recommendation: IncrementRecommendation;
+  percent?: number;
+  notes?: string;
+};
+
+export type PromotionRecommendationPayload = {
+  recommendation: PromotionRecommendation;
+  notes?: string;
+};
+
+export type CreateCalibrationSessionPayload = {
+  tenantId: string;
+  companyId: string;
+  cycleId: string;
+  name: string;
+  scheduledAt?: string;
+  facilitatorId?: string;
+  notes?: string;
+};
+
+export type LaunchAppraisalCyclePayload = {
+  tenantId: string;
+  companyId: string;
+  templateId: string;
+  organizationUnitIds?: string[];
+  includeDescendants?: boolean;
+  employmentTypeId?: string;
+  employeeStatus?: string;
+};
+
+export const performanceCycleApi = {
+  async create(payload: CreatePerformanceCyclePayload): Promise<PerformanceCycleDto> {
+    return request<PerformanceCycleDto>("/performance-cycles", { method: "POST", body: payload });
+  },
+  async update(id: string, payload: UpdatePerformanceCyclePayload): Promise<PerformanceCycleDto> {
+    return request<PerformanceCycleDto>(`/performance-cycles/${id}`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async getById(id: string): Promise<PerformanceCycleDto> {
+    return request<PerformanceCycleDto>(`/performance-cycles/${id}`);
+  },
+  async listForCompany(companyId: string): Promise<PerformanceCycleDto[]> {
+    return request<PerformanceCycleDto[]>(`/performance-cycles?companyId=${companyId}`);
+  },
+  /** Strict forward-only transition — see PERFORMANCE_CYCLE_TRANSITIONS. */
+  async transition(
+    id: string,
+    target: PerformanceCycleStatus,
+    notes?: string,
+  ): Promise<PerformanceCycleDto> {
+    const qs = new URLSearchParams({ target });
+    if (notes) qs.set("notes", notes);
+    return request<PerformanceCycleDto>(`/performance-cycles/${id}/transition?${qs}`, {
+      method: "POST",
+    });
+  },
+  async transitions(id: string): Promise<PerformanceCycleTransitionDto[]> {
+    return request<PerformanceCycleTransitionDto[]>(`/performance-cycles/${id}/transitions`);
+  },
+};
+
+export const appraisalTemplateApi = {
+  async create(payload: CreateAppraisalTemplatePayload): Promise<AppraisalTemplateDto> {
+    return request<AppraisalTemplateDto>("/appraisal-templates", { method: "POST", body: payload });
+  },
+  async update(id: string, payload: UpdateAppraisalTemplatePayload): Promise<AppraisalTemplateDto> {
+    return request<AppraisalTemplateDto>(`/appraisal-templates/${id}`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async getById(id: string): Promise<AppraisalTemplateDto> {
+    return request<AppraisalTemplateDto>(`/appraisal-templates/${id}`);
+  },
+  /** Only templates with active=true are returned server-side. */
+  async listForCompany(companyId: string): Promise<AppraisalTemplateDto[]> {
+    return request<AppraisalTemplateDto[]>(`/appraisal-templates?companyId=${companyId}`);
+  },
+  async addSection(
+    templateId: string,
+    payload: CreateTemplateSectionPayload,
+  ): Promise<TemplateSectionDto> {
+    return request<TemplateSectionDto>(`/appraisal-templates/${templateId}/sections`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async listSections(templateId: string): Promise<TemplateSectionDto[]> {
+    return request<TemplateSectionDto[]>(`/appraisal-templates/${templateId}/sections`);
+  },
+};
+
+export const calibrationSessionApi = {
+  async create(payload: CreateCalibrationSessionPayload): Promise<CalibrationSessionDto> {
+    return request<CalibrationSessionDto>("/calibration-sessions", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async complete(id: string, notes?: string): Promise<CalibrationSessionDto> {
+    const qs = notes ? `?${new URLSearchParams({ notes })}` : "";
+    return request<CalibrationSessionDto>(`/calibration-sessions/${id}/complete${qs}`, {
+      method: "POST",
+    });
+  },
+  async listForCycle(cycleId: string): Promise<CalibrationSessionDto[]> {
+    return request<CalibrationSessionDto[]>(`/calibration-sessions?cycleId=${cycleId}`);
+  },
+};
+
+export const appraisalApi = {
+  /** HR/admin single-employee open — the non-bulk counterpart to
+   *  appraisalCycleLaunchApi.launch(), e.g. for late joiners or corrections. */
+  async open(payload: OpenAppraisalPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>("/appraisals", { method: "POST", body: payload });
+  },
+  async submitSelf(id: string, payload: AssessmentPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/self`, { method: "POST", body: payload });
+  },
+  async submitManager(id: string, payload: AssessmentPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/manager`, { method: "POST", body: payload });
+  },
+  async submitReviewer(id: string, payload: AssessmentPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/reviewer`, { method: "POST", body: payload });
+  },
+  async calibrate(id: string, payload: CalibrationPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/calibrate`, { method: "POST", body: payload });
+  },
+  async submitForApproval(id: string, workflowDefinitionId: string): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/submit-for-approval`, {
+      method: "POST",
+      body: { workflowDefinitionId },
+    });
+  },
+  async approve(id: string, notes?: string): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/approve`, { method: "POST", body: { notes } });
+  },
+  async reject(id: string, notes?: string): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/reject`, { method: "POST", body: { notes } });
+  },
+  async cancel(id: string, reason?: string): Promise<AppraisalDto> {
+    const qs = reason ? `?${new URLSearchParams({ reason })}` : "";
+    return request<AppraisalDto>(`/appraisals/${id}/cancel${qs}`, { method: "POST" });
+  },
+  async recordIncrement(
+    id: string,
+    payload: IncrementRecommendationPayload,
+  ): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/increment`, { method: "POST", body: payload });
+  },
+  async recordPromotion(
+    id: string,
+    payload: PromotionRecommendationPayload,
+  ): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}/promotion`, { method: "POST", body: payload });
+  },
+  async getById(id: string): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/appraisals/${id}`);
+  },
+  async listByCycle(cycleId: string): Promise<AppraisalDto[]> {
+    return request<AppraisalDto[]>(`/appraisals/by-cycle?cycleId=${cycleId}`);
+  },
+  async dashboard(cycleId: string): Promise<PerformanceDashboardDto> {
+    return request<PerformanceDashboardDto>(`/appraisals/dashboard?cycleId=${cycleId}`);
+  },
+  async reportByCycle(cycleId: string): Promise<AppraisalReportRowDto[]> {
+    return request<AppraisalReportRowDto[]>(`/appraisals/reports/by-cycle?cycleId=${cycleId}`);
+  },
+  async bellCurve(cycleId: string): Promise<BellCurveBucketDto[]> {
+    return request<BellCurveBucketDto[]>(`/appraisals/reports/bell-curve?cycleId=${cycleId}`);
+  },
+};
+
+/** Sprint 24B — bulk appraisal-cycle launch, gated PERF_ADMIN (not PERF_WRITE)
+ *  since one call can create appraisals for thousands of employees. */
+export const appraisalCycleLaunchApi = {
+  async launch(
+    cycleId: string,
+    payload: LaunchAppraisalCyclePayload,
+  ): Promise<AppraisalCycleLaunchBatchDto> {
+    return request<AppraisalCycleLaunchBatchDto>(`/performance-cycles/${cycleId}/launch-batches`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async listBatches(cycleId: string): Promise<AppraisalCycleLaunchBatchDto[]> {
+    return request<AppraisalCycleLaunchBatchDto[]>(`/performance-cycles/${cycleId}/launch-batches`);
+  },
+  async getBatch(cycleId: string, batchId: string): Promise<AppraisalCycleLaunchBatchDto> {
+    return request<AppraisalCycleLaunchBatchDto>(
+      `/performance-cycles/${cycleId}/launch-batches/${batchId}`,
+    );
+  },
+};
+
+/** Sprint 24B — reporting surface. Page-shaped endpoints accept a Spring
+ *  Pageable (page/size/sort) query string. */
+export const performanceReportsApi = {
+  async pendingSelfReviews(
+    cycleId: string,
+    page = 0,
+    size = 20,
+  ): Promise<SpringPage<AppraisalReportRowDto>> {
+    return request<SpringPage<AppraisalReportRowDto>>(
+      `/performance/reports/pending-self-reviews?cycleId=${cycleId}&page=${page}&size=${size}`,
+    );
+  },
+  async pendingManagerReviews(
+    cycleId: string,
+    page = 0,
+    size = 20,
+  ): Promise<SpringPage<AppraisalReportRowDto>> {
+    return request<SpringPage<AppraisalReportRowDto>>(
+      `/performance/reports/pending-manager-reviews?cycleId=${cycleId}&page=${page}&size=${size}`,
+    );
+  },
+  async pendingReviewerReviews(
+    cycleId: string,
+    page = 0,
+    size = 20,
+  ): Promise<SpringPage<AppraisalReportRowDto>> {
+    return request<SpringPage<AppraisalReportRowDto>>(
+      `/performance/reports/pending-reviewer-reviews?cycleId=${cycleId}&page=${page}&size=${size}`,
+    );
+  },
+  async employeeStatus(
+    cycleId: string,
+    filters: { status?: AppraisalStatus; orgUnitId?: string; includeDescendants?: boolean },
+    page = 0,
+    size = 20,
+  ): Promise<SpringPage<AppraisalReportRowDto>> {
+    const qs = new URLSearchParams({ cycleId, page: String(page), size: String(size) });
+    if (filters.status) qs.set("status", filters.status);
+    if (filters.orgUnitId) qs.set("orgUnitId", filters.orgUnitId);
+    if (filters.includeDescendants !== undefined) {
+      qs.set("includeDescendants", String(filters.includeDescendants));
+    }
+    return request<SpringPage<AppraisalReportRowDto>>(`/performance/reports/employee-status?${qs}`);
+  },
+  /** Serves Department Progress, Business Unit Progress, and (with no
+   *  rootOrgUnitId) top-level Company Progress — see OrgUnitProgressResponse
+   *  javadoc on the backend for why these aren't separate endpoints. */
+  async orgUnitProgress(cycleId: string, rootOrgUnitId?: string): Promise<OrgUnitProgressDto[]> {
+    const qs = new URLSearchParams({ cycleId });
+    if (rootOrgUnitId) qs.set("rootOrgUnitId", rootOrgUnitId);
+    return request<OrgUnitProgressDto[]>(`/performance/reports/org-unit-progress?${qs}`);
+  },
+  async ratingDistribution(cycleId: string): Promise<RatingDistributionBucketDto[]> {
+    return request<RatingDistributionBucketDto[]>(
+      `/performance/reports/rating-distribution?cycleId=${cycleId}`,
+    );
+  },
+  async calibrationSummary(cycleId: string): Promise<CalibrationSummaryDto> {
+    return request<CalibrationSummaryDto>(
+      `/performance/reports/calibration-summary?cycleId=${cycleId}`,
+    );
+  },
+  async finalRatingSummary(cycleId: string): Promise<FinalRatingSummaryDto> {
+    return request<FinalRatingSummaryDto>(
+      `/performance/reports/final-rating-summary?cycleId=${cycleId}`,
+    );
+  },
+};
+
+/** Sprint 24A — Employee/Manager/Reviewer Self-Service over Performance.
+ *  Auth-only, no PERF_* permission — mirrors onboardingSelfServiceApi. Scoped
+ *  server-side to the caller's own linked employee record. */
+export const performanceSelfServiceApi = {
+  async myAppraisals(): Promise<AppraisalDto[]> {
+    return request<AppraisalDto[]>("/performance/self-service/appraisals");
+  },
+  /** 404s (not 403) if the caller isn't a participant on this appraisal. */
+  async myAppraisal(id: string): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/performance/self-service/appraisals/${id}`);
+  },
+  async submitSelf(id: string, payload: AssessmentPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/performance/self-service/appraisals/${id}/self`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async pendingManagerReview(): Promise<AppraisalDto[]> {
+    return request<AppraisalDto[]>("/performance/self-service/pending-manager-review");
+  },
+  async submitManager(id: string, payload: AssessmentPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/performance/self-service/appraisals/${id}/manager`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async pendingReviewerReview(): Promise<AppraisalDto[]> {
+    return request<AppraisalDto[]>("/performance/self-service/pending-reviewer-review");
+  },
+  async submitReviewer(id: string, payload: AssessmentPayload): Promise<AppraisalDto> {
+    return request<AppraisalDto>(`/performance/self-service/appraisals/${id}/reviewer`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+};
+
+// ---- Goals & KPIs, Competencies, Development Plans (Sprint 24C) -----------
+// com.ewos.goals / com.ewos.competency — unlike Performance, these modules
+// have NO dedicated self-service controller: every endpoint requires an
+// admin-tier GOAL_*/COMPETENCY_* authority and takes an explicit employeeId
+// param rather than resolving the caller's own record. The Employee Self
+// Service screens built on these calls (Goals & KPI, Competencies,
+// Development Plan) therefore only render real data for a caller who holds
+// the matching *_READ authority — this is a genuine backend gap (documented
+// in the Sprint 24C completion report), not a frontend shortcut. Every call
+// here always scopes by the caller's own resolved employeeId, exactly as a
+// true self-service endpoint would, even though the backend itself doesn't
+// enforce that scoping.
+
+export type GoalStatus =
+  | "DRAFT"
+  | "ASSIGNED"
+  | "IN_PROGRESS"
+  | "UNDER_REVIEW"
+  | "COMPLETED"
+  | "CANCELLED";
+export const GOAL_STATUSES: GoalStatus[] = [
+  "DRAFT",
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "UNDER_REVIEW",
+  "COMPLETED",
+  "CANCELLED",
+];
+export type GoalType = "KRA" | "KPI" | "OKR";
+export const GOAL_TYPES: GoalType[] = ["KRA", "KPI", "OKR"];
+export type GoalPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export const GOAL_PRIORITIES: GoalPriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+export type GoalScope = "INDIVIDUAL" | "TEAM" | "DEPARTMENT" | "COMPANY";
+export const GOAL_SCOPES: GoalScope[] = ["INDIVIDUAL", "TEAM", "DEPARTMENT", "COMPANY"];
+
+export type GoalDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  libraryGoalId?: string;
+  parentGoalId?: string;
+  code: string;
+  name: string;
+  description?: string;
+  goalType: GoalType;
+  scope: GoalScope;
+  employeeId?: string;
+  orgUnitId?: string;
+  performanceCycleId?: string;
+  periodStart: string;
+  periodEnd: string;
+  weightage?: number;
+  target?: string;
+  unitOfMeasure?: string;
+  currentValue?: string;
+  progressPercent?: number;
+  status: GoalStatus;
+  priority?: GoalPriority;
+  reviewScore?: number;
+  reviewNotes?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  closedAt?: string;
+  closedBy?: string;
+};
+
+export type GoalProgressDto = {
+  id: string;
+  goalId: string;
+  currentValue?: string;
+  progressPercent: number;
+  notes?: string;
+  recordedAt: string;
+  recordedBy: string;
+};
+
+export type CreateGoalPayload = {
+  tenantId: string;
+  companyId: string;
+  libraryGoalId?: string;
+  parentGoalId?: string;
+  code: string;
+  name: string;
+  description?: string;
+  goalType: GoalType;
+  scope: GoalScope;
+  employeeId?: string;
+  orgUnitId?: string;
+  performanceCycleId?: string;
+  periodStart: string;
+  periodEnd: string;
+  weightage?: number;
+  target?: string;
+  unitOfMeasure?: string;
+  priority?: GoalPriority;
+};
+
+export type UpdateGoalPayload = {
+  name: string;
+  description?: string;
+  weightage?: number;
+  target?: string;
+  unitOfMeasure?: string;
+  priority?: GoalPriority;
+};
+
+export const goalApi = {
+  async create(payload: CreateGoalPayload): Promise<GoalDto> {
+    return request<GoalDto>("/goals", { method: "POST", body: payload });
+  },
+  async update(id: string, payload: UpdateGoalPayload): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/${id}`, { method: "PUT", body: payload });
+  },
+  async assign(id: string): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/${id}/assign`, { method: "POST" });
+  },
+  async recordProgress(
+    id: string,
+    payload: { currentValue?: string; progressPercent: number; notes?: string },
+  ): Promise<GoalProgressDto> {
+    return request<GoalProgressDto>(`/goals/${id}/progress`, { method: "POST", body: payload });
+  },
+  async progressHistory(id: string): Promise<GoalProgressDto[]> {
+    return request<GoalProgressDto[]>(`/goals/${id}/progress`);
+  },
+  async submitReview(id: string): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/${id}/submit-review`, { method: "POST" });
+  },
+  async review(id: string, payload: { reviewScore: number; notes?: string }): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/${id}/review`, { method: "POST", body: payload });
+  },
+  async complete(id: string): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/${id}/complete`, { method: "POST" });
+  },
+  async cancel(id: string, reason?: string): Promise<GoalDto> {
+    const qs = reason ? `?${new URLSearchParams({ reason })}` : "";
+    return request<GoalDto>(`/goals/${id}/cancel${qs}`, { method: "POST" });
+  },
+  async getById(id: string): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/${id}`);
+  },
+  async byEmployee(employeeId: string): Promise<GoalDto[]> {
+    return request<GoalDto[]>(`/goals/by-employee/${employeeId}`);
+  },
+  async byStatus(companyId: string, status: GoalStatus): Promise<GoalDto[]> {
+    return request<GoalDto[]>(`/goals/by-status?companyId=${companyId}&status=${status}`);
+  },
+};
+
+export type CompetencyDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  category?: string;
+  scaleMin: number;
+  scaleMax: number;
+  active: boolean;
+};
+
+export type EmployeeCompetencyDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  employeeId: string;
+  competencyId: string;
+  currentLevel: number;
+  targetLevel?: number;
+  lastAssessedAt?: string;
+  notes?: string;
+};
+
+export type AssessmentType = "SELF" | "MANAGER" | "PEER" | "EXTERNAL";
+export const ASSESSMENT_TYPES: AssessmentType[] = ["SELF", "MANAGER", "PEER", "EXTERNAL"];
+
+export type CompetencyAssessmentDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  employeeId: string;
+  competencyId: string;
+  assessmentType: AssessmentType;
+  assessedLevel: number;
+  assessedBy?: string;
+  assessorName?: string;
+  comments?: string;
+  assessedAt: string;
+};
+
+export const competencyApi = {
+  async listForCompany(companyId: string): Promise<CompetencyDto[]> {
+    return request<CompetencyDto[]>(`/competencies?companyId=${companyId}`);
+  },
+};
+
+export const employeeCompetencyApi = {
+  async forEmployee(employeeId: string): Promise<EmployeeCompetencyDto[]> {
+    return request<EmployeeCompetencyDto[]>(`/competency-matrix/employee/${employeeId}`);
+  },
+  async assess(payload: {
+    tenantId: string;
+    companyId: string;
+    employeeId: string;
+    competencyId: string;
+    assessmentType: AssessmentType;
+    assessedLevel: number;
+    assessorName?: string;
+    comments?: string;
+  }): Promise<CompetencyAssessmentDto> {
+    return request<CompetencyAssessmentDto>("/competency-matrix/assess", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async assessmentsForEmployee(employeeId: string): Promise<CompetencyAssessmentDto[]> {
+    return request<CompetencyAssessmentDto[]>(`/competency-matrix/assessments/${employeeId}`);
+  },
+};
+
+export type DevelopmentPlanStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+export const DEVELOPMENT_PLAN_STATUSES: DevelopmentPlanStatus[] = [
+  "DRAFT",
+  "ACTIVE",
+  "COMPLETED",
+  "CANCELLED",
+];
+
+export type DevelopmentPlanDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  employeeId: string;
+  title: string;
+  description?: string;
+  startsOn?: string;
+  endsOn?: string;
+  status: DevelopmentPlanStatus;
+  completedAt?: string;
+};
+
+export type DevelopmentActionDto = {
+  id: string;
+  planId: string;
+  competencyId?: string;
+  action: string;
+  dueOn?: string;
+  completedAt?: string;
+  completed: boolean;
+  notes?: string;
+};
+
+export const developmentPlanApi = {
+  async create(payload: {
+    tenantId: string;
+    companyId: string;
+    employeeId: string;
+    title: string;
+    description?: string;
+    startsOn?: string;
+    endsOn?: string;
+  }): Promise<DevelopmentPlanDto> {
+    return request<DevelopmentPlanDto>("/development-plans", { method: "POST", body: payload });
+  },
+  async activate(id: string): Promise<DevelopmentPlanDto> {
+    return request<DevelopmentPlanDto>(`/development-plans/${id}/activate`, { method: "POST" });
+  },
+  async complete(id: string): Promise<DevelopmentPlanDto> {
+    return request<DevelopmentPlanDto>(`/development-plans/${id}/complete`, { method: "POST" });
+  },
+  async cancel(id: string): Promise<DevelopmentPlanDto> {
+    return request<DevelopmentPlanDto>(`/development-plans/${id}/cancel`, { method: "POST" });
+  },
+  async addAction(
+    planId: string,
+    payload: { competencyId?: string; action: string; dueOn?: string; notes?: string },
+  ): Promise<DevelopmentActionDto> {
+    return request<DevelopmentActionDto>(`/development-plans/${planId}/actions`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async completeAction(actionId: string): Promise<DevelopmentActionDto> {
+    return request<DevelopmentActionDto>(`/development-plans/actions/${actionId}/complete`, {
+      method: "POST",
+    });
+  },
+  async getById(id: string): Promise<DevelopmentPlanDto> {
+    return request<DevelopmentPlanDto>(`/development-plans/${id}`);
+  },
+  async actionsForPlan(id: string): Promise<DevelopmentActionDto[]> {
+    return request<DevelopmentActionDto[]>(`/development-plans/${id}/actions`);
+  },
+  async byEmployee(employeeId: string): Promise<DevelopmentPlanDto[]> {
+    return request<DevelopmentPlanDto[]>(`/development-plans/by-employee/${employeeId}`);
+  },
+};
