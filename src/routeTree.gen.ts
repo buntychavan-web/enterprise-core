@@ -33,9 +33,11 @@ import { Route as AppPayslipsRouteImport } from './routes/_app.payslips'
 import { Route as AppOutsourcingRouteImport } from './routes/_app.outsourcing'
 import { Route as AppOrganizationRouteImport } from './routes/_app.organization'
 import { Route as AppOperationsDashboardRouteImport } from './routes/_app.operations-dashboard'
+import { Route as AppOnboardingRouteImport } from './routes/_app.onboarding'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMyTeamRouteImport } from './routes/_app.my-team'
 import { Route as AppMyPayslipsRouteImport } from './routes/_app.my-payslips'
+import { Route as AppMyOnboardingRouteImport } from './routes/_app.my-onboarding'
 import { Route as AppMyLeaveRouteImport } from './routes/_app.my-leave'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app.my-attendance'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
@@ -53,7 +55,9 @@ import { Route as AppAuditHistoryRouteImport } from './routes/_app.audit-history
 import { Route as AppAttendanceRouteImport } from './routes/_app.attendance'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app.announcements'
 import { Route as AppAboutRouteImport } from './routes/_app.about'
+import { Route as AppOnboardingPlansIndexRouteImport } from './routes/_app.onboarding-plans.index'
 import { Route as AppRecruitmentCandidatesIdRouteImport } from './routes/_app.recruitment-candidates.$id'
+import { Route as AppOnboardingPlansIdRouteImport } from './routes/_app.onboarding-plans.$id'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -180,6 +184,11 @@ const AppOperationsDashboardRoute = AppOperationsDashboardRouteImport.update({
   path: '/operations-dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -193,6 +202,11 @@ const AppMyTeamRoute = AppMyTeamRouteImport.update({
 const AppMyPayslipsRoute = AppMyPayslipsRouteImport.update({
   id: '/my-payslips',
   path: '/my-payslips',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyOnboardingRoute = AppMyOnboardingRouteImport.update({
+  id: '/my-onboarding',
+  path: '/my-onboarding',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMyLeaveRoute = AppMyLeaveRouteImport.update({
@@ -282,12 +296,22 @@ const AppAboutRoute = AppAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOnboardingPlansIndexRoute = AppOnboardingPlansIndexRouteImport.update({
+  id: '/onboarding-plans/',
+  path: '/onboarding-plans/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRecruitmentCandidatesIdRoute =
   AppRecruitmentCandidatesIdRouteImport.update({
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AppRecruitmentCandidatesRoute,
   } as any)
+const AppOnboardingPlansIdRoute = AppOnboardingPlansIdRouteImport.update({
+  id: '/onboarding-plans/$id',
+  path: '/onboarding-plans/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeesIdRoute = AppEmployeesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -315,9 +339,11 @@ export interface FileRoutesByFullPath {
   '/leave': typeof AppLeaveRoute
   '/my-attendance': typeof AppMyAttendanceRoute
   '/my-leave': typeof AppMyLeaveRoute
+  '/my-onboarding': typeof AppMyOnboardingRoute
   '/my-payslips': typeof AppMyPayslipsRoute
   '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
+  '/onboarding': typeof AppOnboardingRoute
   '/operations-dashboard': typeof AppOperationsDashboardRoute
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
@@ -339,7 +365,9 @@ export interface FileRoutesByFullPath {
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
+  '/onboarding-plans/$id': typeof AppOnboardingPlansIdRoute
   '/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
+  '/onboarding-plans/': typeof AppOnboardingPlansIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -362,9 +390,11 @@ export interface FileRoutesByTo {
   '/leave': typeof AppLeaveRoute
   '/my-attendance': typeof AppMyAttendanceRoute
   '/my-leave': typeof AppMyLeaveRoute
+  '/my-onboarding': typeof AppMyOnboardingRoute
   '/my-payslips': typeof AppMyPayslipsRoute
   '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
+  '/onboarding': typeof AppOnboardingRoute
   '/operations-dashboard': typeof AppOperationsDashboardRoute
   '/organization': typeof AppOrganizationRoute
   '/outsourcing': typeof AppOutsourcingRoute
@@ -386,7 +416,9 @@ export interface FileRoutesByTo {
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
+  '/onboarding-plans/$id': typeof AppOnboardingPlansIdRoute
   '/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
+  '/onboarding-plans': typeof AppOnboardingPlansIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -411,9 +443,11 @@ export interface FileRoutesById {
   '/_app/leave': typeof AppLeaveRoute
   '/_app/my-attendance': typeof AppMyAttendanceRoute
   '/_app/my-leave': typeof AppMyLeaveRoute
+  '/_app/my-onboarding': typeof AppMyOnboardingRoute
   '/_app/my-payslips': typeof AppMyPayslipsRoute
   '/_app/my-team': typeof AppMyTeamRoute
   '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/operations-dashboard': typeof AppOperationsDashboardRoute
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/outsourcing': typeof AppOutsourcingRoute
@@ -435,7 +469,9 @@ export interface FileRoutesById {
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
+  '/_app/onboarding-plans/$id': typeof AppOnboardingPlansIdRoute
   '/_app/recruitment-candidates/$id': typeof AppRecruitmentCandidatesIdRoute
+  '/_app/onboarding-plans/': typeof AppOnboardingPlansIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -460,9 +496,11 @@ export interface FileRouteTypes {
     | '/leave'
     | '/my-attendance'
     | '/my-leave'
+    | '/my-onboarding'
     | '/my-payslips'
     | '/my-team'
     | '/notifications'
+    | '/onboarding'
     | '/operations-dashboard'
     | '/organization'
     | '/outsourcing'
@@ -484,7 +522,9 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
+    | '/onboarding-plans/$id'
     | '/recruitment-candidates/$id'
+    | '/onboarding-plans/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -507,9 +547,11 @@ export interface FileRouteTypes {
     | '/leave'
     | '/my-attendance'
     | '/my-leave'
+    | '/my-onboarding'
     | '/my-payslips'
     | '/my-team'
     | '/notifications'
+    | '/onboarding'
     | '/operations-dashboard'
     | '/organization'
     | '/outsourcing'
@@ -531,7 +573,9 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
+    | '/onboarding-plans/$id'
     | '/recruitment-candidates/$id'
+    | '/onboarding-plans'
   id:
     | '__root__'
     | '/'
@@ -555,9 +599,11 @@ export interface FileRouteTypes {
     | '/_app/leave'
     | '/_app/my-attendance'
     | '/_app/my-leave'
+    | '/_app/my-onboarding'
     | '/_app/my-payslips'
     | '/_app/my-team'
     | '/_app/notifications'
+    | '/_app/onboarding'
     | '/_app/operations-dashboard'
     | '/_app/organization'
     | '/_app/outsourcing'
@@ -579,7 +625,9 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/design-system/organization'
     | '/_app/employees/$id'
+    | '/_app/onboarding-plans/$id'
     | '/_app/recruitment-candidates/$id'
+    | '/_app/onboarding-plans/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -760,6 +808,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOperationsDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/onboarding': {
+      id: '/_app/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notifications': {
       id: '/_app/notifications'
       path: '/notifications'
@@ -779,6 +834,13 @@ declare module '@tanstack/react-router' {
       path: '/my-payslips'
       fullPath: '/my-payslips'
       preLoaderRoute: typeof AppMyPayslipsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-onboarding': {
+      id: '/_app/my-onboarding'
+      path: '/my-onboarding'
+      fullPath: '/my-onboarding'
+      preLoaderRoute: typeof AppMyOnboardingRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/my-leave': {
@@ -900,12 +962,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAboutRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/onboarding-plans/': {
+      id: '/_app/onboarding-plans/'
+      path: '/onboarding-plans'
+      fullPath: '/onboarding-plans/'
+      preLoaderRoute: typeof AppOnboardingPlansIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recruitment-candidates/$id': {
       id: '/_app/recruitment-candidates/$id'
       path: '/$id'
       fullPath: '/recruitment-candidates/$id'
       preLoaderRoute: typeof AppRecruitmentCandidatesIdRouteImport
       parentRoute: typeof AppRecruitmentCandidatesRoute
+    }
+    '/_app/onboarding-plans/$id': {
+      id: '/_app/onboarding-plans/$id'
+      path: '/onboarding-plans/$id'
+      fullPath: '/onboarding-plans/$id'
+      preLoaderRoute: typeof AppOnboardingPlansIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/employees/$id': {
       id: '/_app/employees/$id'
@@ -961,9 +1037,11 @@ interface AppRouteChildren {
   AppLeaveRoute: typeof AppLeaveRoute
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
   AppMyLeaveRoute: typeof AppMyLeaveRoute
+  AppMyOnboardingRoute: typeof AppMyOnboardingRoute
   AppMyPayslipsRoute: typeof AppMyPayslipsRoute
   AppMyTeamRoute: typeof AppMyTeamRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
   AppOperationsDashboardRoute: typeof AppOperationsDashboardRoute
   AppOrganizationRoute: typeof AppOrganizationRoute
   AppOutsourcingRoute: typeof AppOutsourcingRoute
@@ -982,6 +1060,8 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppTenantManagementRoute: typeof AppTenantManagementRoute
   AppUsersRoute: typeof AppUsersRoute
+  AppOnboardingPlansIdRoute: typeof AppOnboardingPlansIdRoute
+  AppOnboardingPlansIndexRoute: typeof AppOnboardingPlansIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1002,9 +1082,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeaveRoute: AppLeaveRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
   AppMyLeaveRoute: AppMyLeaveRoute,
+  AppMyOnboardingRoute: AppMyOnboardingRoute,
   AppMyPayslipsRoute: AppMyPayslipsRoute,
   AppMyTeamRoute: AppMyTeamRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
   AppOperationsDashboardRoute: AppOperationsDashboardRoute,
   AppOrganizationRoute: AppOrganizationRoute,
   AppOutsourcingRoute: AppOutsourcingRoute,
@@ -1023,6 +1105,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppTenantManagementRoute: AppTenantManagementRoute,
   AppUsersRoute: AppUsersRoute,
+  AppOnboardingPlansIdRoute: AppOnboardingPlansIdRoute,
+  AppOnboardingPlansIndexRoute: AppOnboardingPlansIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

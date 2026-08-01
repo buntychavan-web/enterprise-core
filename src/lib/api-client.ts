@@ -2979,3 +2979,327 @@ export const preboardingTaskTemplateApi = {
     await request<void>(`/preboarding/task-templates/${id}`, { method: "DELETE" });
   },
 };
+
+// ---- Onboarding (Sprint 23A/23B) ----------------------------------------
+// com.ewos.onboarding — post-joining plans + tasks. Plans are normally
+// materialised automatically by the preboarding-to-onboarding handoff
+// listener when a checklist reaches JOINED; POST /plans below is HR's
+// manual fallback. Every mutating endpoint requires ONBOARDING_WRITE/
+// ONBOARDING_ADMIN server-side (see OnboardingPlanController /
+// OnboardingTaskTemplateController) — the frontend gates match exactly.
+
+export type OnboardingPlanStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export const ONBOARDING_PLAN_STATUSES: OnboardingPlanStatus[] = [
+  "PLANNED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+];
+
+export type OnboardingTaskStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "WAITING_ON_EMPLOYEE"
+  | "WAITING_ON_COMPANY"
+  | "COMPLETED"
+  | "SKIPPED"
+  | "FAILED";
+export const ONBOARDING_TASK_STATUSES: OnboardingTaskStatus[] = [
+  "PENDING",
+  "IN_PROGRESS",
+  "WAITING_ON_EMPLOYEE",
+  "WAITING_ON_COMPANY",
+  "COMPLETED",
+  "SKIPPED",
+  "FAILED",
+];
+
+export type OnboardingTaskType =
+  | "ORIENTATION"
+  | "DOCUMENT_UPLOAD"
+  | "POLICY_ACKNOWLEDGEMENT"
+  | "TRAINING"
+  | "INTRODUCTION_MEETING"
+  | "TEAM_INTRO"
+  | "SYSTEM_ACCESS"
+  | "WORKSTATION_SETUP"
+  | "HANDBOOK"
+  | "SURVEY"
+  | "GOAL_SETTING"
+  | "BUDDY_ASSIGNMENT"
+  | "OTHER";
+export const ONBOARDING_TASK_TYPES: OnboardingTaskType[] = [
+  "ORIENTATION",
+  "DOCUMENT_UPLOAD",
+  "POLICY_ACKNOWLEDGEMENT",
+  "TRAINING",
+  "INTRODUCTION_MEETING",
+  "TEAM_INTRO",
+  "SYSTEM_ACCESS",
+  "WORKSTATION_SETUP",
+  "HANDBOOK",
+  "SURVEY",
+  "GOAL_SETTING",
+  "BUDDY_ASSIGNMENT",
+  "OTHER",
+];
+
+export type OnboardingTaskOwner =
+  | "EMPLOYEE"
+  | "MANAGER"
+  | "BUDDY"
+  | "HR"
+  | "IT"
+  | "ADMIN"
+  | "OTHER";
+export const ONBOARDING_TASK_OWNERS: OnboardingTaskOwner[] = [
+  "EMPLOYEE",
+  "MANAGER",
+  "BUDDY",
+  "HR",
+  "IT",
+  "ADMIN",
+  "OTHER",
+];
+
+export type OnboardingPlanDto = {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  employeeId: string;
+  sourceOfferId?: string;
+  sourceChecklistId?: string;
+  joiningDate?: string;
+  managerEmployeeId?: string;
+  buddyEmployeeId?: string;
+  status: OnboardingPlanStatus;
+  completionPercent: number;
+  startedAt?: string;
+  completedAt?: string;
+  completedBy?: string;
+  notes?: string;
+  versionNo: number;
+};
+
+export type OnboardingTaskInstanceDto = {
+  id: string;
+  planId: string;
+  templateId?: string;
+  name: string;
+  taskType: OnboardingTaskType;
+  owner: OnboardingTaskOwner;
+  assignedEmployeeId?: string;
+  mandatory: boolean;
+  sortOrder: number;
+  status: OnboardingTaskStatus;
+  dueDate?: string;
+  startedAt?: string;
+  completedAt?: string;
+  completedBy?: string;
+  externalRef?: string;
+  resultJson?: string;
+  notes?: string;
+  versionNo: number;
+};
+
+export type CreateOnboardingPlanPayload = {
+  tenantId: string;
+  companyId: string;
+  employeeId: string;
+  sourceOfferId?: string;
+  sourceChecklistId?: string;
+  joiningDate?: string;
+  managerEmployeeId?: string;
+  buddyEmployeeId?: string;
+  notes?: string;
+};
+
+export type AssignOnboardingPlanRolesPayload = {
+  managerEmployeeId?: string;
+  buddyEmployeeId?: string;
+};
+
+export type AddOnboardingTaskPayload = {
+  templateId?: string;
+  name: string;
+  taskType: OnboardingTaskType;
+  owner?: OnboardingTaskOwner;
+  assignedEmployeeId?: string;
+  mandatory?: boolean;
+  sortOrder?: number;
+  dueDate?: string;
+  notes?: string;
+};
+
+export type UpdateOnboardingTaskStatusPayload = {
+  status: OnboardingTaskStatus;
+  notes?: string;
+  resultJson?: string;
+};
+
+export const onboardingPlanApi = {
+  async create(payload: CreateOnboardingPlanPayload): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>("/onboarding/plans", { method: "POST", body: payload });
+  },
+  async getById(id: string): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>(`/onboarding/plans/${id}`);
+  },
+  async forEmployee(employeeId: string): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>(`/onboarding/plans/by-employee/${employeeId}`);
+  },
+  async byStatus(companyId: string, status: OnboardingPlanStatus): Promise<OnboardingPlanDto[]> {
+    return request<OnboardingPlanDto[]>(
+      `/onboarding/plans?companyId=${companyId}&status=${status}`,
+    );
+  },
+  async start(id: string): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>(`/onboarding/plans/${id}/start`, { method: "POST" });
+  },
+  async complete(id: string): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>(`/onboarding/plans/${id}/complete`, { method: "POST" });
+  },
+  /** Backend binds this endpoint's whole body to a bare string, not `{reason}`. */
+  async cancel(id: string, reason?: string): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>(`/onboarding/plans/${id}/cancel`, {
+      method: "POST",
+      body: reason,
+    });
+  },
+  async assignRoles(
+    id: string,
+    payload: AssignOnboardingPlanRolesPayload,
+  ): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>(`/onboarding/plans/${id}/roles`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async addTask(
+    planId: string,
+    payload: AddOnboardingTaskPayload,
+  ): Promise<OnboardingTaskInstanceDto> {
+    return request<OnboardingTaskInstanceDto>(`/onboarding/plans/${planId}/tasks`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async listTasks(planId: string): Promise<OnboardingTaskInstanceDto[]> {
+    return request<OnboardingTaskInstanceDto[]>(`/onboarding/plans/${planId}/tasks`);
+  },
+  async updateTaskStatus(
+    taskId: string,
+    payload: UpdateOnboardingTaskStatusPayload,
+  ): Promise<OnboardingTaskInstanceDto> {
+    return request<OnboardingTaskInstanceDto>(`/onboarding/tasks/${taskId}/status`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+  async remindTask(taskId: string): Promise<OnboardingTaskInstanceDto> {
+    return request<OnboardingTaskInstanceDto>(`/onboarding/tasks/${taskId}/remind`, {
+      method: "POST",
+    });
+  },
+  /** Sprint 23A — reassigns the employee responsible for a task; `undefined`/omitted clears it. */
+  async reassignTask(
+    taskId: string,
+    assignedEmployeeId: string | undefined,
+  ): Promise<OnboardingTaskInstanceDto> {
+    return request<OnboardingTaskInstanceDto>(`/onboarding/tasks/${taskId}/assignee`, {
+      method: "PUT",
+      body: { assignedEmployeeId: assignedEmployeeId ?? null },
+    });
+  },
+};
+
+/** Sprint 23A — Employee Self-Service over Onboarding. Auth-only, no ONBOARDING_* permission. */
+export const onboardingSelfServiceApi = {
+  async myPlan(): Promise<OnboardingPlanDto> {
+    return request<OnboardingPlanDto>("/onboarding/self-service/plan");
+  },
+  async myTasks(): Promise<OnboardingTaskInstanceDto[]> {
+    return request<OnboardingTaskInstanceDto[]>("/onboarding/self-service/tasks");
+  },
+};
+
+export type OnboardingDashboardDto = {
+  plansPlanned: number;
+  plansInProgress: number;
+  plansCompleted: number;
+  plansCancelled: number;
+  byStatus: Array<{ status: string; count: number }>;
+};
+
+export type OnboardingReportRowDto = {
+  planId: string;
+  employeeId: string;
+  joiningDate?: string;
+  status: OnboardingPlanStatus;
+  completionPercent: number;
+  totalTasks: number;
+  completedTasks: number;
+  pendingMandatoryTasks: number;
+};
+
+export const onboardingDashboardApi = {
+  async dashboard(companyId: string): Promise<OnboardingDashboardDto> {
+    return request<OnboardingDashboardDto>(`/onboarding/dashboard?companyId=${companyId}`);
+  },
+  async reportByStatus(
+    companyId: string,
+    status: OnboardingPlanStatus,
+  ): Promise<OnboardingReportRowDto[]> {
+    return request<OnboardingReportRowDto[]>(
+      `/onboarding/reports/by-status?companyId=${companyId}&status=${status}`,
+    );
+  },
+};
+
+// ---- Onboarding Task Templates -------------------------------------------
+
+export type OnboardingTaskTemplateDto = ResourceRecord & {
+  id: string;
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  taskType: OnboardingTaskType;
+  sortOrder: number;
+  mandatory: boolean;
+  defaultOwner: OnboardingTaskOwner;
+  defaultSlaDays?: number;
+  active: boolean;
+  versionNo: number;
+};
+
+export type CreateOnboardingTaskTemplatePayload = {
+  tenantId: string;
+  companyId: string;
+  code: string;
+  name: string;
+  description?: string;
+  taskType: OnboardingTaskType;
+  sortOrder?: number;
+  mandatory?: boolean;
+  defaultOwner?: OnboardingTaskOwner;
+  defaultSlaDays?: number;
+  active?: boolean;
+};
+
+export const onboardingTaskTemplateApi = {
+  async create(payload: CreateOnboardingTaskTemplatePayload): Promise<OnboardingTaskTemplateDto> {
+    return request<OnboardingTaskTemplateDto>("/onboarding/task-templates", {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async listForCompany(companyId: string): Promise<OnboardingTaskTemplateDto[]> {
+    return request<OnboardingTaskTemplateDto[]>(
+      `/onboarding/task-templates?companyId=${companyId}`,
+    );
+  },
+  async remove(id: string): Promise<void> {
+    await request<void>(`/onboarding/task-templates/${id}`, { method: "DELETE" });
+  },
+};

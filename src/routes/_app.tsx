@@ -26,6 +26,7 @@ import {
   HelpCircle,
   Landmark,
   LayoutDashboard,
+  ListChecks,
   Megaphone,
   Menu,
   Network,
@@ -33,6 +34,8 @@ import {
   Rocket,
   ScrollText,
   ShieldCheck,
+  Sparkles,
+  UserCheck,
   UserSearch,
   Users as UsersIcon,
   Users2,
@@ -109,8 +112,16 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Onboarding",
+    items: [
+      { to: "/onboarding", label: "Dashboard", icon: Sparkles },
+      { to: "/onboarding-plans", label: "Plans & Tasks", icon: ListChecks },
+    ],
+  },
+  {
     label: "My Workspace",
     items: [
+      { to: "/my-onboarding", label: "My Onboarding", icon: UserCheck },
       { to: "/my-leave", label: "My Leave", icon: CalendarDays },
       { to: "/my-attendance", label: "My Attendance", icon: Clock },
       { to: "/my-payslips", label: "My Payslips", icon: Wallet },
