@@ -878,8 +878,39 @@ export const payrollApi = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Company calendar & announcements                                           */
+/* -------------------------------------------------------------------------- */
+
+export const holidaysApi = {
+  list(year: number, signal?: AbortSignal) {
+    return request<HolidayResponse[]>("/holidays", {
+      params: { year },
+      signal,
+    }).then((d) => (Array.isArray(d) ? d : []));
+  },
+};
+
+export const announcementsApi = {
+  list(signal?: AbortSignal) {
+    return request<AnnouncementResponse[]>("/announcements", { signal }).then(
+      (d) => (Array.isArray(d) ? d : []),
+    );
+  },
+};
+
+export const userPreferencesApi = {
+  get(signal?: AbortSignal) {
+    return request<UserPreferenceResponse>("/users/me/preferences", { signal });
+  },
+  update(body: Partial<UserPreferenceResponse>) {
+    return request<UserPreferenceResponse>("/users/me/preferences", { method: "PUT", body });
+  },
+};
+
+/* -------------------------------------------------------------------------- */
 /* Dashboard KPI counts                                                       */
 /* -------------------------------------------------------------------------- */
+
 
 export type DashboardSummary = {
   employees: number | null;
