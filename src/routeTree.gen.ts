@@ -37,6 +37,8 @@ import { Route as AppAboutRouteImport } from './routes/_app.about'
 import { Route as AppRecruitmentIndexRouteImport } from './routes/_app.recruitment.index'
 import { Route as AppEmployeesIdRouteImport } from './routes/_app.employees.$id'
 import { Route as AppRecruitmentRequisitionsIndexRouteImport } from './routes/_app.recruitment.requisitions.index'
+import { Route as AppRecruitmentPositionsIndexRouteImport } from './routes/_app.recruitment.positions.index'
+import { Route as AppRecruitmentPipelineIndexRouteImport } from './routes/_app.recruitment.pipeline.index'
 import { Route as AppRecruitmentRequisitionsIdRouteImport } from './routes/_app.recruitment.requisitions.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -180,6 +182,18 @@ const AppRecruitmentRequisitionsIndexRoute =
     path: '/requisitions/',
     getParentRoute: () => AppRecruitmentRoute,
   } as any)
+const AppRecruitmentPositionsIndexRoute =
+  AppRecruitmentPositionsIndexRouteImport.update({
+    id: '/positions/',
+    path: '/positions/',
+    getParentRoute: () => AppRecruitmentRoute,
+  } as any)
+const AppRecruitmentPipelineIndexRoute =
+  AppRecruitmentPipelineIndexRouteImport.update({
+    id: '/pipeline/',
+    path: '/pipeline/',
+    getParentRoute: () => AppRecruitmentRoute,
+  } as any)
 const AppRecruitmentRequisitionsIdRoute =
   AppRecruitmentRequisitionsIdRouteImport.update({
     id: '/requisitions/$id',
@@ -215,6 +229,8 @@ export interface FileRoutesByFullPath {
   '/employees/$id': typeof AppEmployeesIdRoute
   '/recruitment/': typeof AppRecruitmentIndexRoute
   '/recruitment/requisitions/$id': typeof AppRecruitmentRequisitionsIdRoute
+  '/recruitment/pipeline/': typeof AppRecruitmentPipelineIndexRoute
+  '/recruitment/positions/': typeof AppRecruitmentPositionsIndexRoute
   '/recruitment/requisitions/': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -244,6 +260,8 @@ export interface FileRoutesByTo {
   '/employees/$id': typeof AppEmployeesIdRoute
   '/recruitment': typeof AppRecruitmentIndexRoute
   '/recruitment/requisitions/$id': typeof AppRecruitmentRequisitionsIdRoute
+  '/recruitment/pipeline': typeof AppRecruitmentPipelineIndexRoute
+  '/recruitment/positions': typeof AppRecruitmentPositionsIndexRoute
   '/recruitment/requisitions': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRoutesById {
@@ -276,6 +294,8 @@ export interface FileRoutesById {
   '/_app/employees/$id': typeof AppEmployeesIdRoute
   '/_app/recruitment/': typeof AppRecruitmentIndexRoute
   '/_app/recruitment/requisitions/$id': typeof AppRecruitmentRequisitionsIdRoute
+  '/_app/recruitment/pipeline/': typeof AppRecruitmentPipelineIndexRoute
+  '/_app/recruitment/positions/': typeof AppRecruitmentPositionsIndexRoute
   '/_app/recruitment/requisitions/': typeof AppRecruitmentRequisitionsIndexRoute
 }
 export interface FileRouteTypes {
@@ -308,6 +328,8 @@ export interface FileRouteTypes {
     | '/employees/$id'
     | '/recruitment/'
     | '/recruitment/requisitions/$id'
+    | '/recruitment/pipeline/'
+    | '/recruitment/positions/'
     | '/recruitment/requisitions/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -337,6 +359,8 @@ export interface FileRouteTypes {
     | '/employees/$id'
     | '/recruitment'
     | '/recruitment/requisitions/$id'
+    | '/recruitment/pipeline'
+    | '/recruitment/positions'
     | '/recruitment/requisitions'
   id:
     | '__root__'
@@ -368,6 +392,8 @@ export interface FileRouteTypes {
     | '/_app/employees/$id'
     | '/_app/recruitment/'
     | '/_app/recruitment/requisitions/$id'
+    | '/_app/recruitment/pipeline/'
+    | '/_app/recruitment/positions/'
     | '/_app/recruitment/requisitions/'
   fileRoutesById: FileRoutesById
 }
@@ -577,6 +603,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecruitmentRequisitionsIndexRouteImport
       parentRoute: typeof AppRecruitmentRoute
     }
+    '/_app/recruitment/positions/': {
+      id: '/_app/recruitment/positions/'
+      path: '/positions'
+      fullPath: '/recruitment/positions/'
+      preLoaderRoute: typeof AppRecruitmentPositionsIndexRouteImport
+      parentRoute: typeof AppRecruitmentRoute
+    }
+    '/_app/recruitment/pipeline/': {
+      id: '/_app/recruitment/pipeline/'
+      path: '/pipeline'
+      fullPath: '/recruitment/pipeline/'
+      preLoaderRoute: typeof AppRecruitmentPipelineIndexRouteImport
+      parentRoute: typeof AppRecruitmentRoute
+    }
     '/_app/recruitment/requisitions/$id': {
       id: '/_app/recruitment/requisitions/$id'
       path: '/requisitions/$id'
@@ -602,12 +642,16 @@ const AppEmployeesRouteWithChildren = AppEmployeesRoute._addFileChildren(
 interface AppRecruitmentRouteChildren {
   AppRecruitmentIndexRoute: typeof AppRecruitmentIndexRoute
   AppRecruitmentRequisitionsIdRoute: typeof AppRecruitmentRequisitionsIdRoute
+  AppRecruitmentPipelineIndexRoute: typeof AppRecruitmentPipelineIndexRoute
+  AppRecruitmentPositionsIndexRoute: typeof AppRecruitmentPositionsIndexRoute
   AppRecruitmentRequisitionsIndexRoute: typeof AppRecruitmentRequisitionsIndexRoute
 }
 
 const AppRecruitmentRouteChildren: AppRecruitmentRouteChildren = {
   AppRecruitmentIndexRoute: AppRecruitmentIndexRoute,
   AppRecruitmentRequisitionsIdRoute: AppRecruitmentRequisitionsIdRoute,
+  AppRecruitmentPipelineIndexRoute: AppRecruitmentPipelineIndexRoute,
+  AppRecruitmentPositionsIndexRoute: AppRecruitmentPositionsIndexRoute,
   AppRecruitmentRequisitionsIndexRoute: AppRecruitmentRequisitionsIndexRoute,
 }
 
