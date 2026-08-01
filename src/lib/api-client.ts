@@ -3957,18 +3957,17 @@ export const performanceSelfServiceApi = {
   },
 };
 
-// ---- Goals & KPIs, Competencies, Development Plans (Sprint 24C) -----------
-// com.ewos.goals / com.ewos.competency — unlike Performance, these modules
-// have NO dedicated self-service controller: every endpoint requires an
-// admin-tier GOAL_*/COMPETENCY_* authority and takes an explicit employeeId
-// param rather than resolving the caller's own record. The Employee Self
-// Service screens built on these calls (Goals & KPI, Competencies,
-// Development Plan) therefore only render real data for a caller who holds
-// the matching *_READ authority — this is a genuine backend gap (documented
-// in the Sprint 24C completion report), not a frontend shortcut. Every call
-// here always scopes by the caller's own resolved employeeId, exactly as a
-// true self-service endpoint would, even though the backend itself doesn't
-// enforce that scoping.
+// ---- Goals & KPIs, Competencies, Development Plans (Sprint 24C/24D) -------
+// com.ewos.goals / com.ewos.competency — the admin-tier APIs below
+// (goalApi/competencyApi/employeeCompetencyApi/developmentPlanApi) require a
+// GOAL_*/COMPETENCY_* authority and take an explicit employeeId param; they
+// remain in use by the HR Administration / Manager screens. Sprint 24D added
+// dedicated self-service controllers (goalSelfServiceApi/
+// competencySelfServiceApi/developmentPlanSelfServiceApi, below) mirroring
+// performanceSelfServiceApi — auth-only, server-side scoped to the caller's
+// own linked employee record — which the Employee Self Service screens now
+// call instead, closing the backend gap documented in the Sprint 24C
+// completion report.
 
 export type GoalStatus =
   | "DRAFT"
@@ -4253,5 +4252,63 @@ export const developmentPlanApi = {
   },
   async byEmployee(employeeId: string): Promise<DevelopmentPlanDto[]> {
     return request<DevelopmentPlanDto[]>(`/development-plans/by-employee/${employeeId}`);
+  },
+};
+
+/** Sprint 24D — Employee Self-Service over Goals. Auth-only, no GOAL_*
+ *  permission — mirrors performanceSelfServiceApi. Scoped server-side to the
+ *  caller's own linked employee record; acting on a goal that isn't the
+ *  caller's own fails with 403. */
+export const goalSelfServiceApi = {
+  async myGoals(): Promise<GoalDto[]> {
+    return request<GoalDto[]>("/goals/self-service/goals");
+  },
+  async recordMyProgress(
+    id: string,
+    payload: { currentValue?: string; progressPercent: number; notes?: string },
+  ): Promise<GoalProgressDto> {
+    return request<GoalProgressDto>(`/goals/self-service/goals/${id}/progress`, {
+      method: "POST",
+      body: payload,
+    });
+  },
+  async submitMyGoalForReview(id: string): Promise<GoalDto> {
+    return request<GoalDto>(`/goals/self-service/goals/${id}/submit-review`, { method: "POST" });
+  },
+};
+
+/** Sprint 24D — Employee Self-Service over Competencies. Auth-only, no
+ *  COMPETENCY_* permission — mirrors performanceSelfServiceApi. Read-only:
+ *  recording an assessment remains an admin/manager action. */
+export const competencySelfServiceApi = {
+  async myCompetencies(): Promise<EmployeeCompetencyDto[]> {
+    return request<EmployeeCompetencyDto[]>("/competencies/self-service/competencies");
+  },
+  async myAssessments(): Promise<CompetencyAssessmentDto[]> {
+    return request<CompetencyAssessmentDto[]>("/competencies/self-service/assessments");
+  },
+  async competencyCatalog(): Promise<CompetencyDto[]> {
+    return request<CompetencyDto[]>("/competencies/self-service/catalog");
+  },
+};
+
+/** Sprint 24D — Employee Self-Service over Development Plans. Auth-only, no
+ *  COMPETENCY_* permission — mirrors performanceSelfServiceApi. Scoped
+ *  server-side to the caller's own linked employee record; acting on a
+ *  plan/action that isn't the caller's own fails with 403. */
+export const developmentPlanSelfServiceApi = {
+  async myPlans(): Promise<DevelopmentPlanDto[]> {
+    return request<DevelopmentPlanDto[]>("/development-plans/self-service/plans");
+  },
+  async myPlanActions(planId: string): Promise<DevelopmentActionDto[]> {
+    return request<DevelopmentActionDto[]>(
+      `/development-plans/self-service/plans/${planId}/actions`,
+    );
+  },
+  async completeMyAction(actionId: string): Promise<DevelopmentActionDto> {
+    return request<DevelopmentActionDto>(
+      `/development-plans/self-service/actions/${actionId}/complete`,
+      { method: "POST" },
+    );
   },
 };

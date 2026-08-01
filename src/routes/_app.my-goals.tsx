@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
-import { ApiError, goalApi, type GoalDto, type GoalStatus } from "@/lib/api-client";
+import { ApiError, goalSelfServiceApi, type GoalDto, type GoalStatus } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_app/my-goals")({
   head: () => ({
@@ -57,13 +57,9 @@ function MyGoalsPage() {
     setLoading(true);
     setError(null);
     try {
-      setGoals(await goalApi.byEmployee(employeeId));
+      setGoals(await goalSelfServiceApi.myGoals());
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        setError("You don't have permission to view goals. This requires the GOAL_READ authority.");
-      } else {
-        setError(err instanceof ApiError ? err.message : "Failed to load your goals.");
-      }
+      setError(err instanceof ApiError ? err.message : "Failed to load your goals.");
     } finally {
       setLoading(false);
     }
@@ -90,7 +86,7 @@ function MyGoalsPage() {
     }
     setBusy(true);
     try {
-      await goalApi.recordProgress(progressGoal.id, {
+      await goalSelfServiceApi.recordMyProgress(progressGoal.id, {
         progressPercent: value,
         currentValue: currentValue.trim() || undefined,
         notes: notes.trim() || undefined,
@@ -108,7 +104,7 @@ function MyGoalsPage() {
   const submitForReview = async (id: string) => {
     setBusy(true);
     try {
-      await goalApi.submitReview(id);
+      await goalSelfServiceApi.submitMyGoalForReview(id);
       toast.success("Submitted for review");
       await load();
     } catch (err) {

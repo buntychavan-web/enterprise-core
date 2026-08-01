@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import {
   ApiError,
-  developmentPlanApi,
+  developmentPlanSelfServiceApi,
   type DevelopmentActionDto,
   type DevelopmentPlanDto,
   type DevelopmentPlanStatus,
@@ -45,20 +45,16 @@ function MyDevelopmentPlanPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await developmentPlanApi.byEmployee(employeeId);
+      const data = await developmentPlanSelfServiceApi.myPlans();
       setPlans(data);
       const entries = await Promise.all(
-        data.map(async (p) => [p.id, await developmentPlanApi.actionsForPlan(p.id)] as const),
+        data.map(
+          async (p) => [p.id, await developmentPlanSelfServiceApi.myPlanActions(p.id)] as const,
+        ),
       );
       setActionsByPlan(Object.fromEntries(entries));
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        setError(
-          "You don't have permission to view development plans. This requires the COMPETENCY_READ authority.",
-        );
-      } else {
-        setError(err instanceof ApiError ? err.message : "Failed to load your development plan.");
-      }
+      setError(err instanceof ApiError ? err.message : "Failed to load your development plan.");
     } finally {
       setLoading(false);
     }
@@ -72,9 +68,9 @@ function MyDevelopmentPlanPage() {
   const completeAction = async (planId: string, actionId: string) => {
     setBusyAction(actionId);
     try {
-      await developmentPlanApi.completeAction(actionId);
+      await developmentPlanSelfServiceApi.completeMyAction(actionId);
       toast.success("Action marked complete");
-      const refreshed = await developmentPlanApi.actionsForPlan(planId);
+      const refreshed = await developmentPlanSelfServiceApi.myPlanActions(planId);
       setActionsByPlan((cur) => ({ ...cur, [planId]: refreshed }));
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to complete action.");

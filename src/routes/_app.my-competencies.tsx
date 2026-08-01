@@ -7,11 +7,9 @@ import { HistoryTimeline, type HistoryEntry } from "@/components/ewos/HistoryTim
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/auth-context";
-import { useTenant } from "@/lib/tenant-context";
 import {
   ApiError,
-  competencyApi,
-  employeeCompetencyApi,
+  competencySelfServiceApi,
   type CompetencyAssessmentDto,
   type CompetencyDto,
   type EmployeeCompetencyDto,
@@ -26,7 +24,6 @@ export const Route = createFileRoute("/_app/my-competencies")({
 
 function MyCompetenciesPage() {
   const { user } = useAuth();
-  const { activeCompanyId } = useTenant();
   const employeeId = user?.employeeId;
 
   const [levels, setLevels] = useState<EmployeeCompetencyDto[] | null>(null);
@@ -41,37 +38,25 @@ function MyCompetenciesPage() {
     setLoading(true);
     setError(null);
     Promise.all([
-      employeeCompetencyApi.forEmployee(employeeId),
-      employeeCompetencyApi.assessmentsForEmployee(employeeId),
+      competencySelfServiceApi.myCompetencies(),
+      competencySelfServiceApi.myAssessments(),
+      competencySelfServiceApi.competencyCatalog(),
     ])
-      .then(([l, a]) => {
+      .then(([l, a, c]) => {
         if (cancelled) return;
         setLevels(l);
         setAssessments(a);
+        setCatalog(c);
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err instanceof ApiError && err.status === 403) {
-          setError(
-            "You don't have permission to view competencies. This requires the COMPETENCY_READ authority.",
-          );
-        } else {
-          setError(err instanceof ApiError ? err.message : "Failed to load your competencies.");
-        }
+        setError(err instanceof ApiError ? err.message : "Failed to load your competencies.");
       })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
   }, [employeeId]);
-
-  useEffect(() => {
-    if (!activeCompanyId) return;
-    competencyApi
-      .listForCompany(activeCompanyId)
-      .then(setCatalog)
-      .catch(() => setCatalog([]));
-  }, [activeCompanyId]);
 
   const competencyName = (id: string) => catalog.find((c) => c.id === id)?.name ?? id;
   const competencyScaleMax = (id: string) => catalog.find((c) => c.id === id)?.scaleMax;
