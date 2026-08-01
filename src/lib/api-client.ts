@@ -237,6 +237,34 @@ export type PayrollRunResponse = {
   finalizedAt?: string;
 };
 
+export type HolidayResponse = {
+  id?: string;
+  date: string;
+  name: string;
+  type: "National" | "Regional" | "Optional" | "Company";
+  location?: string;
+  year?: number;
+  recurring?: boolean;
+};
+
+export type AnnouncementResponse = {
+  id: string;
+  title: string;
+  body?: string;
+  category: "Company" | "HR" | "Product" | "Policy";
+  publishedAt?: string;
+  author?: string;
+  pinned?: boolean;
+};
+
+export type UserPreferenceResponse = {
+  userId?: string;
+  emailDigest?: boolean;
+  approvalReminders?: boolean;
+  productUpdates?: boolean;
+};
+
+
 /* -------------------------------------------------------------------------- */
 /* Errors                                                                     */
 /* -------------------------------------------------------------------------- */
