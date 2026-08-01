@@ -6,7 +6,12 @@ import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
 import { EmptyState } from "@/components/ewos/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ApiError, notificationsApi, type NotificationDto } from "@/lib/api-client";
+import {
+  ApiError,
+  notificationsApi,
+  type NotificationDto,
+  type NotificationType,
+} from "@/lib/api-client";
 
 // Sprint 4: wired to the real com.ewos.notification inbox. Through Sprint 13 this screen ran on
 // mock data because the backend module was an empty package stub with no endpoints or table (see
@@ -24,23 +29,69 @@ export const Route = createFileRoute("/_app/notifications")({
   component: NotificationsPage,
 });
 
-const TYPE_TONE: Record<NotificationDto["type"], StatusTone> = {
+// Sprint 24E — TYPE_TONE/TYPE_LABEL are intentionally Partial<>, not Record<>: a lookup miss
+// (a backend enum value shipped after this frontend build) falls back to a neutral chip below
+// rather than crashing or rendering "undefined". Never widen these back to Record<NotificationType, …>.
+const TYPE_TONE: Partial<Record<NotificationType, StatusTone>> = {
   TASK_ASSIGNED: "info",
   TASK_ESCALATED: "warning",
   INSTANCE_COMPLETED: "success",
   INSTANCE_CANCELLED: "neutral",
   INSTANCE_ERRORED: "danger",
   GENERIC: "neutral",
+  PERF_SELF_REVIEW_OPENED: "info",
+  PERF_MANAGER_REVIEW_PENDING: "info",
+  PERF_REVIEWER_REVIEW_PENDING: "info",
+  PERF_REVIEW_REMINDER: "warning",
+  PERF_FINAL_RATING_RELEASED: "success",
+  PERF_BULK_LAUNCH_COMPLETED: "success",
+  CALIBRATION_SESSION_OPENED: "info",
+  CALIBRATION_COMPLETED: "success",
+  GOAL_ASSIGNED: "info",
+  GOAL_REVIEW_PENDING: "info",
+  GOAL_REVIEWED: "success",
+  GOAL_COMPLETED: "success",
+  GOAL_CANCELLED: "neutral",
+  GOAL_DUE_REMINDER: "warning",
+  GOAL_OVERDUE: "danger",
+  COMPETENCY_ASSESSED: "success",
+  DEVPLAN_ACTIVATED: "info",
+  DEVPLAN_COMPLETED: "success",
+  DEVPLAN_ACTION_DUE: "warning",
+  DEVPLAN_ACTION_OVERDUE: "danger",
 };
 
-const TYPE_LABEL: Record<NotificationDto["type"], string> = {
+const TYPE_LABEL: Partial<Record<NotificationType, string>> = {
   TASK_ASSIGNED: "Task assigned",
   TASK_ESCALATED: "Escalated",
   INSTANCE_COMPLETED: "Completed",
   INSTANCE_CANCELLED: "Cancelled",
   INSTANCE_ERRORED: "Error",
   GENERIC: "Notice",
+  PERF_SELF_REVIEW_OPENED: "Self review opened",
+  PERF_MANAGER_REVIEW_PENDING: "Manager review pending",
+  PERF_REVIEWER_REVIEW_PENDING: "Reviewer review pending",
+  PERF_REVIEW_REMINDER: "Review reminder",
+  PERF_FINAL_RATING_RELEASED: "Final rating released",
+  PERF_BULK_LAUNCH_COMPLETED: "Bulk launch completed",
+  CALIBRATION_SESSION_OPENED: "Calibration scheduled",
+  CALIBRATION_COMPLETED: "Calibration completed",
+  GOAL_ASSIGNED: "Goal assigned",
+  GOAL_REVIEW_PENDING: "Goal review pending",
+  GOAL_REVIEWED: "Goal reviewed",
+  GOAL_COMPLETED: "Goal completed",
+  GOAL_CANCELLED: "Goal cancelled",
+  GOAL_DUE_REMINDER: "Goal due soon",
+  GOAL_OVERDUE: "Goal overdue",
+  COMPETENCY_ASSESSED: "Competency assessed",
+  DEVPLAN_ACTIVATED: "Development plan activated",
+  DEVPLAN_COMPLETED: "Development plan completed",
+  DEVPLAN_ACTION_DUE: "Development action due",
+  DEVPLAN_ACTION_OVERDUE: "Development action overdue",
 };
+
+const DEFAULT_TONE: StatusTone = "neutral";
+const DEFAULT_LABEL = "Notification";
 
 export function NotificationsPage() {
   const [items, setItems] = useState<NotificationDto[] | null>(null);
@@ -138,7 +189,9 @@ export function NotificationsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-foreground">{n.title}</span>
-                        <StatusChip tone={TYPE_TONE[n.type]}>{TYPE_LABEL[n.type]}</StatusChip>
+                        <StatusChip tone={TYPE_TONE[n.type] ?? DEFAULT_TONE}>
+                          {TYPE_LABEL[n.type] ?? DEFAULT_LABEL}
+                        </StatusChip>
                       </div>
                       {n.body && <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>}
                       <div className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">

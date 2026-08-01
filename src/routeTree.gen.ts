@@ -37,6 +37,7 @@ import { Route as AppRecruitmentCandidatesRouteImport } from './routes/_app.recr
 import { Route as AppRecruitmentRouteImport } from './routes/_app.recruitment'
 import { Route as AppProviderDashboardRouteImport } from './routes/_app.provider-dashboard'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppPmsImportExportRouteImport } from './routes/_app.pms-import-export'
 import { Route as AppPerformanceTemplatesRouteImport } from './routes/_app.performance-templates'
 import { Route as AppPerformanceReportsRouteImport } from './routes/_app.performance-reports'
 import { Route as AppPerformanceRatingDistributionRouteImport } from './routes/_app.performance-rating-distribution'
@@ -235,6 +236,11 @@ const AppProviderDashboardRoute = AppProviderDashboardRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPmsImportExportRoute = AppPmsImportExportRouteImport.update({
+  id: '/pms-import-export',
+  path: '/pms-import-export',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPerformanceTemplatesRoute = AppPerformanceTemplatesRouteImport.update({
@@ -549,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/performance-rating-distribution': typeof AppPerformanceRatingDistributionRoute
   '/performance-reports': typeof AppPerformanceReportsRoute
   '/performance-templates': typeof AppPerformanceTemplatesRoute
+  '/pms-import-export': typeof AppPmsImportExportRoute
   '/profile': typeof AppProfileRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/recruitment': typeof AppRecruitmentRoute
@@ -629,6 +636,7 @@ export interface FileRoutesByTo {
   '/performance-rating-distribution': typeof AppPerformanceRatingDistributionRoute
   '/performance-reports': typeof AppPerformanceReportsRoute
   '/performance-templates': typeof AppPerformanceTemplatesRoute
+  '/pms-import-export': typeof AppPmsImportExportRoute
   '/profile': typeof AppProfileRoute
   '/provider-dashboard': typeof AppProviderDashboardRoute
   '/recruitment': typeof AppRecruitmentRoute
@@ -711,6 +719,7 @@ export interface FileRoutesById {
   '/_app/performance-rating-distribution': typeof AppPerformanceRatingDistributionRoute
   '/_app/performance-reports': typeof AppPerformanceReportsRoute
   '/_app/performance-templates': typeof AppPerformanceTemplatesRoute
+  '/_app/pms-import-export': typeof AppPmsImportExportRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/provider-dashboard': typeof AppProviderDashboardRoute
   '/_app/recruitment': typeof AppRecruitmentRoute
@@ -793,6 +802,7 @@ export interface FileRouteTypes {
     | '/performance-rating-distribution'
     | '/performance-reports'
     | '/performance-templates'
+    | '/pms-import-export'
     | '/profile'
     | '/provider-dashboard'
     | '/recruitment'
@@ -873,6 +883,7 @@ export interface FileRouteTypes {
     | '/performance-rating-distribution'
     | '/performance-reports'
     | '/performance-templates'
+    | '/pms-import-export'
     | '/profile'
     | '/provider-dashboard'
     | '/recruitment'
@@ -954,6 +965,7 @@ export interface FileRouteTypes {
     | '/_app/performance-rating-distribution'
     | '/_app/performance-reports'
     | '/_app/performance-templates'
+    | '/_app/pms-import-export'
     | '/_app/profile'
     | '/_app/provider-dashboard'
     | '/_app/recruitment'
@@ -1191,6 +1203,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pms-import-export': {
+      id: '/_app/pms-import-export'
+      path: '/pms-import-export'
+      fullPath: '/pms-import-export'
+      preLoaderRoute: typeof AppPmsImportExportRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/performance-templates': {
@@ -1635,6 +1654,7 @@ interface AppRouteChildren {
   AppPerformanceRatingDistributionRoute: typeof AppPerformanceRatingDistributionRoute
   AppPerformanceReportsRoute: typeof AppPerformanceReportsRoute
   AppPerformanceTemplatesRoute: typeof AppPerformanceTemplatesRoute
+  AppPmsImportExportRoute: typeof AppPmsImportExportRoute
   AppProfileRoute: typeof AppProfileRoute
   AppProviderDashboardRoute: typeof AppProviderDashboardRoute
   AppRecruitmentRoute: typeof AppRecruitmentRoute
@@ -1708,6 +1728,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPerformanceRatingDistributionRoute: AppPerformanceRatingDistributionRoute,
   AppPerformanceReportsRoute: AppPerformanceReportsRoute,
   AppPerformanceTemplatesRoute: AppPerformanceTemplatesRoute,
+  AppPmsImportExportRoute: AppPmsImportExportRoute,
   AppProfileRoute: AppProfileRoute,
   AppProviderDashboardRoute: AppProviderDashboardRoute,
   AppRecruitmentRoute: AppRecruitmentRoute,

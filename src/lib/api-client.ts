@@ -998,15 +998,41 @@ export const leaveApprovalsApi = {
 /* replacing the mock NOTIFICATIONS data the /notifications screen used.      */
 /* -------------------------------------------------------------------------- */
 
+// Sprint 24E — kept in sync with com.ewos.notification.domain.NotificationType. This union had
+// drifted out of date since Sprint 24B (PERF_* types shipped with no frontend-side update); NOTIF_
+// UI code must never index a lookup map by `type` without a fallback, since the backend enum will
+// keep growing and a stale frontend build should degrade gracefully, not render "undefined".
+export type NotificationType =
+  | "TASK_ASSIGNED"
+  | "TASK_ESCALATED"
+  | "INSTANCE_COMPLETED"
+  | "INSTANCE_CANCELLED"
+  | "INSTANCE_ERRORED"
+  | "GENERIC"
+  | "PERF_SELF_REVIEW_OPENED"
+  | "PERF_MANAGER_REVIEW_PENDING"
+  | "PERF_REVIEWER_REVIEW_PENDING"
+  | "PERF_REVIEW_REMINDER"
+  | "PERF_FINAL_RATING_RELEASED"
+  | "PERF_BULK_LAUNCH_COMPLETED"
+  | "CALIBRATION_SESSION_OPENED"
+  | "CALIBRATION_COMPLETED"
+  | "GOAL_ASSIGNED"
+  | "GOAL_REVIEW_PENDING"
+  | "GOAL_REVIEWED"
+  | "GOAL_COMPLETED"
+  | "GOAL_CANCELLED"
+  | "GOAL_DUE_REMINDER"
+  | "GOAL_OVERDUE"
+  | "COMPETENCY_ASSESSED"
+  | "DEVPLAN_ACTIVATED"
+  | "DEVPLAN_COMPLETED"
+  | "DEVPLAN_ACTION_DUE"
+  | "DEVPLAN_ACTION_OVERDUE";
+
 export type NotificationDto = {
   id: string;
-  type:
-    | "TASK_ASSIGNED"
-    | "TASK_ESCALATED"
-    | "INSTANCE_COMPLETED"
-    | "INSTANCE_CANCELLED"
-    | "INSTANCE_ERRORED"
-    | "GENERIC";
+  type: NotificationType;
   title: string;
   body?: string;
   link?: string;
@@ -4310,5 +4336,151 @@ export const developmentPlanSelfServiceApi = {
       `/development-plans/self-service/actions/${actionId}/complete`,
       { method: "POST" },
     );
+  },
+};
+
+// ---- Goal / Competency / Development Plan Import-Export (Sprint 24E) ------
+// Bulk CSV import/export — HR Admin only (GOAL_ADMIN / COMPETENCY_WRITE /
+// COMPETENCY_READ / COMPETENCY_PLAN, matching each module's existing
+// @PreAuthorize scheme). These endpoints return/accept text/csv and
+// multipart/form-data respectively, so they bypass the JSON-only `request()`
+// helper above and talk to `fetch` directly.
+
+export type ImportRowErrorDto = { rowNumber: number; rowData: string; errorMessage: string };
+export type ImportResultDto = {
+  jobId: string;
+  totalRows: number;
+  successCount: number;
+  failureCount: number;
+  errors: ImportRowErrorDto[];
+};
+
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const token = tokenStore.get();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  headers["X-Tenant-Id"] = tenantStore.get() ?? DEFAULT_TENANT_ID;
+  return headers;
+}
+
+/** Downloads a CSV endpoint as a browser file save (template or export). */
+async function downloadCsv(path: string, fileName: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1${path}`, { headers: authHeaders() });
+  } catch (err) {
+    throw new ApiError(
+      "Unable to reach the server. Please check your connection and try again.",
+      0,
+      err,
+    );
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    let data: unknown = text;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // plain-text error body — leave `data` as the raw string
+    }
+    throw new ApiError(extractErrorMessage(data, response.status), response.status, data);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** Uploads a CSV file for bulk import and returns the per-row result report. */
+async function uploadCsv(path: string, file: File): Promise<ImportResultDto> {
+  const form = new FormData();
+  form.append("file", file);
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1${path}`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(
+      "Unable to reach the server. Please check your connection and try again.",
+      0,
+      err,
+    );
+  }
+  const text = await response.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+  if (!response.ok) {
+    throw new ApiError(extractErrorMessage(data, response.status), response.status, data);
+  }
+  return data as ImportResultDto;
+}
+
+/** Sprint 24E — CSV export/template-download/bulk-import for Goals. GOAL_ADMIN only. */
+export const goalImportExportApi = {
+  async downloadTemplate(): Promise<void> {
+    return downloadCsv("/goals/import-export/template.csv", "goals-template.csv");
+  },
+  async exportCsv(companyId: string): Promise<void> {
+    return downloadCsv(
+      `/goals/import-export/export.csv?companyId=${companyId}`,
+      `goals-${companyId}.csv`,
+    );
+  },
+  async importCsv(companyId: string, file: File): Promise<ImportResultDto> {
+    return uploadCsv(`/goals/import-export/import?companyId=${companyId}`, file);
+  },
+};
+
+/** Sprint 24E — CSV export/template-download/bulk-import for employee
+ *  competency levels. COMPETENCY_WRITE to import, COMPETENCY_READ to export. */
+export const competencyImportExportApi = {
+  async downloadTemplate(): Promise<void> {
+    return downloadCsv(
+      "/competency-matrix/import-export/template.csv",
+      "employee-competencies-template.csv",
+    );
+  },
+  async exportCsv(companyId: string): Promise<void> {
+    return downloadCsv(
+      `/competency-matrix/import-export/export.csv?companyId=${companyId}`,
+      `employee-competencies-${companyId}.csv`,
+    );
+  },
+  async importCsv(companyId: string, file: File): Promise<ImportResultDto> {
+    return uploadCsv(`/competency-matrix/import-export/import?companyId=${companyId}`, file);
+  },
+};
+
+/** Sprint 24E — CSV export/template-download/bulk-import for development
+ *  plans (plan-level fields only; actions must still be added one at a time). */
+export const developmentPlanImportExportApi = {
+  async downloadTemplate(): Promise<void> {
+    return downloadCsv(
+      "/development-plans/import-export/template.csv",
+      "development-plans-template.csv",
+    );
+  },
+  async exportCsv(companyId: string): Promise<void> {
+    return downloadCsv(
+      `/development-plans/import-export/export.csv?companyId=${companyId}`,
+      `development-plans-${companyId}.csv`,
+    );
+  },
+  async importCsv(companyId: string, file: File): Promise<ImportResultDto> {
+    return uploadCsv(`/development-plans/import-export/import?companyId=${companyId}`, file);
   },
 };

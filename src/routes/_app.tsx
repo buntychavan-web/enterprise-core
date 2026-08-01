@@ -49,6 +49,7 @@ import {
   Users as UsersIcon,
   Users2,
   UserSquare2,
+  Upload,
   Wallet,
   Workflow as WorkflowIcon,
   X,
@@ -140,6 +141,7 @@ const NAV_GROUPS = [
       { to: "/performance-rating-distribution", label: "Rating Distribution", icon: BarChart3 },
       { to: "/performance-progress", label: "Progress (Dept / BU / Company)", icon: GaugeCircle },
       { to: "/performance-reports", label: "Reports", icon: ClipboardList },
+      { to: "/pms-import-export", label: "Data Import/Export", icon: Upload },
     ],
   },
   {
