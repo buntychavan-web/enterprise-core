@@ -10,7 +10,6 @@ import {
   Info,
   LayoutDashboard,
   Megaphone,
-  PartyPopper,
   Search,
   Settings,
   UserCircle2,
@@ -44,7 +43,6 @@ type Nav = {
     | "/notifications"
     | "/my-team"
     | "/directory"
-    | "/holidays"
     | "/announcements"
     | "/help"
     | "/about";
@@ -60,7 +58,6 @@ const NAV: Nav[] = [
   { label: "Payslips", to: "/payslips", icon: Wallet, hint: "Salary history" },
   { label: "My Team", to: "/my-team", icon: UsersIcon, hint: "Manager & reports" },
   { label: "Directory", to: "/directory", icon: Contact2, hint: "Company-wide people" },
-  { label: "Holidays", to: "/holidays", icon: PartyPopper, hint: "Company calendar" },
   { label: "Announcements", to: "/announcements", icon: Megaphone, hint: "Latest news" },
   { label: "Notifications", to: "/notifications", icon: Bell, hint: "Inbox" },
   { label: "Organization", to: "/organization", icon: Building2, hint: "Setup" },

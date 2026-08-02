@@ -69,7 +69,6 @@ import { Route as AppMyAppraisalRouteImport } from './routes/_app.my-appraisal'
 import { Route as AppLeaveRouteImport } from './routes/_app.leave'
 import { Route as AppIntegrationMonitoringRouteImport } from './routes/_app.integration-monitoring'
 import { Route as AppIntegrationConfigurationsRouteImport } from './routes/_app.integration-configurations'
-import { Route as AppHolidaysRouteImport } from './routes/_app.holidays'
 import { Route as AppHelpRouteImport } from './routes/_app.help'
 import { Route as AppEmployeesRouteImport } from './routes/_app.employees'
 import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
@@ -405,11 +404,6 @@ const AppIntegrationConfigurationsRoute =
     path: '/integration-configurations',
     getParentRoute: () => AppRoute,
   } as any)
-const AppHolidaysRoute = AppHolidaysRouteImport.update({
-  id: '/holidays',
-  path: '/holidays',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppHelpRoute = AppHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -523,7 +517,6 @@ export interface FileRoutesByFullPath {
   '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
   '/help': typeof AppHelpRoute
-  '/holidays': typeof AppHolidaysRoute
   '/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
@@ -604,7 +597,6 @@ export interface FileRoutesByTo {
   '/directory': typeof AppDirectoryRoute
   '/employees': typeof AppEmployeesRouteWithChildren
   '/help': typeof AppHelpRoute
-  '/holidays': typeof AppHolidaysRoute
   '/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/leave': typeof AppLeaveRoute
@@ -687,7 +679,6 @@ export interface FileRoutesById {
   '/_app/directory': typeof AppDirectoryRoute
   '/_app/employees': typeof AppEmployeesRouteWithChildren
   '/_app/help': typeof AppHelpRoute
-  '/_app/holidays': typeof AppHolidaysRoute
   '/_app/integration-configurations': typeof AppIntegrationConfigurationsRoute
   '/_app/integration-monitoring': typeof AppIntegrationMonitoringRoute
   '/_app/leave': typeof AppLeaveRoute
@@ -770,7 +761,6 @@ export interface FileRouteTypes {
     | '/directory'
     | '/employees'
     | '/help'
-    | '/holidays'
     | '/integration-configurations'
     | '/integration-monitoring'
     | '/leave'
@@ -851,7 +841,6 @@ export interface FileRouteTypes {
     | '/directory'
     | '/employees'
     | '/help'
-    | '/holidays'
     | '/integration-configurations'
     | '/integration-monitoring'
     | '/leave'
@@ -933,7 +922,6 @@ export interface FileRouteTypes {
     | '/_app/directory'
     | '/_app/employees'
     | '/_app/help'
-    | '/_app/holidays'
     | '/_app/integration-configurations'
     | '/_app/integration-monitoring'
     | '/_app/leave'
@@ -1429,13 +1417,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIntegrationConfigurationsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/holidays': {
-      id: '/_app/holidays'
-      path: '/holidays'
-      fullPath: '/holidays'
-      preLoaderRoute: typeof AppHolidaysRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/help': {
       id: '/_app/help'
       path: '/help'
@@ -1622,7 +1603,6 @@ interface AppRouteChildren {
   AppDirectoryRoute: typeof AppDirectoryRoute
   AppEmployeesRoute: typeof AppEmployeesRouteWithChildren
   AppHelpRoute: typeof AppHelpRoute
-  AppHolidaysRoute: typeof AppHolidaysRoute
   AppIntegrationConfigurationsRoute: typeof AppIntegrationConfigurationsRoute
   AppIntegrationMonitoringRoute: typeof AppIntegrationMonitoringRoute
   AppLeaveRoute: typeof AppLeaveRoute
@@ -1696,7 +1676,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppDirectoryRoute: AppDirectoryRoute,
   AppEmployeesRoute: AppEmployeesRouteWithChildren,
   AppHelpRoute: AppHelpRoute,
-  AppHolidaysRoute: AppHolidaysRoute,
   AppIntegrationConfigurationsRoute: AppIntegrationConfigurationsRoute,
   AppIntegrationMonitoringRoute: AppIntegrationMonitoringRoute,
   AppLeaveRoute: AppLeaveRoute,
