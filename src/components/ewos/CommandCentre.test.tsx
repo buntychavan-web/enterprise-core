@@ -67,4 +67,22 @@ describe("CommandCentre", () => {
       await screen.findByPlaceholderText(/search modules, people, actions/i),
     ).toBeInTheDocument();
   });
+
+  // Sprint 0 review — verified via manual browser testing that a single
+  // Escape press did not close the dialog (Radix's own escape-to-close
+  // didn't fire on the first press in this app). Fixed with an explicit
+  // handler; this guards against a regression back to needing two presses.
+  it("closes on a single Escape press", async () => {
+    render(<CommandCentre />);
+    const user = userEvent.setup();
+
+    await user.click(screen.getAllByRole("button", { name: /open command centre/i })[0]);
+    await screen.findByPlaceholderText(/search modules, people, actions/i);
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByPlaceholderText(/search modules, people, actions/i),
+    ).not.toBeInTheDocument();
+  });
 });

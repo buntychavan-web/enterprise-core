@@ -148,6 +148,21 @@ export function CommandCentre() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Sprint 0 review fix: verified via manual browser testing that Escape
+  // needed two presses to close the dialog (Radix's own DismissableLayer
+  // escape-to-close didn't fire on the first press in this app — root cause
+  // not fully isolated, but reproducible regardless of timing). This
+  // explicit handler makes a single Escape always close it, independent of
+  // whatever layering interaction was swallowing the first keydown.
+  useEffect(() => {
+    if (!open) return;
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [open]);
+
   useEffect(() => {
     if (open) setRecent(readRecent().filter((p) => p !== pathname));
   }, [open, pathname]);
