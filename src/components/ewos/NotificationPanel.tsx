@@ -102,8 +102,11 @@ export function NotificationPanel() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="font-medium text-foreground">{n.title}</div>
                       {!n.readAt && (
+                        // Same gold "needs you" signal as the bell badge above —
+                        // see the Sprint 0 review note on this file, applied
+                        // consistently to every unread indicator, not just the badge.
                         <span
-                          className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary"
+                          className="mt-1 h-2 w-2 shrink-0 rounded-full bg-attention"
                           aria-hidden
                         />
                       )}

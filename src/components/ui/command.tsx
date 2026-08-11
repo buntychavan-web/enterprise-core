@@ -128,7 +128,12 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      // EWOS identity (Sprint 0 design gate) — the selected row uses the
+      // brand gold tint, not the generic shadcn accent colour, so the
+      // Command Centre reads as part of the same dark-ink + gold shell
+      // language. This is --brand (structural gold), not --attention: a
+      // highlighted search result is not "needs your attention."
+      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-brand/10 data-[selected=true]:text-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 data-[selected=true]:[&_svg]:text-brand",
       className,
     )}
     {...props}

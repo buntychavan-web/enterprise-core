@@ -160,11 +160,15 @@ function AppShellContent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
 
+  // EWOS identity (Sprint 0 design gate) — dark-ink nav rail. Active state is
+  // a gold left-indicator (box-shadow, not a border, so it doesn't shift
+  // layout) + gold text, never a filled background — restrained per "do not
+  // make the rail visually heavy."
   const navLinkClass =
-    "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary";
+    "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-nav-fg transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-attention focus-visible:ring-offset-2 focus-visible:ring-offset-ink data-[status=active]:text-nav-fg-active data-[status=active]:shadow-[inset_2.5px_0_0_var(--nav-fg-active)]";
 
   return (
-    <div className="min-h-dvh bg-muted/30 text-foreground">
+    <div className="min-h-dvh bg-ewos-canvas text-foreground">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow"
@@ -183,17 +187,17 @@ function AppShellContent() {
       <aside
         id="primary-navigation"
         aria-label="Sidebar"
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-card transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-ink transition-transform lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-14 items-center justify-between border-b border-border px-4">
-          <EwosLogo />
+        <div className="flex h-14 items-center justify-between border-b border-ink-border px-4">
+          <EwosLogo onDark />
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden"
+            className="text-nav-fg hover:bg-white/5 hover:text-white lg:hidden"
             aria-label="Close navigation"
           >
             <X className="h-4 w-4" />
@@ -226,14 +230,14 @@ function AppShellContent() {
             </Link>
           )}
 
-          <div className="my-2 border-t border-border" />
+          <div className="my-2 border-t border-ink-border" />
 
           <button
             type="button"
             onClick={() => setMoreOpen((o) => !o)}
             aria-expanded={moreOpen}
             aria-controls="more-nav-group"
-            className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-nav-fg transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-attention focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
           >
             <MoreHorizontal className="h-4 w-4" aria-hidden />
             More
@@ -257,8 +261,8 @@ function AppShellContent() {
           )}
         </nav>
 
-        <div className="border-t border-border p-3">
-          <div className="text-[11px] text-muted-foreground">EWOS v1.0</div>
+        <div className="border-t border-ink-border p-3">
+          <div className="text-[11px] text-nav-fg">EWOS v1.0</div>
         </div>
       </aside>
 
@@ -321,10 +325,14 @@ function AppShellContent() {
 }
 
 /**
- * Sprint 0 (EWOS App Shell) — mobile bottom navigation. Mobile is not a
- * shrunken desktop: the sidebar-as-overlay pattern remains for the full
- * "More" list, but Home/Work/Team/More get a thumb-reachable bottom bar
- * instead of requiring the hamburger for every navigation.
+ * Sprint 0 (EWOS App Shell) — mobile bottom navigation.
+ *
+ * EWOS identity (Sprint 0 design gate): adapted from the desktop rail, not a
+ * copy of it — same dark-ink + gold language (so the brand signature still
+ * reads at 375px), but the gesture changes to suit touch/thumb use: a solid
+ * gold-filled pill behind the active icon instead of the desktop's inset
+ * left-indicator, since a 2.5px edge bar isn't legible at this size. Mobile
+ * is not a shrunken desktop, per the design brief.
  */
 function MobileTabBar({
   pathname,
@@ -340,7 +348,7 @@ function MobileTabBar({
   return (
     <nav
       aria-label="Primary (mobile)"
-      className="fixed inset-x-0 bottom-0 z-30 grid border-t border-border bg-card lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid border-t border-ink-border bg-ink lg:hidden"
       style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}
     >
       {tabs.map((item) => {
@@ -350,12 +358,19 @@ function MobileTabBar({
             key={item.to}
             to={item.to}
             className={cn(
-              "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-              active && "text-primary",
+              "flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium text-nav-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-attention focus-visible:ring-inset",
+              active && "text-nav-fg-active",
             )}
             aria-current={active ? "page" : undefined}
           >
-            <item.icon className="h-5 w-5" aria-hidden />
+            <span
+              className={cn(
+                "flex h-6 w-9 items-center justify-center rounded-full",
+                active && "bg-nav-fg-active/15",
+              )}
+            >
+              <item.icon className="h-5 w-5" aria-hidden />
+            </span>
             {item.label}
           </Link>
         );
@@ -363,9 +378,11 @@ function MobileTabBar({
       <button
         type="button"
         onClick={onMore}
-        className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className="flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium text-nav-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-attention focus-visible:ring-inset"
       >
-        <MoreHorizontal className="h-5 w-5" aria-hidden />
+        <span className="flex h-6 w-9 items-center justify-center rounded-full">
+          <MoreHorizontal className="h-5 w-5" aria-hidden />
+        </span>
         More
       </button>
     </nav>

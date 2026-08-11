@@ -61,6 +61,31 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-attention: var(--attention);
   --color-attention-foreground: var(--attention-foreground);
+  /* EWOS identity (Sprint 0 design gate, Direction 2) — additive design
+   * system for the Sprint 0 surface (App Shell, Home, Attention Inbox, Work
+   * Hub, Command Centre). Deliberately NOT repointing --primary/--secondary,
+   * which every existing screen's buttons/inputs still use unchanged. */
+  --color-ink: var(--ink);
+  --color-ink-border: var(--ink-border);
+  --color-nav-fg: var(--nav-fg);
+  --color-nav-fg-active: var(--nav-fg-active);
+  --color-ewos-canvas: var(--ewos-canvas);
+  --color-ewos-surface: var(--ewos-surface);
+  --color-ewos-line: var(--ewos-line);
+  --color-ewos-text: var(--ewos-text);
+  --color-ewos-muted: var(--ewos-muted);
+  --color-brand: var(--brand);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  /* Typography — see the Sprint 0 design-gate comparison (Gloock vs. Lora
+   * vs. Crimson Pro vs. IBM Plex Serif) in the PR description. IBM Plex
+   * Serif won on readability at UI sizes and "enterprise," not "editorial,"
+   * character — Gloock read as marketing-page, exactly what was ruled out.
+   * font-serif is used ONLY for the Home greeting and section headings,
+   * never for body copy or buttons. */
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 :root {
@@ -97,12 +122,38 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
-  /* EWOS Sprint 0 — the "attention" accent. Used in exactly two places: the
-   * Attention Inbox card top-rule and the Command Centre's active-item
-   * indicator. Never used as a general brand/UI color — see frontend design
-   * notes in AttentionInbox.tsx. A restrained gold, not a red/alert color. */
-  --attention: oklch(0.58 0.13 75);
-  --attention-foreground: oklch(0.99 0.01 90);
+  /* EWOS identity (Sprint 0 design gate, Direction 2: "Dark Ink + Gold +
+   * Calm Enterprise"). --brand and --attention are deliberately different
+   * values of the same gold family, not one color used two ways:
+   *   --brand      structural — logo mark, Work Card icon chips. Means
+   *                "this is EWOS," nothing more.
+   *   --nav-fg-active  the nav rail's own active-page indicator — a dimmer,
+   *                less saturated gold than --attention on purpose, since
+   *                "you are here" is not "you need to act."
+   *   --attention  reserved exclusively for "action required" — the
+   *                Attention Inbox left-rule, the notification-bell dot.
+   *                If gold shows up anywhere else, it must not compete with
+   *                this meaning.
+   * --warning is a distinct amber-orange hue (not gold) so it never gets
+   * mistaken for "needs your attention" — see StatusChip's existing amber
+   * "warning" tone elsewhere in the app, which this is compatible with. */
+  --ink: oklch(0.2 0.02 260);
+  --ink-border: oklch(0.28 0.02 260);
+  --nav-fg: oklch(0.62 0.02 80);
+  /* Deliberately dimmer/less saturated than --attention below — "current
+   * page" is not "needs your action," so the nav rail's own active-state
+   * indicator must not borrow attention's exact bright, saturated gold. */
+  --nav-fg-active: oklch(0.74 0.1 76);
+  --ewos-canvas: oklch(0.975 0.004 80);
+  --ewos-surface: oklch(1 0 0);
+  --ewos-line: oklch(0.9 0.015 80);
+  --ewos-text: oklch(0.2 0.02 260);
+  --ewos-muted: oklch(0.5 0.02 80);
+  --brand: oklch(0.58 0.14 72);
+  --positive: oklch(0.5 0.09 165);
+  --warning: oklch(0.58 0.15 45);
+  --attention: oklch(0.78 0.15 80);
+  --attention-foreground: oklch(0.18 0.03 80);
 }
 
 .dark {
@@ -138,7 +189,19 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
-  --attention: oklch(0.78 0.15 80);
+  --ink: oklch(0.16 0.02 260);
+  --ink-border: oklch(0.24 0.02 260);
+  --nav-fg: oklch(0.62 0.02 80);
+  --nav-fg-active: oklch(0.78 0.11 76);
+  --ewos-canvas: var(--background);
+  --ewos-surface: var(--card);
+  --ewos-line: var(--border);
+  --ewos-text: var(--foreground);
+  --ewos-muted: var(--muted-foreground);
+  --brand: oklch(0.68 0.15 74);
+  --positive: oklch(0.62 0.1 165);
+  --warning: oklch(0.65 0.16 45);
+  --attention: oklch(0.82 0.16 80);
   --attention-foreground: oklch(0.18 0.03 80);
 }
 
@@ -148,9 +211,7 @@
   }
 
   html {
-    font-family:
-      "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-      Arial, sans-serif;
+    font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;

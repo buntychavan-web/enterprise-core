@@ -10,6 +10,10 @@ import { cn } from "@/lib/utils";
  * two real status lines, and a single link through to the existing (reused,
  * not rebuilt) module screen. See CTO review "Bento Home — MODIFY: fixed
  * role-aware card set for v1, not a personalized/reorderable grid."
+ *
+ * EWOS identity (Sprint 0 design gate) — the icon sits in a tinted brand-gold
+ * chip, the approved "icon-in-chip" Bento/work-card signature, rather than
+ * floating bare next to the title.
  */
 export function WorkCard({
   to,
@@ -36,8 +40,13 @@ export function WorkCard({
         "hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
     >
-      <div className="flex items-center gap-2 text-muted-foreground">
-        {icon}
+      <div className="flex items-center gap-2.5">
+        <span
+          aria-hidden
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand/12 text-brand transition-colors group-hover:bg-brand/18"
+        >
+          {icon}
+        </span>
         <h2 className="text-sm font-medium text-foreground">{title}</h2>
       </div>
 

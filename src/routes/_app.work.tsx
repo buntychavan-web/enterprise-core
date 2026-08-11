@@ -40,7 +40,7 @@ function WorkHubPage() {
           error={dashboard.error}
           cta="Apply or track"
         >
-          <p className="text-lg font-semibold text-foreground">
+          <p className="font-mono text-lg font-semibold tabular-nums text-foreground">
             {leave?.balanceDays != null ? `${leave.balanceDays} days available` : "—"}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -76,7 +76,7 @@ function WorkHubPage() {
               : "None yet"}
           </p>
           {payroll?.ytdGross != null && (
-            <p className="text-xs text-muted-foreground">
+            <p className="font-mono text-xs tabular-nums text-muted-foreground">
               YTD gross ₹{payroll.ytdGross.toLocaleString("en-IN")}
             </p>
           )}

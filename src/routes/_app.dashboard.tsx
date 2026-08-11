@@ -6,6 +6,7 @@ import { WorkCard } from "@/components/ewos/WorkCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { displayName } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import {
   useEssDashboard,
   useMssDashboard,
@@ -58,7 +59,7 @@ export function HomePage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader eyebrow={today} title={`${greeting()}, ${firstName}.`} />
+      <PageHeader eyebrow={today} title={`${greeting()}, ${firstName}.`} serif />
 
       <AttentionInbox />
 
@@ -73,6 +74,7 @@ export function HomePage() {
               ? `Next: ${new Date(leave.nextApprovedLeaveDate).toLocaleDateString()}`
               : undefined
           }
+          numeric
         />
         <QuickStat
           label="Today"
@@ -104,7 +106,7 @@ export function HomePage() {
           error={dashboard.error}
           cta="Apply or track"
         >
-          <p className="text-lg font-semibold text-foreground">
+          <p className="font-mono text-lg font-semibold tabular-nums text-foreground">
             {leave?.balanceDays != null ? `${leave.balanceDays} days` : "—"}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -153,7 +155,7 @@ export function HomePage() {
 
       {showTeamPulse && (
         <div>
-          <h2 className="mb-2 text-sm font-medium text-foreground">Team pulse</h2>
+          <h2 className="mb-2 font-serif text-base font-normal text-foreground">Team pulse</h2>
           <WorkCard
             to="/my-team"
             icon={<Users2 className="h-4 w-4" />}
@@ -179,12 +181,17 @@ function QuickStat({
   hint,
   loading,
   error,
+  numeric = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   loading?: boolean;
   error?: string | null;
+  /** EWOS identity (Sprint 0 design gate) — mono/tabular figures are reserved
+   * for genuinely numeric/financial values (e.g. a leave-day balance), not
+   * status text ("No entry yet today") or a formatted month ("Jul 2026"). */
+  numeric?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -197,7 +204,14 @@ function QuickStat({
         <p className="mt-1 text-sm text-muted-foreground">Unavailable right now</p>
       ) : (
         <>
-          <div className="mt-1 text-lg font-semibold text-foreground">{value}</div>
+          <div
+            className={cn(
+              "mt-1 text-lg font-semibold text-foreground",
+              numeric && "font-mono tabular-nums",
+            )}
+          >
+            {value}
+          </div>
           {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
         </>
       )}

@@ -152,7 +152,11 @@ export function AttentionInbox() {
         const content = (
           <div
             className={cn(
-              "flex items-start gap-3 rounded-lg border border-border border-t-2 border-t-attention bg-card p-3",
+              // EWOS identity (Sprint 0 design gate) — the attention signal is a
+              // left-rule, not a top-rule: the approved Direction 2 gesture,
+              // distinct from --brand gold used elsewhere so "needs you" never
+              // reads as just decorative branding.
+              "flex items-start gap-3 rounded-lg border border-border border-l-[3px] border-l-attention bg-card p-3",
               item.to && "transition-colors hover:border-foreground/20",
             )}
           >

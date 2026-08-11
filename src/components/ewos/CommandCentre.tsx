@@ -179,6 +179,9 @@ export function CommandCentre() {
 
   return (
     <>
+      {/* EWOS identity (Sprint 0 design gate) — the trigger's ⌘K chip uses the
+          dark-ink + gold pairing so Command Centre reads as the same shell
+          language as the nav rail, even though the topbar itself stays light. */}
       <Button
         variant="outline"
         size="sm"
@@ -190,7 +193,7 @@ export function CommandCentre() {
           <Search className="h-4 w-4" />
           Search EWOS…
         </span>
-        <kbd className="pointer-events-none hidden select-none rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
+        <kbd className="pointer-events-none hidden select-none rounded bg-ink px-1.5 py-0.5 text-[10px] font-medium text-nav-fg-active sm:inline-block">
           ⌘K
         </kbd>
       </Button>
