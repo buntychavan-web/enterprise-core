@@ -68,6 +68,27 @@ describe("CommandCentre", () => {
     ).toBeInTheDocument();
   });
 
+  // Sprint 0 final gate — AppShell mounts two <CommandCentre/> instances (one
+  // per responsive trigger wrapper). Before the module-level shared-state fix,
+  // each instance owned an independent open state and its own Cmd/Ctrl+K
+  // listener, so the shortcut opened two stacked dialogs at once. Guards
+  // against regressing back to that.
+  it("opens exactly one dialog with Cmd/Ctrl+K even with multiple mounted instances", async () => {
+    render(
+      <>
+        <CommandCentre />
+        <CommandCentre />
+      </>,
+    );
+
+    const user = userEvent.setup();
+    await user.keyboard("{Control>}k{/Control}");
+
+    expect(await screen.findAllByPlaceholderText(/search modules, people, actions/i)).toHaveLength(
+      1,
+    );
+  });
+
   // Sprint 0 review — verified via manual browser testing that a single
   // Escape press did not close the dialog (Radix's own escape-to-close
   // didn't fire on the first press in this app). Fixed with an explicit

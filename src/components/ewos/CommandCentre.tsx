@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Bell,
@@ -131,37 +131,99 @@ export function useTrackRecentRoute() {
   }, [pathname]);
 }
 
+// Sprint 0 final-gate E2E testing found that AppShell mounts two
+// <CommandCentre/> instances (one per responsive trigger wrapper — see
+// _app.tsx's header), and each independently owned its own `open` state and
+// its own global Cmd/Ctrl+K listener. Pressing the shortcut fired both
+// listeners at once and opened two stacked dialogs. Rather than restructure
+// the header's responsive layout, the open state and the keyboard shortcut
+// are made module-level singletons here: exactly one "Cmd/Ctrl+K opens,
+// Escape closes" listener ever exists, and every mounted instance renders
+// off the same shared boolean.
+let sharedOpen = false;
+const openSubscribers = new Set<(open: boolean) => void>();
+
+function publishOpen(next: boolean) {
+  sharedOpen = next;
+  openSubscribers.forEach((notify) => notify(next));
+}
+
+let globalShortcutHandler: ((e: KeyboardEvent) => void) | null = null;
+
+function attachGlobalShortcut() {
+  if (globalShortcutHandler || typeof window === "undefined") return;
+  globalShortcutHandler = (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      publishOpen(!sharedOpen);
+      return;
+    }
+    if (e.key === "Escape" && sharedOpen) {
+      publishOpen(false);
+    }
+  };
+  window.addEventListener("keydown", globalShortcutHandler);
+}
+
+// Torn down once the last mounted instance unsubscribes (component-test
+// remounts, HMR, or a logout/login cycle that unmounts the whole shell) so
+// the next mount starts clean instead of inheriting a stale open state or a
+// duplicate listener.
+function detachGlobalShortcutIfIdle() {
+  if (openSubscribers.size > 0 || !globalShortcutHandler || typeof window === "undefined") return;
+  window.removeEventListener("keydown", globalShortcutHandler);
+  globalShortcutHandler = null;
+  sharedOpen = false;
+}
+
+function useSharedCommandCentreOpen() {
+  const [open, setLocalOpen] = useState(sharedOpen);
+  useEffect(() => {
+    attachGlobalShortcut();
+    openSubscribers.add(setLocalOpen);
+    return () => {
+      openSubscribers.delete(setLocalOpen);
+      detachGlobalShortcutIfIdle();
+    };
+  }, []);
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    publishOpen(typeof next === "function" ? next(sharedOpen) : next);
+  };
+  return [open, setOpen] as const;
+}
+
+// Sharing `open` alone isn't enough — every mounted <CommandCentre/> still
+// renders its own <CommandDialog>, so two instances would still show two
+// (perfectly synced) dialogs. Only the first-mounted instance "owns" and
+// renders the dialog; every other instance renders trigger buttons only,
+// which still work since they share the same open state above.
+let dialogOwner: object | null = null;
+
+function useIsCommandDialogOwner() {
+  const idRef = useRef<object | null>(null);
+  if (!idRef.current) idRef.current = {};
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    const id = idRef.current!;
+    if (dialogOwner === null) {
+      dialogOwner = id;
+      setIsOwner(true);
+    }
+    return () => {
+      if (dialogOwner === id) dialogOwner = null;
+    };
+  }, []);
+
+  return isOwner;
+}
+
 export function CommandCentre() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useSharedCommandCentreOpen();
+  const isDialogOwner = useIsCommandDialogOwner();
   const [recent, setRecent] = useState<string[]>([]);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // Sprint 0 review fix: verified via manual browser testing that Escape
-  // needed two presses to close the dialog (Radix's own DismissableLayer
-  // escape-to-close didn't fire on the first press in this app — root cause
-  // not fully isolated, but reproducible regardless of timing). This
-  // explicit handler makes a single Escape always close it, independent of
-  // whatever layering interaction was swallowing the first keydown.
-  useEffect(() => {
-    if (!open) return;
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onEscape);
-    return () => window.removeEventListener("keydown", onEscape);
-  }, [open]);
 
   useEffect(() => {
     if (open) setRecent(readRecent().filter((p) => p !== pathname));
@@ -207,42 +269,49 @@ export function CommandCentre() {
         <Search className="h-4 w-4" />
       </Button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search modules, people, actions…" />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          {recentNav.length > 0 && (
-            <>
-              <CommandGroup heading="Recent">
-                {recentNav.map((n) => (
-                  <CommandItem
-                    key={`recent-${n.to}`}
-                    value={`recent ${n.label} ${n.hint ?? ""}`}
-                    onSelect={() => go({ kind: "route", to: n.to, label: n.label, icon: n.icon })}
-                  >
-                    <n.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{n.label}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              <CommandSeparator />
-            </>
-          )}
-          <CommandGroup heading="Navigate">
-            {NAV.map((n) => (
-              <CommandItem
-                key={n.to}
-                value={`${n.label} ${n.hint ?? ""}`}
-                onSelect={() => go({ kind: "route", to: n.to, label: n.label, icon: n.icon })}
-              >
-                <n.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>{n.label}</span>
-                {n.hint && <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span>}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      {/* Only the dialog-owning instance renders CommandDialog at all — see
+          useIsCommandDialogOwner above. Every instance's trigger buttons
+          above still work, since they all drive the same shared open state. */}
+      {isDialogOwner && (
+        <CommandDialog open={open} onOpenChange={setOpen}>
+          <CommandInput placeholder="Search modules, people, actions…" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            {recentNav.length > 0 && (
+              <>
+                <CommandGroup heading="Recent">
+                  {recentNav.map((n) => (
+                    <CommandItem
+                      key={`recent-${n.to}`}
+                      value={`recent ${n.label} ${n.hint ?? ""}`}
+                      onSelect={() => go({ kind: "route", to: n.to, label: n.label, icon: n.icon })}
+                    >
+                      <n.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span>{n.label}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
+            <CommandGroup heading="Navigate">
+              {NAV.map((n) => (
+                <CommandItem
+                  key={n.to}
+                  value={`${n.label} ${n.hint ?? ""}`}
+                  onSelect={() => go({ kind: "route", to: n.to, label: n.label, icon: n.icon })}
+                >
+                  <n.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span>{n.label}</span>
+                  {n.hint && (
+                    <span className="ml-auto text-xs text-muted-foreground">{n.hint}</span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </CommandDialog>
+      )}
     </>
   );
 }
