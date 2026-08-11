@@ -65,8 +65,12 @@ export function NotificationPanel() {
         >
           <Bell className="h-4 w-4" />
           {unread > 0 && (
+            // Sprint 0 review: a routine unread count isn't an alert — bg-destructive
+            // (red) contradicted the "no red unless truly urgent" design direction and
+            // competed with the Attention Inbox's own gold signal. One "needs your
+            // attention" color throughout, not two.
             <span
-              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive"
+              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-attention"
               aria-hidden
             />
           )}
