@@ -21,7 +21,23 @@ export const Route = createFileRoute("/_app/my-payslips")({
   component: MyPayslipsPage,
 });
 
-function MyPayslipsPage() {
+// Sprint 1 (ESS Core Polish) — matches the admin Payslips screen's money()
+// formatter (Intl.NumberFormat) instead of raw string concatenation, so the
+// same figure is formatted identically on both screens.
+function money(n: number | undefined, currency: string | undefined) {
+  if (n === undefined) return "—";
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: currency || "INR",
+      maximumFractionDigits: 0,
+    }).format(n);
+  } catch {
+    return String(n);
+  }
+}
+
+export function MyPayslipsPage() {
   const [payslips, setPayslips] = useState<PayslipDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,14 +112,14 @@ function MyPayslipsPage() {
                         {p.periodStart} — {p.periodEnd}
                       </TableCell>
                       <TableCell className="text-sm">{p.payDate}</TableCell>
-                      <TableCell className="text-sm">
-                        {p.currency} {p.grossAmount.toLocaleString()}
+                      <TableCell className="font-mono text-sm tabular-nums">
+                        {money(p.grossAmount, p.currency)}
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {p.currency} {p.deductionsAmount.toLocaleString()}
+                      <TableCell className="font-mono text-sm tabular-nums text-muted-foreground">
+                        −{money(p.deductionsAmount, p.currency)}
                       </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {p.currency} {p.netAmount.toLocaleString()}
+                      <TableCell className="font-mono text-sm font-medium tabular-nums">
+                        {money(p.netAmount, p.currency)}
                       </TableCell>
                       <TableCell className="text-sm">{p.status}</TableCell>
                     </TableRow>

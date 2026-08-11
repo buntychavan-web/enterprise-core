@@ -801,6 +801,68 @@ export const employeeSelfApi = {
   },
 };
 
+/**
+ * Sprint 1 (ESS Core Polish) — the real self-service profile update endpoint
+ * (Sprint 27C `EssProfileController`), previously wired on the backend but
+ * never called from this client (Profile's "Edit" button was a no-op).
+ *
+ * Only these 5 fields are settable — the backend explicitly excludes
+ * workEmail/displayName (HR-admin-only) and every employment field
+ * (employeeNumber, name, hireDate, status, manager, etc.) from this DTO, so
+ * there is no point exposing them as "editable" in the UI. Every field is
+ * optional; a field omitted (or sent as undefined) leaves the current value
+ * unchanged server-side — see EmployeeService.updateMe's null-check pattern.
+ */
+export type EssProfileUpdateRequest = {
+  personalEmail?: string;
+  phone?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  avatarStorageUri?: string;
+};
+
+/** Mirrors the backend's ApiError.fieldErrors — present on 400s from @Valid failures. */
+export type ApiFieldError = {
+  field: string;
+  rejectedValue?: unknown;
+  message: string;
+  code?: string;
+};
+
+/** Best-effort extraction of field-level validation errors from an ApiError's raw payload. */
+export function fieldErrorsFrom(err: unknown): Record<string, string> {
+  if (!(err instanceof ApiError)) return {};
+  const payload = err.payload;
+  if (!payload || typeof payload !== "object" || !("fieldErrors" in payload)) return {};
+  const raw = (payload as { fieldErrors: unknown }).fieldErrors;
+  if (!Array.isArray(raw)) return {};
+  const out: Record<string, string> = {};
+  for (const e of raw) {
+    if (e && typeof e === "object" && "field" in e && "message" in e) {
+      const fe = e as ApiFieldError;
+      out[fe.field] = fe.message;
+    }
+  }
+  return out;
+}
+
+export const essProfileApi = {
+  /**
+   * PATCH /self-service/me — requires an Idempotency-Key header (the backend
+   * rejects a missing/blank one with 400, not treats it as optional) so a
+   * retried request after a dropped response replays the original result
+   * instead of double-applying. Returns the same full EmployeeResponse shape
+   * as employeeSelfApi.me().
+   */
+  async updateMe(patch: EssProfileUpdateRequest): Promise<ResourceRecord> {
+    return request<ResourceRecord>("/self-service/me", {
+      method: "PATCH",
+      body: patch,
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
+  },
+};
+
 /* -------------------------------------------------------------------------- */
 /* Employee & Manager Self-Service (Sprint 3) — reads/writes scoped to the   */
 /* caller's own linked employee record via new backend /self-service         */

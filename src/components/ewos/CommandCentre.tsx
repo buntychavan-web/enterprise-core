@@ -89,6 +89,16 @@ const NAV: Nav[] = [
   { label: "My Payslips", to: "/my-payslips", icon: Wallet },
   { label: "My profile", to: "/profile", icon: UserCircle2 },
   { label: "My Team", to: "/my-team", icon: UsersIcon, hint: "Manager & reports" },
+  // Sprint 1 (ESS Core Polish) — these 3 admin screens already existed as
+  // real, linked routes (sidebar "More" group, labeled "(Admin)" there too)
+  // but were conspicuously absent from ⌘K search right next to their ESS
+  // counterparts above. Nav["to"] already had these paths typed; only the
+  // NAV entries were missing. The other 11 admin/ops routes in "More"
+  // (Tenant Management, Outsourcing, Integration Monitoring, etc.) are
+  // deliberately left out of ⌘K search for now — see Sprint 1 report.
+  { label: "Leave (Admin)", to: "/leave", icon: CalendarDays, hint: "Tenant-wide leave" },
+  { label: "Attendance (Admin)", to: "/attendance", icon: Clock, hint: "Tenant-wide attendance" },
+  { label: "Payslips (Admin)", to: "/payslips", icon: Wallet, hint: "Look up by employee" },
   { label: "Employees", to: "/employees", icon: UserSquare2, hint: "Workforce directory" },
   { label: "Directory", to: "/directory", icon: Contact2, hint: "Company-wide people" },
   { label: "Holidays", to: "/holidays", icon: PartyPopper, hint: "Company calendar" },

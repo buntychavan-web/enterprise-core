@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { resourceApi, DEFAULT_TENANT_ID, type ResourceRecord } from "@/lib/api-client";
+import { resourceApi, type ResourceRecord } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_app/attendance")({
   head: () => ({
@@ -116,7 +116,7 @@ function AttendancePage() {
       <PageHeader
         eyebrow="Time & Attendance"
         title="Attendance"
-        description={`Live policies and timesheets for tenant ${DEFAULT_TENANT_ID} (placeholder — see Sprint 13 report).`}
+        description="Attendance policies and timesheets across the organization."
       />
 
       <Card>
@@ -146,40 +146,42 @@ function AttendancePage() {
               description="No attendance policies have been created for this tenant."
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Hours/day</TableHead>
-                  <TableHead>Hours/week</TableHead>
-                  <TableHead>Working days</TableHead>
-                  <TableHead>Grace (min)</TableHead>
-                  <TableHead>OT multiplier</TableHead>
-                  <TableHead>Active</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {policies.map((p) => (
-                  <TableRow key={String(p.id)}>
-                    <TableCell className="font-medium">{p.code ?? "—"}</TableCell>
-                    <TableCell>{p.name ?? "—"}</TableCell>
-                    <TableCell>{p.standardHoursPerDay ?? "—"}</TableCell>
-                    <TableCell>{p.standardHoursPerWeek ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {p.workingDays ?? "—"}
-                    </TableCell>
-                    <TableCell>{p.graceMinutes ?? "—"}</TableCell>
-                    <TableCell>{p.overtimeMultiplier ?? "—"}</TableCell>
-                    <TableCell>
-                      <StatusChip tone={p.active ? "success" : "neutral"}>
-                        {p.active ? "Active" : "Inactive"}
-                      </StatusChip>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Hours/day</TableHead>
+                    <TableHead>Hours/week</TableHead>
+                    <TableHead>Working days</TableHead>
+                    <TableHead>Grace (min)</TableHead>
+                    <TableHead>OT multiplier</TableHead>
+                    <TableHead>Active</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {policies.map((p) => (
+                    <TableRow key={String(p.id)}>
+                      <TableCell className="font-medium">{p.code ?? "—"}</TableCell>
+                      <TableCell>{p.name ?? "—"}</TableCell>
+                      <TableCell>{p.standardHoursPerDay ?? "—"}</TableCell>
+                      <TableCell>{p.standardHoursPerWeek ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {p.workingDays ?? "—"}
+                      </TableCell>
+                      <TableCell>{p.graceMinutes ?? "—"}</TableCell>
+                      <TableCell>{p.overtimeMultiplier ?? "—"}</TableCell>
+                      <TableCell>
+                        <StatusChip tone={p.active ? "success" : "neutral"}>
+                          {p.active ? "Active" : "Inactive"}
+                        </StatusChip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -231,40 +233,44 @@ function AttendancePage() {
               icon={CalendarDays}
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead className="text-right">Worked hrs</TableHead>
-                  <TableHead className="text-right">Overtime hrs</TableHead>
-                  <TableHead className="text-right">Absence hrs</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {timesheets.map((t) => (
-                  <TableRow key={String(t.id)}>
-                    <TableCell className="font-mono text-xs">{t.employeeId ?? "—"}</TableCell>
-                    <TableCell>
-                      {t.periodStart ?? "—"} → {t.periodEnd ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.workedHours ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.overtimeHours ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.absenceHours ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      {t.status && <StatusChip tone={STATUS_TONE[t.status]}>{t.status}</StatusChip>}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee ID</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead className="text-right">Worked hrs</TableHead>
+                    <TableHead className="text-right">Overtime hrs</TableHead>
+                    <TableHead className="text-right">Absence hrs</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {timesheets.map((t) => (
+                    <TableRow key={String(t.id)}>
+                      <TableCell className="font-mono text-xs">{t.employeeId ?? "—"}</TableCell>
+                      <TableCell>
+                        {t.periodStart ?? "—"} → {t.periodEnd ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.workedHours ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.overtimeHours ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.absenceHours ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {t.status && (
+                          <StatusChip tone={STATUS_TONE[t.status]}>{t.status}</StatusChip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

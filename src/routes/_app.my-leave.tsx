@@ -55,7 +55,7 @@ const STATUS_TONE: Record<LeaveRequestDto["status"], StatusTone> = {
   CANCELLED: "neutral",
 };
 
-function MyLeavePage() {
+export function MyLeavePage() {
   const [balances, setBalances] = useState<LeaveBalanceDto[] | null>(null);
   const [requests, setRequests] = useState<LeaveRequestDto[] | null>(null);
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeDto[]>([]);

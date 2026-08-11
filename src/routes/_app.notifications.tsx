@@ -137,10 +137,15 @@ export function NotificationsPage() {
                 {items.map((n) => (
                   <li
                     key={n.id}
-                    className={`flex items-start gap-3 px-4 py-3 sm:px-5 ${!n.readAt ? "bg-primary/5" : ""}`}
+                    className={`flex items-start gap-3 px-4 py-3 sm:px-5 ${!n.readAt ? "bg-attention/5" : ""}`}
                   >
+                    {/* Sprint 1 (ESS Core Polish) — matches the header bell's
+                        gold unread signal (NotificationPanel.tsx). This full
+                        inbox page was using bg-primary here, a leftover from
+                        before Sprint 0 established one "needs your attention"
+                        color throughout. */}
                     <span
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt ? "bg-muted-foreground/30" : "bg-primary"}`}
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt ? "bg-muted-foreground/30" : "bg-attention"}`}
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1">

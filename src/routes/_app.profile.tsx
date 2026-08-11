@@ -3,8 +3,8 @@ import { Mail, ShieldCheck, User } from "lucide-react";
 import { PageHeader } from "@/components/ewos/PageHeader";
 import { StatusChip } from "@/components/ewos/StatusChip";
 import { MyEmployeeCard } from "@/components/ewos/MyEmployeeCard";
+import { ProfilePersonalDetailsCard } from "@/components/ewos/ProfilePersonalDetailsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { displayName, initials } from "@/lib/api-client";
 
@@ -48,9 +48,12 @@ function ProfilePage() {
               ))}
             </div>
           </div>
-          <Button size="sm" variant="outline">
-            Edit
-          </Button>
+          {/* Sprint 1 (ESS Core Polish) — the "Edit" button that used to sit
+              here had no onClick and nothing to call: username/name/email/
+              userId below are JWT-derived account fields, not part of the
+              backend's editable-profile DTO. Real editing now lives on
+              <ProfilePersonalDetailsCard/>, scoped to the 5 fields the
+              backend actually accepts. */}
         </CardContent>
       </Card>
 
@@ -65,6 +68,8 @@ function ProfilePage() {
           <Field label="User ID" value={String(user?.userId ?? user?.id ?? "—")} />
         </CardContent>
       </Card>
+
+      <ProfilePersonalDetailsCard />
 
       <MyEmployeeCard />
 

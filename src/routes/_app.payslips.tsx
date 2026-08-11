@@ -160,42 +160,46 @@ export function PayslipsPage() {
                   description="No payslips exist for this employee ID under this tenant."
                 />
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Period</TableHead>
-                      <TableHead>Pay date</TableHead>
-                      <TableHead className="text-right">Gross</TableHead>
-                      <TableHead className="text-right">Deductions</TableHead>
-                      <TableHead className="text-right">Net</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payslips.map((p) => (
-                      <TableRow key={String(p.id)}>
-                        <TableCell className="font-medium">
-                          {p.periodStart ?? "—"} → {p.periodEnd ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{p.payDate ?? "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {money(p.grossAmount, p.currency)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted-foreground">
-                          −{money(p.deductionsAmount, p.currency)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">
-                          {money(p.netAmount, p.currency)}
-                        </TableCell>
-                        <TableCell>
-                          {p.status && (
-                            <StatusChip tone={TONE[p.status] ?? "neutral"}>{p.status}</StatusChip>
-                          )}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Period</TableHead>
+                        <TableHead>Pay date</TableHead>
+                        <TableHead className="text-right">Gross</TableHead>
+                        <TableHead className="text-right">Deductions</TableHead>
+                        <TableHead className="text-right">Net</TableHead>
+                        <TableHead>Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {payslips.map((p) => (
+                        <TableRow key={String(p.id)}>
+                          <TableCell className="font-medium">
+                            {p.periodStart ?? "—"} → {p.periodEnd ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {p.payDate ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {money(p.grossAmount, p.currency)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                            −{money(p.deductionsAmount, p.currency)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium tabular-nums">
+                            {money(p.netAmount, p.currency)}
+                          </TableCell>
+                          <TableCell>
+                            {p.status && (
+                              <StatusChip tone={TONE[p.status] ?? "neutral"}>{p.status}</StatusChip>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

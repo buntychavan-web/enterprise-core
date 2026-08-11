@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { resourceApi, DEFAULT_TENANT_ID, type ResourceRecord } from "@/lib/api-client";
+import { resourceApi, type ResourceRecord } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_app/leave")({
   head: () => ({
@@ -117,7 +117,7 @@ function LeavePage() {
       <PageHeader
         eyebrow="Time-off"
         title="Leave"
-        description={`Live leave types and requests for tenant ${DEFAULT_TENANT_ID} (placeholder — see Sprint 13 report).`}
+        description="Leave types and requests across the organization."
       />
 
       <Card>
@@ -147,44 +147,46 @@ function LeavePage() {
               description="No leave types have been created for this tenant."
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Paid</TableHead>
-                  <TableHead className="text-right">Accrual/yr</TableHead>
-                  <TableHead className="text-right">Max balance</TableHead>
-                  <TableHead>Requires approval</TableHead>
-                  <TableHead>Active</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {types.map((t) => (
-                  <TableRow key={String(t.id)}>
-                    <TableCell className="font-medium">{t.code ?? "—"}</TableCell>
-                    <TableCell>{t.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <StatusChip tone={t.paid ? "success" : "neutral"}>
-                        {t.paid ? "Paid" : "Unpaid"}
-                      </StatusChip>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.accrualDaysPerYear ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.maxBalanceDays ?? "—"}
-                    </TableCell>
-                    <TableCell>{t.requiresApproval ? "Yes" : "No"}</TableCell>
-                    <TableCell>
-                      <StatusChip tone={t.active ? "success" : "neutral"}>
-                        {t.active ? "Active" : "Inactive"}
-                      </StatusChip>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Paid</TableHead>
+                    <TableHead className="text-right">Accrual/yr</TableHead>
+                    <TableHead className="text-right">Max balance</TableHead>
+                    <TableHead>Requires approval</TableHead>
+                    <TableHead>Active</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {types.map((t) => (
+                    <TableRow key={String(t.id)}>
+                      <TableCell className="font-medium">{t.code ?? "—"}</TableCell>
+                      <TableCell>{t.name ?? "—"}</TableCell>
+                      <TableCell>
+                        <StatusChip tone={t.paid ? "success" : "neutral"}>
+                          {t.paid ? "Paid" : "Unpaid"}
+                        </StatusChip>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.accrualDaysPerYear ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.maxBalanceDays ?? "—"}
+                      </TableCell>
+                      <TableCell>{t.requiresApproval ? "Yes" : "No"}</TableCell>
+                      <TableCell>
+                        <StatusChip tone={t.active ? "success" : "neutral"}>
+                          {t.active ? "Active" : "Inactive"}
+                        </StatusChip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -236,38 +238,42 @@ function LeavePage() {
               icon={CalendarDays}
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>To</TableHead>
-                  <TableHead className="text-right">Days</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reason</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((r) => (
-                  <TableRow key={String(r.id)}>
-                    <TableCell className="font-mono text-xs">{r.employeeId ?? "—"}</TableCell>
-                    <TableCell>{r.leaveTypeCode ?? "—"}</TableCell>
-                    <TableCell>{r.startDate ?? "—"}</TableCell>
-                    <TableCell>{r.endDate ?? "—"}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {r.daysRequested ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      {r.status && <StatusChip tone={STATUS_TONE[r.status]}>{r.status}</StatusChip>}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {r.reason ?? "—"}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee ID</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>From</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead className="text-right">Days</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Reason</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {requests.map((r) => (
+                    <TableRow key={String(r.id)}>
+                      <TableCell className="font-mono text-xs">{r.employeeId ?? "—"}</TableCell>
+                      <TableCell>{r.leaveTypeCode ?? "—"}</TableCell>
+                      <TableCell>{r.startDate ?? "—"}</TableCell>
+                      <TableCell>{r.endDate ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {r.daysRequested ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {r.status && (
+                          <StatusChip tone={STATUS_TONE[r.status]}>{r.status}</StatusChip>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {r.reason ?? "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
