@@ -2,9 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const { mineMock, markReadMock } = vi.hoisted(() => ({
-  mineMock: vi.fn(),
+// Sprint 0 (EWOS App Shell) — repointed to notificationInboxApi (the Sprint
+// 27C NotificationInboxController) instead of the old notificationsApi, so
+// dismiss is now real and testable — see the EWOS CTO review's "two
+// notification controllers" finding.
+
+const { listMock, markReadMock, dismissMock } = vi.hoisted(() => ({
+  listMock: vi.fn(),
   markReadMock: vi.fn(),
+  dismissMock: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -15,7 +21,7 @@ vi.mock("@/lib/api-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-client")>("@/lib/api-client");
   return {
     ...actual,
-    notificationsApi: { mine: mineMock, markRead: markReadMock },
+    notificationInboxApi: { list: listMock, markRead: markReadMock, dismiss: dismissMock },
   };
 });
 
@@ -32,14 +38,8 @@ const notification = (overrides: Partial<Record<string, unknown>> = {}) => ({
 });
 
 describe("Notification inbox", () => {
-  it("renders unread notifications from the backend inbox", async () => {
-    mineMock.mockResolvedValueOnce({
-      content: [notification()],
-      totalElements: 1,
-      totalPages: 1,
-      number: 0,
-      size: 50,
-    });
+  it("renders unread notifications from the Sprint 27C inbox", async () => {
+    listMock.mockResolvedValueOnce({ items: [notification()] });
 
     render(<NotificationsPage />);
 
@@ -48,13 +48,7 @@ describe("Notification inbox", () => {
   });
 
   it("marks a notification read and updates the unread count", async () => {
-    mineMock.mockResolvedValueOnce({
-      content: [notification()],
-      totalElements: 1,
-      totalPages: 1,
-      number: 0,
-      size: 50,
-    });
+    listMock.mockResolvedValueOnce({ items: [notification()] });
     markReadMock.mockResolvedValueOnce(undefined);
 
     const user = userEvent.setup();
@@ -67,14 +61,22 @@ describe("Notification inbox", () => {
     await waitFor(() => expect(screen.getByText(/0 unread of 1 total/i)).toBeInTheDocument());
   });
 
+  it("dismisses a notification and removes it from the list", async () => {
+    listMock.mockResolvedValueOnce({ items: [notification()] });
+    dismissMock.mockResolvedValueOnce(undefined);
+
+    const user = userEvent.setup();
+    render(<NotificationsPage />);
+
+    await screen.findByText("New task assigned");
+    await user.click(screen.getByRole("button", { name: /dismiss/i }));
+
+    await waitFor(() => expect(dismissMock).toHaveBeenCalledWith("notif-1"));
+    await waitFor(() => expect(screen.queryByText("New task assigned")).not.toBeInTheDocument());
+  });
+
   it("shows an empty state when the inbox has nothing yet", async () => {
-    mineMock.mockResolvedValueOnce({
-      content: [],
-      totalElements: 0,
-      totalPages: 0,
-      number: 0,
-      size: 50,
-    });
+    listMock.mockResolvedValueOnce({ items: [] });
 
     render(<NotificationsPage />);
 

@@ -5,41 +5,44 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "./EmptyState";
-import { ApiError, notificationsApi, type NotificationDto } from "@/lib/api-client";
+import { ApiError, notificationInboxApi, type NotificationInboxItemDto } from "@/lib/api-client";
 
 /**
  * Sprint 4 — wired to the real `com.ewos.notification` inbox (previously a stub package with no
  * endpoints; the `/notifications` screen and this panel both ran on mock data through Sprint 13).
- * Fetches once on mount rather than polling — an operator can add a refresh interval later without
- * changing this component's shape.
+ *
+ * Sprint 0 (EWOS App Shell) — repointed from the older `/notifications/mine`
+ * controller to the Sprint 27C `NotificationInboxController`
+ * (/self-service/notifications), the only one that supports dismiss and the
+ * one the rest of the ESS/MSS self-service API family already uses. See the
+ * EWOS CTO review's "two notification controllers" finding.
+ *
+ * Fetches once on mount rather than polling — an operator can add a refresh
+ * interval later without changing this component's shape.
  */
 export function NotificationPanel() {
-  const [items, setItems] = useState<NotificationDto[]>([]);
-  const [unread, setUnread] = useState(0);
+  const [items, setItems] = useState<NotificationInboxItemDto[]>([]);
   const [open, setOpen] = useState(false);
 
   const load = () => {
-    notificationsApi
-      .mine(0, 8)
-      .then((page) => setItems(page.content))
+    notificationInboxApi
+      .list({ limit: 8 })
+      .then((page) => setItems(page.items))
       .catch(() => setItems([]));
-    notificationsApi
-      .unreadCount()
-      .then(setUnread)
-      .catch(() => setUnread(0));
   };
 
   useEffect(() => {
     load();
   }, []);
 
+  const unread = items.filter((n) => !n.readAt).length;
+
   const markRead = async (id: string) => {
     try {
-      await notificationsApi.markRead(id);
+      await notificationInboxApi.markRead(id);
       setItems((xs) =>
         xs.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)),
       );
-      setUnread((n) => Math.max(0, n - 1));
     } catch (err) {
       if (!(err instanceof ApiError)) throw err;
     }
