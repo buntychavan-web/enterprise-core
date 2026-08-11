@@ -156,12 +156,15 @@ type RequestOptions = {
   body?: unknown;
   auth?: boolean;
   signal?: AbortSignal;
+  /** Extra headers layered on top of the defaults below (e.g. Idempotency-Key). */
+  headers?: Record<string, string>;
 };
 
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, auth = true, signal } = opts;
   const headers: Record<string, string> = {
     Accept: "application/json",
+    ...opts.headers,
   };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (auth) {
@@ -945,6 +948,153 @@ export const payslipSelfServiceApi = {
 export const employeeReportsApi = {
   async myReports(): Promise<ResourceRecord[]> {
     return request<ResourceRecord[]>("/employees/me/reports");
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* ESS Dashboard (Sprint 27C) — the caller's landing-page aggregate. Built    */
+/* alongside the self-service/leave/attendance/payroll APIs above but never   */
+/* consumed by the frontend until Sprint 0 (EWOS App Shell) wired it into the */
+/* new Home/Today screen and Attention Inbox.                                 */
+/* -------------------------------------------------------------------------- */
+
+export type EssPendingActionsDto = {
+  notificationsUnread: number;
+  timesheetDue: boolean;
+  leaveRequestsPendingMyApproval: number;
+  upcomingTimesheetDeadline?: string;
+};
+
+export type EssLeaveSummaryDto = {
+  balanceDays?: number;
+  pendingRequests: number;
+  nextApprovedLeaveDate?: string;
+};
+
+export type EssPayrollSnapshotDto = {
+  latestPayslipId?: string;
+  latestPayslipPeriodStart?: string;
+  latestPayslipPeriodEnd?: string;
+  ytdGross?: number;
+  ytdTaxDeducted?: number;
+};
+
+export type CalendarEventDto = {
+  date: string;
+  type: "HOLIDAY" | "LEAVE" | "TIMESHEET_DUE";
+  title: string;
+  metadata?: Record<string, string>;
+};
+
+export type EssDashboardDto = {
+  employee: ResourceRecord | null;
+  pendingActions: EssPendingActionsDto;
+  leaveSummary: EssLeaveSummaryDto;
+  payrollSnapshot: EssPayrollSnapshotDto;
+  upcomingEvents: CalendarEventDto[];
+};
+
+export const essDashboardApi = {
+  async get(): Promise<EssDashboardDto> {
+    return request<EssDashboardDto>("/self-service/dashboard");
+  },
+};
+
+export const essCalendarApi = {
+  /** `from`/`to` are ISO date strings (yyyy-MM-dd). */
+  async upcoming(from: string, to: string): Promise<CalendarEventDto[]> {
+    const data = await request<{ events: CalendarEventDto[] }>(
+      `/self-service/calendar?from=${from}&to=${to}`,
+    );
+    return data.events;
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* MSS Dashboard (Sprint 27C) — the caller's team summary. Same "built but    */
+/* never consumed" situation as the ESS dashboard above.                      */
+/* -------------------------------------------------------------------------- */
+
+export type MssTeamSummaryDto = {
+  headcount: number;
+  onLeaveToday: number;
+  pendingApprovals: number;
+  timesheetsPending: number;
+  leaveRequestsPending: number;
+};
+
+export type MssTeamAttendanceEntryDto = {
+  employeeId: string;
+  displayName: string;
+  /** PRESENT is never actually emitted by the backend today (no live daily rollup exists —
+   *  see MssAttendanceStatus's javadoc) — treat it as a reserved future value, not live data. */
+  status: "PRESENT" | "ON_LEAVE" | "NOT_MARKED";
+};
+
+export type MssUpcomingLeaveEntryDto = {
+  employeeId: string;
+  displayName: string;
+  startDate: string;
+  endDate: string;
+  leaveTypeName: string;
+};
+
+export type MssDashboardDto = {
+  teamSummary: MssTeamSummaryDto;
+  teamAttendanceSnapshot: MssTeamAttendanceEntryDto[];
+  upcomingTeamLeave: MssUpcomingLeaveEntryDto[];
+};
+
+export const mssDashboardApi = {
+  async get(actingForEmployeeId?: string): Promise<MssDashboardDto> {
+    return request<MssDashboardDto>(
+      `/manager-self-service/dashboard${actingForEmployeeId ? `?actingForEmployeeId=${actingForEmployeeId}` : ""}`,
+    );
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Notification Inbox (Sprint 27C) — the cursor-paginated, dismiss-capable    */
+/* surface at /api/v1/self-service/notifications. Distinct from the older     */
+/* `notificationsApi` above (still real, still at /api/v1/notifications) —    */
+/* Sprint 0 moves the Attention Inbox and the /notifications screen onto this */
+/* one specifically because it's the only one that supports dismiss.         */
+/* -------------------------------------------------------------------------- */
+
+export type NotificationInboxItemDto = {
+  id: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+  readAt?: string;
+  createdAt: string;
+};
+
+export type NotificationInboxPageDto = {
+  items: NotificationInboxItemDto[];
+  nextCursor?: string;
+};
+
+export const notificationInboxApi = {
+  async list(
+    opts: { unreadOnly?: boolean; cursor?: string; limit?: number } = {},
+  ): Promise<NotificationInboxPageDto> {
+    const params = new URLSearchParams();
+    if (opts.unreadOnly) params.set("unreadOnly", "true");
+    if (opts.cursor) params.set("cursor", opts.cursor);
+    if (opts.limit) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    return request<NotificationInboxPageDto>(`/self-service/notifications${qs ? `?${qs}` : ""}`);
+  },
+  async markRead(id: string): Promise<void> {
+    await request<void>(`/self-service/notifications/${id}/read`, { method: "POST" });
+  },
+  async dismiss(id: string): Promise<void> {
+    await request<void>(`/self-service/notifications/${id}/dismiss`, {
+      method: "POST",
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
   },
 };
 

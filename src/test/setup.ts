@@ -14,6 +14,10 @@ class ResizeObserverStub {
 }
 vi.stubGlobal("ResizeObserver", ResizeObserverStub);
 
+// jsdom has no scrollIntoView; cmdk (Command Centre's palette library) calls
+// it on the highlighted item whenever the list re-renders.
+Element.prototype.scrollIntoView = vi.fn();
+
 // jsdom does not implement matchMedia; ThemeToggle and friends check it.
 Object.defineProperty(window, "matchMedia", {
   writable: true,

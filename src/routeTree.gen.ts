@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as AppWorkRouteImport } from './routes/_app.work'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTenantManagementRouteImport } from './routes/_app.tenant-management'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -76,6 +77,11 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppWorkRoute = AppWorkRouteImport.update({
+  id: '/work',
+  path: '/work',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
@@ -269,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
+  '/work': typeof AppWorkRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tenant-management': typeof AppTenantManagementRoute
   '/users': typeof AppUsersRoute
+  '/work': typeof AppWorkRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/employees/$id': typeof AppEmployeesIdRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tenant-management': typeof AppTenantManagementRoute
   '/_app/users': typeof AppUsersRoute
+  '/_app/work': typeof AppWorkRoute
   '/api/$': typeof ApiSplatRoute
   '/design-system/organization': typeof DesignSystemOrganizationRoute
   '/_app/employees/$id': typeof AppEmployeesIdRoute
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tenant-management'
     | '/users'
+    | '/work'
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tenant-management'
     | '/users'
+    | '/work'
     | '/api/$'
     | '/design-system/organization'
     | '/employees/$id'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tenant-management'
     | '/_app/users'
+    | '/_app/work'
     | '/api/$'
     | '/design-system/organization'
     | '/_app/employees/$id'
@@ -520,6 +532,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/$'
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/work': {
+      id: '/_app/work'
+      path: '/work'
+      fullPath: '/work'
+      preLoaderRoute: typeof AppWorkRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/users': {
       id: '/_app/users'
@@ -784,6 +803,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppTenantManagementRoute: typeof AppTenantManagementRoute
   AppUsersRoute: typeof AppUsersRoute
+  AppWorkRoute: typeof AppWorkRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -817,6 +837,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppTenantManagementRoute: AppTenantManagementRoute,
   AppUsersRoute: AppUsersRoute,
+  AppWorkRoute: AppWorkRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -1,17 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bell, Check, Loader2 } from "lucide-react";
+import { Bell, Check, Loader2, X } from "lucide-react";
 import { PageHeader } from "@/components/ewos/PageHeader";
-import { StatusChip, type StatusTone } from "@/components/ewos/StatusChip";
 import { EmptyState } from "@/components/ewos/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ApiError, notificationsApi, type NotificationDto } from "@/lib/api-client";
+import { ApiError, notificationInboxApi, type NotificationInboxItemDto } from "@/lib/api-client";
 
 // Sprint 4: wired to the real com.ewos.notification inbox. Through Sprint 13 this screen ran on
 // mock data because the backend module was an empty package stub with no endpoints or table (see
 // the Sprint 13 completion report) — Sprint 4 built the notifications table, service, and REST API
 // this screen now consumes.
+//
+// Sprint 0 (EWOS App Shell) — repointed to the Sprint 27C NotificationInboxController
+// (/self-service/notifications), the only one that supports dismiss/soft-delete. The old
+// /notifications/mine controller this screen previously called is still real and untouched, but
+// has no dismiss endpoint — see the EWOS CTO review's "two notification controllers" finding.
 
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
@@ -24,26 +28,20 @@ export const Route = createFileRoute("/_app/notifications")({
   component: NotificationsPage,
 });
 
-const TYPE_TONE: Record<NotificationDto["type"], StatusTone> = {
-  TASK_ASSIGNED: "info",
-  TASK_ESCALATED: "warning",
-  INSTANCE_COMPLETED: "success",
-  INSTANCE_CANCELLED: "neutral",
-  INSTANCE_ERRORED: "danger",
-  GENERIC: "neutral",
-};
-
-const TYPE_LABEL: Record<NotificationDto["type"], string> = {
-  TASK_ASSIGNED: "Task assigned",
-  TASK_ESCALATED: "Escalated",
-  INSTANCE_COMPLETED: "Completed",
-  INSTANCE_CANCELLED: "Cancelled",
-  INSTANCE_ERRORED: "Error",
-  GENERIC: "Notice",
-};
+/** Real backend NotificationType has 60+ values across every module (see
+ * com.ewos.notification.domain.NotificationType) — rather than hardcoding an
+ * exhaustive tone/label map that will drift, this formats the raw enum name
+ * into a readable label, e.g. "PAYSLIP_READY" -> "Payslip ready". */
+function formatType(type: string): string {
+  return type
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 export function NotificationsPage() {
-  const [items, setItems] = useState<NotificationDto[] | null>(null);
+  const [items, setItems] = useState<NotificationInboxItemDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
@@ -51,8 +49,8 @@ export function NotificationsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const page = await notificationsApi.mine(0, 50);
-      setItems(page.content);
+      const page = await notificationInboxApi.list({ limit: 50 });
+      setItems(page.items);
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load notifications.");
@@ -68,16 +66,26 @@ export function NotificationsPage() {
   const unread = (items ?? []).filter((n) => !n.readAt);
 
   const markOne = async (id: string) => {
-    await notificationsApi.markRead(id);
+    await notificationInboxApi.markRead(id);
     setItems((xs) =>
       (xs ?? []).map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)),
     );
   };
 
+  const dismissOne = async (id: string) => {
+    setItems((xs) => (xs ?? []).filter((n) => n.id !== id));
+    try {
+      await notificationInboxApi.dismiss(id);
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err;
+      load(); // best-effort: reload if the dismiss genuinely failed server-side
+    }
+  };
+
   const markAll = async () => {
     setMarkingAll(true);
     try {
-      await Promise.all(unread.map((n) => notificationsApi.markRead(n.id)));
+      await Promise.all(unread.map((n) => notificationInboxApi.markRead(n.id)));
       await load();
     } finally {
       setMarkingAll(false);
@@ -138,23 +146,34 @@ export function NotificationsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-foreground">{n.title}</span>
-                        <StatusChip tone={TYPE_TONE[n.type]}>{TYPE_LABEL[n.type]}</StatusChip>
+                        <span className="text-xs text-muted-foreground">{formatType(n.type)}</span>
                       </div>
                       {n.body && <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>}
                       <div className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
                         {new Date(n.createdAt).toLocaleString()}
                       </div>
                     </div>
-                    {!n.readAt && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      {!n.readAt && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => markOne(n.id)}
+                        >
+                          Mark read
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="shrink-0 text-xs"
-                        onClick={() => markOne(n.id)}
+                        size="icon"
+                        className="h-7 w-7"
+                        aria-label={`Dismiss: ${n.title}`}
+                        onClick={() => dismissOne(n.id)}
                       >
-                        Mark read
+                        <X className="h-3.5 w-3.5" />
                       </Button>
-                    )}
+                    </div>
                   </li>
                 ))}
               </ul>

@@ -1,459 +1,220 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  ArrowUpRight,
-  Building2,
-  CalendarClock,
-  ClipboardList,
-  Clock,
-  DollarSign,
-  FileText,
-  ShieldCheck,
-  Sparkles,
-  TrendingUp,
-  UserPlus,
-  UserSquare2,
-  Users as UsersIcon,
-  Wallet,
-} from "lucide-react";
-import { dashboardApi, type DashboardSummary } from "@/lib/api-client";
-import { useTenant } from "@/lib/tenant-context";
+import { createFileRoute } from "@tanstack/react-router";
+import { CalendarDays, Clock, UserCircle2, Users2, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/ewos/PageHeader";
-import { StatCard } from "@/components/ewos/StatCard";
-import { StatusChip } from "@/components/ewos/StatusChip";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { AttentionInbox } from "@/components/ewos/AttentionInbox";
+import { WorkCard } from "@/components/ewos/WorkCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth-context";
+import { displayName } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import {
-  ANNOUNCEMENTS,
-  ATTENDANCE_WEEK,
-  DEPARTMENT_SPLIT,
-  HEADCOUNT_TREND,
-  PAYROLL_MONTHLY,
-  RECENT_ACTIVITY,
-} from "@/lib/mock/dashboard";
+  useEssDashboard,
+  useMssDashboard,
+  useTodayAttendanceStatus,
+} from "@/hooks/use-ess-home-data";
+
+// Sprint 0 (EWOS App Shell) — replaces the previous mock-heavy "Executive /
+// HR / Payroll / Employee" tabbed dashboard (DEPARTMENT_SPLIT, PAYROLL_MONTHLY,
+// ANNOUNCEMENTS, ATTENDANCE_WEEK, HEADCOUNT_TREND, RECENT_ACTIVITY — all
+// permanently-mocked chart data from src/lib/mock/dashboard.ts) with a
+// role-aware Today/Home built entirely on real Sprint 27C ESS/MSS dashboard
+// endpoints. The URL stays /dashboard on purpose (index.tsx and login.tsx
+// both redirect here) — the App Shell's navigation labels this "Home"
+// independently of the route path.
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — EWOS" },
-      { name: "description", content: "Executive, HR, payroll, and employee dashboards." },
+      { title: "Home — EWOS" },
+      { name: "description", content: "Your day at EWOS: what needs attention, and your work." },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: DashboardPage,
+  component: HomePage,
 });
 
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--primary)",
-];
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-export function DashboardPage() {
-  const [summary, setSummary] = useState<DashboardSummary>({
-    employees: null,
-    users: null,
-    departments: null,
-    roles: null,
+export function HomePage() {
+  const { user } = useAuth();
+  const dashboard = useEssDashboard();
+  const attendance = useTodayAttendanceStatus();
+  const mss = useMssDashboard();
+
+  const firstName = displayName(user).split(" ")[0] || displayName(user);
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
   });
-  const [loading, setLoading] = useState(true);
-  const { tenantId } = useTenant();
 
-  useEffect(() => {
-    let cancelled = false;
-    dashboardApi.summary(tenantId).then((d) => {
-      if (cancelled) return;
-      setSummary(d);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantId]);
+  const leave = dashboard.data?.leaveSummary;
+  const payroll = dashboard.data?.payrollSnapshot;
+  const showTeamPulse = (mss.data?.teamSummary.headcount ?? 0) > 0;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Overview"
-        title="Dashboard"
-        description="Live workforce metrics with executive, HR, payroll and employee views."
-        actions={
-          <StatusChip tone="info" icon={<Sparkles className="h-3 w-3" />}>
-            Sample analytics
-          </StatusChip>
-        }
-      />
+    <div className="space-y-8">
+      <PageHeader eyebrow={today} title={`${greeting()}, ${firstName}.`} serif />
 
-      <section aria-labelledby="metrics-heading">
-        <h3 id="metrics-heading" className="sr-only">
-          Key metrics
-        </h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Employees"
-            icon={<UserSquare2 className="h-5 w-5" />}
-            value={summary.employees}
-            loading={loading}
-            unavailable={!loading && summary.employees === null}
-          />
-          <StatCard
-            label="Active users"
-            icon={<UsersIcon className="h-5 w-5" />}
-            value={summary.users}
-            loading={loading}
-            unavailable={!loading && summary.users === null}
-          />
-          <StatCard
-            label="Departments"
-            icon={<Building2 className="h-5 w-5" />}
-            value={summary.departments}
-            loading={loading}
-            unavailable={!loading && summary.departments === null}
-          />
-          <StatCard
-            label="Roles"
-            icon={<ShieldCheck className="h-5 w-5" />}
-            value={summary.roles}
-            loading={loading}
-            unavailable={!loading && summary.roles === null}
-          />
+      <AttentionInbox />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <QuickStat
+          label="Leave balance"
+          loading={dashboard.loading}
+          error={dashboard.error}
+          value={leave?.balanceDays != null ? `${leave.balanceDays} days` : "—"}
+          hint={
+            leave?.nextApprovedLeaveDate
+              ? `Next: ${new Date(leave.nextApprovedLeaveDate).toLocaleDateString()}`
+              : undefined
+          }
+          numeric
+        />
+        <QuickStat
+          label="Today"
+          loading={attendance.loading}
+          error={attendance.error}
+          value={attendance.data?.label ?? "—"}
+        />
+        <QuickStat
+          label="Latest payslip"
+          loading={dashboard.loading}
+          error={dashboard.error}
+          value={
+            payroll?.latestPayslipPeriodEnd
+              ? new Date(payroll.latestPayslipPeriodEnd).toLocaleDateString(undefined, {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "None yet"
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <WorkCard
+          to="/my-leave"
+          icon={<CalendarDays className="h-4 w-4" />}
+          title="Leave"
+          loading={dashboard.loading}
+          error={dashboard.error}
+          cta="Apply or track"
+        >
+          <p className="font-mono text-lg font-semibold tabular-nums text-foreground">
+            {leave?.balanceDays != null ? `${leave.balanceDays} days` : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {leave?.pendingRequests ? `${leave.pendingRequests} pending` : "available"}
+          </p>
+        </WorkCard>
+
+        <WorkCard
+          to="/my-attendance"
+          icon={<Clock className="h-4 w-4" />}
+          title="Attendance"
+          loading={attendance.loading}
+          error={attendance.error}
+          cta="View timesheets"
+        >
+          <p className="text-sm font-semibold text-foreground">{attendance.data?.label ?? "—"}</p>
+        </WorkCard>
+
+        <WorkCard
+          to="/my-payslips"
+          icon={<Wallet className="h-4 w-4" />}
+          title="Payslip"
+          loading={dashboard.loading}
+          error={dashboard.error}
+          cta="View payslips"
+        >
+          <p className="text-sm font-semibold text-foreground">
+            {payroll?.latestPayslipPeriodEnd
+              ? new Date(payroll.latestPayslipPeriodEnd).toLocaleDateString(undefined, {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "None yet"}
+          </p>
+        </WorkCard>
+
+        <WorkCard
+          to="/profile"
+          icon={<UserCircle2 className="h-4 w-4" />}
+          title="Profile"
+          cta="View profile"
+        >
+          <p className="text-sm text-muted-foreground">Your details</p>
+        </WorkCard>
+      </div>
+
+      {showTeamPulse && (
+        <div>
+          <h2 className="mb-2 font-serif text-base font-normal text-foreground">Team pulse</h2>
+          <WorkCard
+            to="/my-team"
+            icon={<Users2 className="h-4 w-4" />}
+            title="Your team"
+            loading={mss.loading}
+            error={mss.error}
+            cta="Open team"
+          >
+            <p className="text-sm text-foreground">
+              {mss.data?.teamSummary.onLeaveToday ?? 0} on leave today ·{" "}
+              {mss.data?.teamSummary.pendingApprovals ?? 0} pending approvals
+            </p>
+          </WorkCard>
         </div>
-      </section>
-
-      <Tabs defaultValue="executive">
-        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
-          <TabsTrigger value="executive">Executive</TabsTrigger>
-          <TabsTrigger value="hr">HR</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
-          <TabsTrigger value="employee">Employee</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="executive" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Headcount trend</CardTitle>
-              </CardHeader>
-              <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={HEADCOUNT_TREND}>
-                    <defs>
-                      <linearGradient id="hc" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
-                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Area
-                      type="monotone"
-                      dataKey="headcount"
-                      stroke="var(--primary)"
-                      fill="url(#hc)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Department split</CardTitle>
-              </CardHeader>
-              <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={DEPARTMENT_SPLIT}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={55}
-                      outerRadius={90}
-                      paddingAngle={2}
-                    >
-                      {DEPARTMENT_SPLIT.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <QuickActions />
-            <RecentActivity />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="hr" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="New joiners (MTD)"
-              icon={<UserPlus className="h-5 w-5" />}
-              value={42}
-            />
-            <StatCard label="Exits (MTD)" icon={<TrendingUp className="h-5 w-5" />} value={10} />
-            <StatCard
-              label="Attrition (12m)"
-              icon={<TrendingUp className="h-5 w-5" />}
-              value="6.2%"
-            />
-            <StatCard
-              label="Open positions"
-              icon={<ClipboardList className="h-5 w-5" />}
-              value={28}
-            />
-          </div>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Attendance this week</CardTitle>
-            </CardHeader>
-            <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ATTENDANCE_WEEK}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="present" stackId="a" fill="var(--chart-2)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="late" stackId="a" fill="var(--chart-4)" />
-                  <Bar dataKey="absent" stackId="a" fill="var(--chart-5)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="payroll" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Gross this month"
-              icon={<Wallet className="h-5 w-5" />}
-              value="₹4.47 Cr"
-            />
-            <StatCard
-              label="Net this month"
-              icon={<DollarSign className="h-5 w-5" />}
-              value="₹3.41 Cr"
-            />
-            <StatCard
-              label="Tax withheld"
-              icon={<FileText className="h-5 w-5" />}
-              value="₹0.85 Cr"
-            />
-            <StatCard
-              label="Next run"
-              icon={<CalendarClock className="h-5 w-5" />}
-              value="Aug 28"
-            />
-          </div>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">
-                Payroll — gross vs net (₹ crores)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={PAYROLL_MONTHLY}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Line
-                    type="monotone"
-                    dataKey="gross"
-                    stroke="var(--chart-1)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="net"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="tax"
-                    stroke="var(--chart-4)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="employee" className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Leave balance"
-              icon={<CalendarClock className="h-5 w-5" />}
-              value="14 days"
-            />
-            <StatCard
-              label="Pending approvals"
-              icon={<ClipboardList className="h-5 w-5" />}
-              value={3}
-            />
-            <StatCard
-              label="Payslips available"
-              icon={<FileText className="h-5 w-5" />}
-              value={12}
-            />
-            <StatCard label="Next holiday" icon={<Clock className="h-5 w-5" />} value="Aug 15" />
-          </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Announcements</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {ANNOUNCEMENTS.map((a) => (
-                  <div key={a.id} className="rounded-md border border-border p-3">
-                    <div className="text-sm font-medium text-foreground">{a.title}</div>
-                    <p className="mt-1 text-xs text-muted-foreground">{a.body}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-            <QuickActions />
-          </div>
-        </TabsContent>
-      </Tabs>
+      )}
     </div>
   );
 }
 
-const tooltipStyle: React.CSSProperties = {
-  background: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  fontSize: 12,
-  color: "var(--popover-foreground)",
-};
-
-function QuickActions() {
-  const actions: Array<{
-    to: "/users" | "/employees" | "/organization" | "/settings";
-    title: string;
-    description: string;
-    icon: typeof UsersIcon;
-  }> = [
-    {
-      to: "/employees",
-      title: "Add employee",
-      description: "Onboard a new team member.",
-      icon: UserPlus,
-    },
-    {
-      to: "/organization",
-      title: "Organization setup",
-      description: "Departments, grades, calendars.",
-      icon: Building2,
-    },
-    {
-      to: "/users",
-      title: "Manage users",
-      description: "Accounts and access controls.",
-      icon: ShieldCheck,
-    },
-    {
-      to: "/settings",
-      title: "Settings",
-      description: "Theme and preferences.",
-      icon: ClipboardList,
-    },
-  ];
+function QuickStat({
+  label,
+  value,
+  hint,
+  loading,
+  error,
+  numeric = false,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  loading?: boolean;
+  error?: string | null;
+  /** EWOS identity (Sprint 0 design gate) — mono/tabular figures are reserved
+   * for genuinely numeric/financial values (e.g. a leave-day balance), not
+   * status text ("No entry yet today") or a formatted month ("Jul 2026"). */
+  numeric?: boolean;
+}) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {actions.map((a) => (
-          <Link
-            key={a.to}
-            to={a.to}
-            className="group flex items-start gap-3 rounded-md border border-border p-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      {loading ? (
+        <Skeleton className="mt-2 h-6 w-20" />
+      ) : error ? (
+        <p className="mt-1 text-sm text-muted-foreground">Unavailable right now</p>
+      ) : (
+        <>
+          <div
+            className={cn(
+              "mt-1 text-lg font-semibold text-foreground",
+              numeric && "font-mono tabular-nums",
+            )}
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-              <a.icon className="h-4 w-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center justify-between text-sm font-medium text-foreground">
-                {a.title}
-                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary" />
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">{a.description}</span>
-            </span>
-          </Link>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function RecentActivity() {
-  const toneMap = {
-    info: "info",
-    success: "success",
-    warning: "warning",
-    neutral: "neutral",
-  } as const;
-  return (
-    <Card className="lg:col-span-2">
-      <CardHeader className="flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-semibold">Recent activity</CardTitle>
-        <Button variant="ghost" size="sm" className="text-xs">
-          View all
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-border">
-          {RECENT_ACTIVITY.map((a) => (
-            <li key={a.id} className="flex items-start gap-3 px-5 py-3">
-              <StatusChip tone={toneMap[a.tone]} className="mt-0.5 shrink-0">
-                {a.tone}
-              </StatusChip>
-              <div className="min-w-0 flex-1 text-sm">
-                <span className="font-medium text-foreground">{a.actor}</span>{" "}
-                <span className="text-muted-foreground">{a.action}</span>{" "}
-                <span className="font-medium text-foreground">{a.target}</span>
-                <div className="mt-0.5 text-xs text-muted-foreground">{a.at}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
+            {value}
+          </div>
+          {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
+        </>
+      )}
+    </div>
   );
 }

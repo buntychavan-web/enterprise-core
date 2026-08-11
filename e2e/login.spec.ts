@@ -30,4 +30,11 @@ test.describe("Login page", () => {
 
     await expect(page).toHaveURL(/\/login/);
   });
+
+  // Sprint 0 (EWOS App Shell) — the new Work Hub route needs the same guard.
+  test("redirects an unauthenticated visit to Work back to login", async ({ page }) => {
+    await page.goto("/work");
+
+    await expect(page).toHaveURL(/\/login/);
+  });
 });
