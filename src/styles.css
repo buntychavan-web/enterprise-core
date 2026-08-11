@@ -59,6 +59,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-attention: var(--attention);
+  --color-attention-foreground: var(--attention-foreground);
 }
 
 :root {
@@ -95,6 +97,12 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* EWOS Sprint 0 — the "attention" accent. Used in exactly two places: the
+   * Attention Inbox card top-rule and the Command Centre's active-item
+   * indicator. Never used as a general brand/UI color — see frontend design
+   * notes in AttentionInbox.tsx. A restrained gold, not a red/alert color. */
+  --attention: oklch(0.58 0.13 75);
+  --attention-foreground: oklch(0.99 0.01 90);
 }
 
 .dark {
@@ -130,6 +138,8 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --attention: oklch(0.78 0.15 80);
+  --attention-foreground: oklch(0.18 0.03 80);
 }
 
 @layer base {
