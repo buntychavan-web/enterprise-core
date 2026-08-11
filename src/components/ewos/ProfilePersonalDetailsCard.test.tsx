@@ -81,6 +81,62 @@ describe("ProfilePersonalDetailsCard", () => {
     expect(updateMe).not.toHaveBeenCalled();
   });
 
+  it("sends an explicitly cleared field to the backend as an empty value", async () => {
+    // Regression test: EssProfileUpdateRequest fields are skipped server-side
+    // only when null (see EmployeeService.updateMe) — so clearing a field in
+    // the form must be sent as "", not omitted, or the backend silently
+    // leaves the old value in place while the UI reports success.
+    me.mockResolvedValueOnce(record({ emergencyContactName: "John" }));
+    updateMe.mockResolvedValueOnce(record({ emergencyContactName: "" }));
+
+    render(<ProfilePersonalDetailsCard />);
+    await screen.findByText("John");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.clear(screen.getByLabelText("Emergency contact name"));
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    await waitFor(() => expect(updateMe).toHaveBeenCalledTimes(1));
+    expect(updateMe).toHaveBeenCalledWith(expect.objectContaining({ emergencyContactName: "" }));
+  });
+
+  it("does not send fields the user never touched", async () => {
+    me.mockResolvedValueOnce(record());
+    updateMe.mockResolvedValueOnce(record({ personalEmail: "new@example.com" }));
+
+    render(<ProfilePersonalDetailsCard />);
+    await screen.findByText("asha.personal@example.com");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    const emailInput = screen.getByLabelText("Personal email");
+    await user.clear(emailInput);
+    await user.type(emailInput, "new@example.com");
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    await waitFor(() => expect(updateMe).toHaveBeenCalledTimes(1));
+    expect(updateMe).toHaveBeenCalledWith({ personalEmail: "new@example.com" });
+  });
+
+  it("blocks clearing phone to blank instead of sending an empty value the backend would reject", async () => {
+    // Unlike emergencyContactName, phone carries a backend @Pattern requiring
+    // 7-32 characters — an empty string fails it server-side, so this field
+    // can't be cleared to blank the way emergencyContactName can.
+    me.mockResolvedValueOnce(record());
+
+    render(<ProfilePersonalDetailsCard />);
+    await screen.findByText("asha.personal@example.com");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.clear(screen.getByLabelText("Phone"));
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(await screen.findByText("Enter a valid phone number.")).toBeInTheDocument();
+    expect(updateMe).not.toHaveBeenCalled();
+  });
+
   it("saves successfully and returns to view mode with the updated values", async () => {
     me.mockResolvedValueOnce(record());
     updateMe.mockResolvedValueOnce(record({ personalEmail: "new@example.com" }));

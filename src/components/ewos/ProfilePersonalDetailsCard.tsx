@@ -40,6 +40,13 @@ const FIELDS: { key: EditableField; label: string; type: string; placeholder?: s
 // number is caught before a round trip rather than only after a 400.
 const PHONE_PATTERN = /^\+?[0-9()\-\s]{7,32}$/;
 
+// Only phone/emergencyContactPhone carry that backend @Pattern, which
+// requires 7-32 characters (see EssProfileUpdateRequest.java) — an empty
+// string fails it server-side, so those two fields can't be cleared to
+// blank. personalEmail/emergencyContactName/avatarStorageUri have no such
+// minimum, so an explicit empty value is a valid "clear this field".
+const PHONE_FIELDS: EditableField[] = ["phone", "emergencyContactPhone"];
+
 function toFormState(record: ResourceRecord): EssProfileUpdateRequest {
   return {
     personalEmail: str(record.personalEmail),
@@ -109,19 +116,35 @@ export function ProfilePersonalDetailsCard() {
     setFieldErrors({});
   };
 
-  const validate = (): Record<string, string> => {
+  // Validates only the fields actually being sent (the patch), so an
+  // untouched field that has always been blank never blocks a save.
+  const validate = (patch: EssProfileUpdateRequest): Record<string, string> => {
     const errors: Record<string, string> = {};
-    if (form.phone && !PHONE_PATTERN.test(form.phone)) {
-      errors.phone = "Enter a valid phone number.";
-    }
-    if (form.emergencyContactPhone && !PHONE_PATTERN.test(form.emergencyContactPhone)) {
-      errors.emergencyContactPhone = "Enter a valid phone number.";
+    for (const key of PHONE_FIELDS) {
+      const v = patch[key];
+      if (v !== undefined && !PHONE_PATTERN.test(v)) {
+        errors[key] = "Enter a valid phone number.";
+      }
     }
     return errors;
   };
 
   const save = async () => {
-    const clientErrors = validate();
+    if (state.kind !== "found") return;
+    // Diff against the values the form was pre-filled with (not "is it
+    // truthy") so a field the user explicitly clears is sent as "" — the
+    // backend's updateMe only skips a field when it is `null`, so an empty
+    // string is a real "clear this field" instruction, not "leave
+    // unchanged". Fields the user never touched are left out of the patch
+    // entirely, matching their unchanged original value.
+    const original = toFormState(state.record);
+    const patch: EssProfileUpdateRequest = {};
+    for (const f of FIELDS) {
+      const v = form[f.key] ?? "";
+      if (v !== original[f.key]) patch[f.key] = v;
+    }
+
+    const clientErrors = validate(patch);
     if (Object.keys(clientErrors).length > 0) {
       setFieldErrors(clientErrors);
       return;
@@ -130,14 +153,6 @@ export function ProfilePersonalDetailsCard() {
     setFormError(null);
     setFieldErrors({});
     try {
-      // Send only fields with a real value — an empty string would overwrite
-      // (the backend treats non-null as "set", not "clear"), so a field the
-      // user never touched (still "") is omitted rather than sent as "".
-      const patch: EssProfileUpdateRequest = {};
-      for (const f of FIELDS) {
-        const v = form[f.key];
-        if (v) patch[f.key] = v;
-      }
       const updated = await essProfileApi.updateMe(patch);
       setState({ kind: "found", record: updated });
       setEditing(false);
