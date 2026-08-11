@@ -11,20 +11,24 @@ import {
   Activity,
   ArrowLeftRight,
   Bell,
+  Briefcase,
   Building2,
   CalendarDays,
   ClipboardCheck,
   Clock,
   Contact2,
   HelpCircle,
+  Info,
   Landmark,
   LayoutDashboard,
   Megaphone,
   Menu,
+  MoreHorizontal,
   Network,
   PartyPopper,
   Rocket,
   ScrollText,
+  Settings as SettingsIcon,
   ShieldCheck,
   Users as UsersIcon,
   Users2,
@@ -39,19 +43,28 @@ import { CompanySwitcher } from "@/components/ewos/CompanySwitcher";
 import { NotificationPanel } from "@/components/ewos/NotificationPanel";
 import { UserMenu } from "@/components/ewos/UserMenu";
 import { Footer } from "@/components/ewos/Footer";
-import { GlobalSearch } from "@/components/ewos/GlobalSearch";
+import { CommandCentre, useTrackRecentRoute } from "@/components/ewos/CommandCentre";
 import { ThemeToggle } from "@/components/ewos/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { displayName, initials, tokenStore } from "@/lib/api-client";
 import { TenantProvider, useTenant } from "@/lib/tenant-context";
+import { useHasDirectReports } from "@/hooks/use-ess-home-data";
+import { cn } from "@/lib/utils";
 
-// Sprint 14.1 / 2.1 — Company Switcher backend integration. GET /api/v1/companies
+// Sprint 2.1 — Company Switcher backend integration. GET /api/v1/companies
 // is already Chinese-Wall filtered server-side to the companies under the
 // caller's accessible clients. Sprint 2.1 lifted the companies/activeCompanyId
 // state out of this route into TenantProvider (lib/tenant-context.tsx) so
 // sibling routes (Employees, Organization) can consume the active tenant and
 // company via useTenant() instead of hardcoding DEFAULT_TENANT_ID/DEFAULT_COMPANY_ID.
+//
+// Sprint 0 (EWOS App Shell) — the flat 27-item NAV list below is replaced by
+// a small primary nav (Home, Work, Team) plus a "More" group holding every
+// other existing route unchanged. No route was removed or renamed; only
+// where each one is *linked from* changed. See CTO review "App Shell —
+// REDESIGN: keep auth guard, ErrorBoundary, CompanySwitcher, notification
+// bell wiring — replace the flat sidebar with the new IA."
 
 export const Route = createFileRoute("/_app")({
   // Route-level guard: redirects before the protected shell ever renders,
@@ -66,16 +79,18 @@ export const Route = createFileRoute("/_app")({
   component: AppShell,
 });
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+const PRIMARY_NAV = [
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/work", label: "Work", icon: Briefcase },
+] as const;
+
+const TEAM_ITEM = { to: "/my-team", label: "Team", icon: Users2 } as const;
+
+const MORE_NAV = [
   { to: "/employees", label: "Employees", icon: UserSquare2 },
-  { to: "/attendance", label: "Attendance", icon: Clock },
-  { to: "/leave", label: "Leave", icon: CalendarDays },
-  { to: "/payslips", label: "Payslips", icon: Wallet },
-  { to: "/my-leave", label: "My Leave", icon: CalendarDays },
-  { to: "/my-attendance", label: "My Attendance", icon: Clock },
-  { to: "/my-payslips", label: "My Payslips", icon: Wallet },
-  { to: "/my-team", label: "My Team", icon: Users2 },
+  { to: "/attendance", label: "Attendance (Admin)", icon: Clock },
+  { to: "/leave", label: "Leave (Admin)", icon: CalendarDays },
+  { to: "/payslips", label: "Payslips (Admin)", icon: Wallet },
   { to: "/directory", label: "Directory", icon: Contact2 },
   { to: "/holidays", label: "Holidays", icon: PartyPopper },
   { to: "/announcements", label: "Announcements", icon: Megaphone },
@@ -93,7 +108,9 @@ const NAV = [
   { to: "/users", label: "Users", icon: UsersIcon },
   { to: "/roles", label: "Roles", icon: ShieldCheck },
   { to: "/audit-history", label: "Audit History", icon: ClipboardCheck },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
   { to: "/help", label: "Help", icon: HelpCircle },
+  { to: "/about", label: "About EWOS", icon: Info },
 ] as const;
 
 function AppShell() {
@@ -127,6 +144,12 @@ function AppShellContent() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { companies, activeCompanyId, selectCompany } = useTenant();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hasTeam = useHasDirectReports();
+
+  const moreIsActive = MORE_NAV.some((item) => pathname.startsWith(item.to));
+  const [moreOpen, setMoreOpen] = useState(moreIsActive);
+
+  useTrackRecentRoute();
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -136,6 +159,9 @@ function AppShellContent() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
+
+  const navLinkClass =
+    "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary";
 
   return (
     <div className="min-h-dvh bg-muted/30 text-foreground">
@@ -173,13 +199,13 @@ function AppShellContent() {
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <nav aria-label="Primary" className="flex-1 space-y-0.5 p-3">
-          {NAV.map((item) => (
+        <nav aria-label="Primary" className="flex-1 space-y-0.5 overflow-y-auto p-3 pb-20 lg:pb-3">
+          {PRIMARY_NAV.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               onClick={() => setMobileOpen(false)}
-              className="flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:bg-primary/10 data-[status=active]:text-primary"
+              className={navLinkClass}
               activeOptions={{ exact: false }}
               activeProps={{ "aria-current": "page" }}
             >
@@ -187,13 +213,52 @@ function AppShellContent() {
               {item.label}
             </Link>
           ))}
+          {hasTeam && (
+            <Link
+              to={TEAM_ITEM.to}
+              onClick={() => setMobileOpen(false)}
+              className={navLinkClass}
+              activeOptions={{ exact: false }}
+              activeProps={{ "aria-current": "page" }}
+            >
+              <TEAM_ITEM.icon className="h-4 w-4" aria-hidden />
+              {TEAM_ITEM.label}
+            </Link>
+          )}
+
+          <div className="my-2 border-t border-border" />
+
+          <button
+            type="button"
+            onClick={() => setMoreOpen((o) => !o)}
+            aria-expanded={moreOpen}
+            aria-controls="more-nav-group"
+            className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
+            More
+          </button>
+          {moreOpen && (
+            <div id="more-nav-group" className="space-y-0.5">
+              {MORE_NAV.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(navLinkClass, "pl-9 text-[13px]")}
+                  activeOptions={{ exact: false }}
+                  activeProps={{ "aria-current": "page" }}
+                >
+                  <item.icon className="h-3.5 w-3.5" aria-hidden />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          )}
         </nav>
 
         <div className="border-t border-border p-3">
-          <Link to="/design-system" className="text-xs text-muted-foreground hover:text-foreground">
-            Design System
-          </Link>
-          <div className="mt-1 text-[11px] text-muted-foreground">EWOS v1.0</div>
+          <div className="text-[11px] text-muted-foreground">EWOS v1.0</div>
         </div>
       </aside>
 
@@ -216,11 +281,11 @@ function AppShellContent() {
             onSelect={selectCompany}
           />
           <div className="mx-2 hidden flex-1 sm:block">
-            <GlobalSearch />
+            <CommandCentre />
           </div>
           <div className="ml-auto flex items-center gap-1 sm:gap-2 sm:ml-0">
             <div className="sm:hidden">
-              <GlobalSearch />
+              <CommandCentre />
             </div>
             <ThemeToggle />
             <NotificationPanel />
@@ -235,7 +300,7 @@ function AppShellContent() {
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+        <main id="main-content" tabIndex={-1} className="flex-1 pb-16 focus:outline-none lg:pb-0">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <ErrorBoundary key={pathname} section="This page">
               <Outlet />
@@ -245,6 +310,60 @@ function AppShellContent() {
 
         <Footer />
       </div>
+
+      <MobileTabBar pathname={pathname} hasTeam={hasTeam} onMore={() => setMobileOpen(true)} />
     </div>
+  );
+}
+
+/**
+ * Sprint 0 (EWOS App Shell) — mobile bottom navigation. Mobile is not a
+ * shrunken desktop: the sidebar-as-overlay pattern remains for the full
+ * "More" list, but Home/Work/Team/More get a thumb-reachable bottom bar
+ * instead of requiring the hamburger for every navigation.
+ */
+function MobileTabBar({
+  pathname,
+  hasTeam,
+  onMore,
+}: {
+  pathname: string;
+  hasTeam: boolean;
+  onMore: () => void;
+}) {
+  const tabs = [...PRIMARY_NAV, ...(hasTeam ? [TEAM_ITEM] : [])];
+
+  return (
+    <nav
+      aria-label="Primary (mobile)"
+      className="fixed inset-x-0 bottom-0 z-30 grid border-t border-border bg-card lg:hidden"
+      style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}
+    >
+      {tabs.map((item) => {
+        const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={cn(
+              "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              active && "text-primary",
+            )}
+            aria-current={active ? "page" : undefined}
+          >
+            <item.icon className="h-5 w-5" aria-hidden />
+            {item.label}
+          </Link>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onMore}
+        className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      >
+        <MoreHorizontal className="h-5 w-5" aria-hidden />
+        More
+      </button>
+    </nav>
   );
 }
