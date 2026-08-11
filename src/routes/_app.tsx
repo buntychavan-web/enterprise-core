@@ -262,7 +262,11 @@ function AppShellContent() {
         </div>
       </aside>
 
-      <div className="flex min-h-dvh flex-col lg:pl-64">
+      {/* pb-16 clears the fixed mobile bottom tab bar (h-14 + safe-area) so it never
+          overlaps the last card on a page or the footer — see Sprint 0 review's
+          "mobile overflow" finding. Applied to the whole column, not just <main>,
+          since <Footer/> is a sibling that needs the same clearance. */}
+      <div className="flex min-h-dvh flex-col pb-16 lg:pb-0 lg:pl-64">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-card px-4 sm:px-6">
           <Button
             variant="ghost"
@@ -300,7 +304,7 @@ function AppShellContent() {
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="flex-1 pb-16 focus:outline-none lg:pb-0">
+        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <ErrorBoundary key={pathname} section="This page">
               <Outlet />
