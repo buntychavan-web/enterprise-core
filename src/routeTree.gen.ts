@@ -15,11 +15,6 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesignSystemOrganizationRouteImport } from './routes/design-system.organization'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
-// Sprint 0 (EWOS App Shell) — manually added: bun install is blocked by the
-// documented private-registry issue (see docs/DEPLOYMENT.md), so the
-// TanStack Router codegen could not regenerate this file. Re-run `bun run
-// dev`/`bun run build` once that's resolved to confirm this matches the
-// generator's own output exactly.
 import { Route as AppWorkRouteImport } from './routes/_app.work'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTenantManagementRouteImport } from './routes/_app.tenant-management'
@@ -538,18 +533,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/users': {
-      id: '/_app/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AppUsersRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/work': {
       id: '/_app/work'
       path: '/work'
       fullPath: '/work'
       preLoaderRoute: typeof AppWorkRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tenant-management': {
